@@ -86,36 +86,43 @@ return function(screen, th, width)
     end
 
     local ctx = plugin:deleteContext()
+    local delete_w = Button:new{ text = _("Delete"), text_font_size = 14 }:getSize().w
 
     -- Tapping a folder opens it; deleting is always the explicit Delete button.
+    -- Rows that can't be deleted have no button and say why instead of showing a share bar.
     local function build(i)
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
-        local button = Button:new{
-            text = _("Delete"),
-            radius = Size.radius.button,
-            text_font_size = 14,
-            show_parent = screen,
-            enabled = reason == nil,
-            callback = function() plugin:confirmDelete(item, dir) end,
-        }
-        local mid_w = width - thumb_w - size_w - button:getSize().w - 4 * gap
+        local mid_w = width - thumb_w - size_w - delete_w - 4 * gap
         local under
         if reason then
             under = UI.text(reason, 13, { color = th.muted, max_width = mid_w })
         else
             under = UI.bar(th, mid_w, sp(8), item.size / largest, th.accent)
         end
+        local action = HorizontalSpan:new{ width = delete_w }
+        if not reason then
+            action = Button:new{
+                text = _("Delete"),
+                radius = Size.radius.button,
+                text_font_size = 14,
+                show_parent = screen,
+                callback = function() plugin:confirmDelete(item, dir) end,
+            }
+        end
         local row = frame(HorizontalGroup:new{
             align = "center",
             UI.block(thumb_w, thumb_h, Theme.kind(th, item), sp(5)),
             HorizontalSpan:new{ width = gap },
-            VerticalGroup:new{
-                align = "left",
-                UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
-                    { bold = true, color = reason and th.muted or th.ink, max_width = mid_w }),
-                VerticalSpan:new{ width = sp(5) },
-                under,
+            LeftContainer:new{
+                dimen = Geom:new{ w = mid_w, h = thumb_h },
+                VerticalGroup:new{
+                    align = "left",
+                    UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
+                        { bold = true, color = reason and th.muted or th.ink, max_width = mid_w }),
+                    VerticalSpan:new{ width = sp(5) },
+                    under,
+                },
             },
             HorizontalSpan:new{ width = gap },
             RightContainer:new{
@@ -123,7 +130,7 @@ return function(screen, th, width)
                 UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }),
             },
             HorizontalSpan:new{ width = gap },
-            button,
+            action,
         })
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)

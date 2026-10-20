@@ -11,6 +11,7 @@ local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
@@ -40,6 +41,38 @@ function UI.block(w, h, color, radius)
     }
 end
 
+-- KOReader paints a container's border first and its contents over it, so square fills
+-- poke out of rounded corners. This paints the child, masks the four corners with the
+-- page colour, then draws the rounded outline on top, giving fills a clean rounded edge.
+local RoundedClip = WidgetContainer:extend{ radius = 0, bg = nil, color = nil, border = 0 }
+
+function RoundedClip:getSize()
+    return self[1]:getSize()
+end
+
+function RoundedClip:paintTo(bb, x, y)
+    local size = self:getSize()
+    self[1]:paintTo(bb, x, y)
+    local r = math.min(self.radius, math.floor(size.h / 2), math.floor(size.w / 2))
+    for dy = 0, r - 1 do
+        local dist = r - (dy + 0.5)
+        local mask = math.floor(r - math.sqrt(r * r - dist * dist) + 0.5)
+        if mask > 0 then
+            bb:paintRect(x, y + dy, mask, 1, self.bg)
+            bb:paintRect(x + size.w - mask, y + dy, mask, 1, self.bg)
+            bb:paintRect(x, y + size.h - 1 - dy, mask, 1, self.bg)
+            bb:paintRect(x + size.w - mask, y + size.h - 1 - dy, mask, 1, self.bg)
+        end
+    end
+    if self.border > 0 then
+        bb:paintBorder(x, y, size.w, size.h, self.border, self.color, r, true)
+    end
+end
+
+function UI.rounded(th, widget, radius, border)
+    return RoundedClip:new{ radius = radius, bg = th.bg, color = th.ink, border = border or 0, widget }
+end
+
 function UI.chip(th, text)
     return FrameContainer:new{
         bordersize = Size.border.thin, color = th.ink, radius = sp(14),
@@ -51,14 +84,11 @@ end
 -- A rounded track with a filled share of it.
 function UI.bar(th, width, height, fraction, fill)
     fraction = math.max(0, math.min(1, fraction))
-    local radius = math.floor(height / 4)
     local filled = math.floor(width * fraction)
     local row = HorizontalGroup:new{}
-    if filled > 0 then table.insert(row, UI.block(filled, height, fill, radius)) end
+    if filled > 0 then table.insert(row, UI.block(filled, height, fill)) end
     table.insert(row, UI.block(width - filled, height, th.free))
-    return FrameContainer:new{
-        bordersize = 0, padding = 0, margin = 0, radius = radius, background = th.free, row,
-    }
+    return UI.rounded(th, row, math.floor(height / 2))
 end
 
 -- Wraps a widget so a tap (and optionally a hold) on it calls back.
@@ -83,13 +113,11 @@ end
 -- tabs = { { id, label }, ... }; the active one is filled.
 function UI.tabbar(th, width, tabs, active, on_select)
     local h = sp(42)
-    local border = Size.border.thin
-    local inner = width - 2 * border
-    local cell_w = math.floor(inner / #tabs)
+    local cell_w = math.floor(width / #tabs)
     local row = HorizontalGroup:new{}
     for i, tab in ipairs(tabs) do
         local on = tab.id == active
-        local w = (i == #tabs) and (inner - cell_w * (#tabs - 1)) or cell_w
+        local w = (i == #tabs) and (width - cell_w * (#tabs - 1)) or cell_w
         local cell = FrameContainer:new{
             bordersize = 0, padding = 0, margin = 0, background = on and th.accent or th.bg,
             CenterContainer:new{
@@ -99,9 +127,7 @@ function UI.tabbar(th, width, tabs, active, on_select)
         }
         table.insert(row, UI.tappable(cell, function() on_select(tab.id) end))
     end
-    return FrameContainer:new{
-        bordersize = border, padding = 0, margin = 0, radius = Size.radius.button, color = th.ink, row,
-    }
+    return UI.rounded(th, row, sp(12), Size.border.button)
 end
 
 -- « ‹ Page 1 of 3 › » ; on_page(n) is called with the page to show.

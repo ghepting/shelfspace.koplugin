@@ -1,9 +1,14 @@
 local Device = require("device")
+local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
+local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
-local TitleBar = require("ui/widget/titlebar")
+local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local RightContainer = require("ui/widget/container/rightcontainer")
+local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -13,6 +18,25 @@ local Screen = Device.screen
 local Theme = require("shelfspace/theme")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
+
+-- Title with a close button; our own so the icon can be transparent on the page colour.
+local function header(th, width, on_close)
+    local h = sp(46)
+    local icon = IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) }
+    local close = UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = sp(56), h = h }, icon }, on_close)
+    return VerticalGroup:new{
+        align = "left",
+        OverlapGroup:new{
+            dimen = Geom:new{ w = width, h = h },
+            CenterContainer:new{
+                dimen = Geom:new{ w = width, h = h },
+                UI.text(_("Shelf Space"), 22, { face = "tfont", color = th.ink }),
+            },
+            RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
+        },
+        LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
+    }
+end
 
 local views = {
     overview = require("shelfspace/views/overview"),
@@ -72,14 +96,7 @@ function ShelfScreen:rebuild()
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
 
-    local titlebar = TitleBar:new{
-        width = self.dimen.w,
-        fullscreen = true,
-        title = _("Shelf Space"),
-        with_bottom_line = true,
-        close_callback = function() self:onClose() end,
-        show_parent = self,
-    }
+    local titlebar = header(th, self.dimen.w, function() self:onClose() end)
     local tabs = {
         { id = "overview", label = _("OVERVIEW") },
         { id = "browse", label = _("BROWSE") },

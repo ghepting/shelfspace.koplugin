@@ -33,22 +33,18 @@ return function(screen, th, width)
     else
         parts = { { u.used, th.other } }
     end
-    local inner = width - 2 * Size.border.thin
-    local bar_h = sp(22)
+    local bar_h = sp(20)
     local row = HorizontalGroup:new{}
     local used_w = 0
     for i, part in ipairs(parts) do
-        local w = math.floor(inner * part[1] / u.total)
+        local w = math.floor(width * part[1] / u.total)
         if w > 0 then
             table.insert(row, UI.block(w, bar_h, part[2]))
             used_w = used_w + w
         end
     end
-    table.insert(row, UI.block(inner - used_w, bar_h, th.free))
-    local bar = FrameContainer:new{
-        bordersize = Size.border.thin, padding = 0, margin = 0,
-        radius = Size.radius.button, color = th.ink, background = th.free, row,
-    }
+    table.insert(row, UI.block(width - used_w, bar_h, th.free))
+    local bar = UI.rounded(th, row, math.floor(bar_h / 2), Size.border.button)
 
     local function legend(color, label, size_text)
         local dot, gap = sp(14), sp(12)

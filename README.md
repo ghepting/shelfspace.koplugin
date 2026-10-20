@@ -13,11 +13,11 @@ in the desktop emulator.
 
 | KOReader data | Clear | Grayscale screens |
 | --- | --- | --- |
-| <img src="assets/koreader.png" width="260"> | <img src="assets/clear.png" width="260"> | <img src="assets/overview-gray.png" width="260"> |
+| <img src="assets/koreader.png" width="260"> | <img src="assets/clear.png" width="260"> | <img src="assets/browse-gray.png" width="260"> |
 
-Taken in the KOReader desktop emulator, so the totals are a Mac's. Colour
-shows on Kaleido screens such as the Kobo Libra Colour; other screens get the
-grayscale version.
+Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
+totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
+other screens get the grayscale version.
 
 ## What it does
 
