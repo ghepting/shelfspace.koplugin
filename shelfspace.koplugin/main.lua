@@ -107,7 +107,8 @@ function ShelfSpace:browse()
                 callback = e.is_dir and function() show(e.path) end or nil,
             })
         end
-        local title = T(_("%1 (%2)"), dir, util.getFriendlySize(tree[dir].size))
+        local name = dir == root and _("Library") or dir:match("[^/]+$")
+        local title = T(_("%1 (%2)"), name, util.getFriendlySize(tree[dir].size))
         if menu then
             menu:switchItemTable(title, items)
         else
@@ -116,6 +117,11 @@ function ShelfSpace:browse()
                 item_table = items,
                 covers_fullscreen = true,
                 is_borderless = true,
+                -- Menu closes itself after a selection by default; here a tap drills in.
+                onMenuSelect = function(_, item)
+                    if item.callback then item.callback() end
+                    return true
+                end,
                 close_callback = function() UIManager:close(menu) end,
             }
             UIManager:show(menu)
