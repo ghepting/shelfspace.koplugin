@@ -46,8 +46,9 @@ function Overview:init()
     self:rebuild()
 end
 
-function Overview:setBreakdown(breakdown)
+function Overview:update(usage, breakdown)
     if self.closed then return end
+    self.usage = usage
     self.breakdown = breakdown
     self:rebuild()
     UIManager:setDirty(self, "ui")
