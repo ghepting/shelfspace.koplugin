@@ -26,6 +26,7 @@ local Overview = InputContainer:extend{
     usage = nil, -- { total, used, available } in bytes
     breakdown = nil, -- { books, koreader, other } in bytes
     on_browse = nil,
+    on_koreader = nil,
 }
 
 -- A solid w x h block; FrameContainer takes its size from its content.
@@ -164,16 +165,19 @@ function Overview:rebuild()
     end
 
     table.insert(body, VerticalSpan:new{ width = pad })
-    table.insert(body, Button:new{
-        text = _("Browse by size"),
-        width = width,
-        radius = Size.radius.button,
-        background = th.chip,
-        enabled = b ~= nil,
-        callback = function()
-            if self.on_browse then self.on_browse() end
-        end,
-    })
+    local function button(text, callback)
+        table.insert(body, Button:new{
+            text = text,
+            width = width,
+            radius = Size.radius.button,
+            background = th.chip,
+            enabled = b ~= nil,
+            callback = function() if callback then callback() end end,
+        })
+    end
+    button(_("Browse by size"), self.on_browse)
+    table.insert(body, VerticalSpan:new{ width = Screen:scaleBySize(10) })
+    button(_("KOReader data"), self.on_koreader)
 
     self[1] = FrameContainer:new{
         bordersize = 0, padding = 0, margin = 0, background = th.bg,
