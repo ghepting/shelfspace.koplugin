@@ -1,4 +1,5 @@
 local _ = require("gettext")
+local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
@@ -7,8 +8,10 @@ local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local util = require("util")
+local N_ = _.ngettext
 local T = ffiUtil.template
 
+local Deleter = require("shelfspace/deleter")
 local Overview = require("shelfspace/overview")
 local Scanner = require("shelfspace/scanner")
 
@@ -35,35 +38,41 @@ local function libraryPath()
 end
 
 -- Scans the library (and KOReader's data dir when it lives elsewhere), keeping
--- the result in self.tree for the browser. on_done(tree, root, koreader_dir).
+-- the result in self.tree for the browser.
 function ShelfSpace:scan(on_done)
-    local root = libraryPath()
+    self.root = libraryPath()
     local koreader_dir = DataStorage:getDataDir()
-    koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
-    Scanner.scan(root, function(tree)
-        if tree[koreader_dir] then
+    self.koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
+    Scanner.scan(self.root, function(tree)
+        if tree[self.koreader_dir] then
             self.tree = tree
-            on_done(tree, root, koreader_dir)
+            on_done()
             return
         end
-        Scanner.scan(koreader_dir, function(extra)
+        Scanner.scan(self.koreader_dir, function(extra)
             for dir, node in pairs(extra) do tree[dir] = node end
             self.tree = tree
-            on_done(tree, root, koreader_dir)
+            on_done()
         end)
     end)
 end
 
 -- Books = visible top-level entries; "other" is whatever the partition holds beyond that.
-local function breakdown(tree, root, koreader_dir, usage)
+function ShelfSpace:breakdown(usage)
     local books = 0
-    for _, e in ipairs(tree[root].entries) do
-        if e.name:sub(1, 1) ~= "." and e.path ~= koreader_dir then
+    for _, e in ipairs(self.tree[self.root].entries) do
+        if e.name:sub(1, 1) ~= "." and e.path ~= self.koreader_dir then
             books = books + e.size
         end
     end
-    local koreader = tree[koreader_dir].size
+    local koreader = self.tree[self.koreader_dir].size
     return { books = books, koreader = koreader, other = math.max(usage.used - books - koreader, 0) }
+end
+
+function ShelfSpace:refreshOverview()
+    if not self.overview or self.overview.closed then return end
+    local usage = util.diskUsage(self.root)
+    self.overview:update(usage, self:breakdown(usage))
 end
 
 function ShelfSpace:showOverview()
@@ -72,20 +81,54 @@ function ShelfSpace:showOverview()
         UIManager:show(InfoMessage:new { text = _("Could not read storage usage.") })
         return
     end
-    local overview = Overview:new {
+    self.overview = Overview:new {
         usage = usage,
         on_browse = function() self:browse() end,
     }
-    UIManager:show(overview)
-    self:scan(function(tree, root, koreader_dir)
-        overview:setBreakdown(breakdown(tree, root, koreader_dir, usage))
-    end)
+    UIManager:show(self.overview)
+    self:scan(function() self:refreshOverview() end)
 end
 
--- Shows folders and files largest-first; tap a folder to drill in.
+-- Asks before deleting `entry` (listed in `dir`), then updates the tree and screens.
+function ShelfSpace:confirmDelete(entry, dir, redraw)
+    local open_file = self.ui.document and self.ui.document.file
+    if Deleter.holdsOpenBook(entry, open_file) then
+        UIManager:show(InfoMessage:new { text = _("You are reading this book, so it can't be deleted.") })
+        return
+    end
+    local lines = {
+        T(_("Delete %1?"), entry.name),
+        T(_("Frees %1."), util.getFriendlySize(entry.size)),
+    }
+    if entry.is_dir then
+        local files = Deleter.countFiles(self.tree, entry)
+        table.insert(lines, T(N_("Contains %1 file.", "Contains %1 files.", files), files))
+    end
+    local sidecars = Deleter.countSidecars(self.tree, entry)
+    if sidecars > 0 then
+        table.insert(lines, T(N_("Also removes the reading progress and notes of %1 book.",
+            "Also removes the reading progress and notes of %1 books.", sidecars), sidecars))
+    end
+    table.insert(lines, _("This cannot be undone."))
+    UIManager:show(ConfirmBox:new {
+        text = table.concat(lines, "\n\n"),
+        ok_text = _("Delete"),
+        ok_callback = function()
+            if Deleter.delete(entry) then
+                Scanner.remove(self.tree, self.root, dir, entry)
+                redraw()
+                self:refreshOverview()
+            else
+                UIManager:show(InfoMessage:new { text = T(_("Failed to delete:\n%1"), entry.path) })
+            end
+        end,
+    })
+end
+
+-- Shows folders and files largest-first. Tap a folder to open it; tap a file,
+-- or hold anything, to delete it.
 function ShelfSpace:browse()
-    local root = libraryPath()
-    local tree = self.tree
+    local root, tree = self.root, self.tree
     if not tree then return end
     local menu
     local function show(dir)
@@ -98,13 +141,17 @@ function ShelfSpace:browse()
             })
         end
         local entries = {}
-        for i, e in ipairs(tree[dir].entries) do entries[i] = e end
+        for _, e in ipairs(tree[dir].entries) do
+            if not e.hidden then table.insert(entries, e) end
+        end
         table.sort(entries, function(a, b) return a.size > b.size end)
         for _, e in ipairs(entries) do
+            local ask = function() self:confirmDelete(e, dir, function() show(dir) end) end
             table.insert(items, {
                 text = e.is_dir and (e.name .. "/") or e.name,
                 mandatory = util.getFriendlySize(e.size),
-                callback = e.is_dir and function() show(e.path) end or nil,
+                callback = e.is_dir and function() show(e.path) end or ask,
+                hold_callback = ask,
             })
         end
         local name = dir == root and _("Library") or dir:match("[^/]+$")
@@ -120,6 +167,10 @@ function ShelfSpace:browse()
                 -- Menu closes itself after a selection by default; here a tap drills in.
                 onMenuSelect = function(_, item)
                     if item.callback then item.callback() end
+                    return true
+                end,
+                onMenuHold = function(_, item)
+                    if item.hold_callback then item.hold_callback() end
                     return true
                 end,
                 close_callback = function() UIManager:close(menu) end,
