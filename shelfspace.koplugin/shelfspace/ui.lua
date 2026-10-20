@@ -1,4 +1,3 @@
-local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -74,23 +73,42 @@ function UI.rounded(th, widget, radius, border)
     return RoundedClip:new{ radius = radius, bg = th.bg, color = th.ink, border = border or 0, widget }
 end
 
--- A button that recedes as a whole when disabled: KOReader only greys a disabled button's
--- label, so the outline and fill are swapped for a flat pale pill. `background` fills the
--- enabled button (none = white with an outline); `disabled_background` the disabled one.
+-- A rounded button of our own. KOReader's Button flashes by inverting its whole rectangle
+-- when tapped and doesn't restore the rounded corners afterwards, and it only greys a disabled
+-- button's label. Here a disabled button is a flat pale pill, and a tap just calls back.
+-- opts: text, size, width (fixed, else as wide as the label), enabled, callback,
+-- background (fill of an enabled button; none = white with an outline), disabled_background.
 function UI.button(th, opts)
     local enabled = opts.enabled ~= false
-    local background = opts.background
-    if not enabled then background = opts.disabled_background or th.free end
-    return Button:new{
-        text = opts.text,
-        width = opts.width,
-        text_font_size = opts.size or 15,
-        radius = opts.radius or Size.radius.button,
-        show_parent = opts.show_parent,
-        callback = opts.callback,
-        enabled = enabled,
-        background = background,
+    local border = Size.border.button
+    local pad_h, pad_v = sp(12), sp(6)
+    local label = UI.text(opts.text, opts.size or 15, { bold = true, color = enabled and th.ink or th.muted })
+    local content = label
+    if opts.width then
+        content = CenterContainer:new{
+            dimen = Geom:new{ w = opts.width - 2 * (border + pad_h), h = label:getSize().h },
+            label,
+        }
+    end
+    local fill, line
+    if not enabled then
+        fill = opts.disabled_background or th.free
+        line = fill
+    elseif opts.background then
+        fill = opts.background
+        line = fill
+    else
+        fill, line = th.white, th.ink
+    end
+    local frame = FrameContainer:new{
+        bordersize = border, color = line, background = fill, radius = Size.radius.button, margin = 0,
+        padding = pad_v, padding_left = pad_h, padding_right = pad_h,
+        content,
     }
+    if enabled and opts.callback then
+        return UI.tappable(frame, opts.callback)
+    end
+    return frame
 end
 
 function UI.chip(th, text)

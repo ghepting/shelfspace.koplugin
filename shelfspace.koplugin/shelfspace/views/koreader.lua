@@ -58,7 +58,6 @@ return function(screen, th, width)
         local button = UI.button(th, {
             text = _("Clear"),
             size = 15,
-            show_parent = screen,
             enabled = clearable,
             callback = function()
                 if t.blocked then
@@ -98,7 +97,6 @@ return function(screen, th, width)
     local bottom = UI.button(th, {
         text = T(_("Clear cache, updates and logs · %1"), util.getFriendlySize(safe_free)),
         width = width,
-        show_parent = screen,
         enabled = safe_free > 0,
         background = th.chip,
         disabled_background = th.bg,

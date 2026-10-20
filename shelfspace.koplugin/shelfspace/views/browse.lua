@@ -1,4 +1,3 @@
-local Button = require("ui/widget/button")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -86,7 +85,7 @@ return function(screen, th, width)
     end
 
     local ctx = plugin:deleteContext()
-    local delete_w = Button:new{ text = _("Delete"), text_font_size = 14 }:getSize().w
+    local delete_w = UI.button(th, { text = _("Delete"), size = 14 }):getSize().w
 
     -- Tapping a folder opens it; deleting is always the explicit Delete button.
     -- Rows that can't be deleted have no button and say why instead of showing a share bar.
@@ -102,13 +101,11 @@ return function(screen, th, width)
         end
         local action = HorizontalSpan:new{ width = delete_w }
         if not reason then
-            action = Button:new{
+            action = UI.button(th, {
                 text = _("Delete"),
-                radius = Size.radius.button,
-                text_font_size = 14,
-                show_parent = screen,
+                size = 14,
                 callback = function() plugin:confirmDelete(item, dir) end,
-            }
+            })
         end
         local row = frame(HorizontalGroup:new{
             align = "center",
