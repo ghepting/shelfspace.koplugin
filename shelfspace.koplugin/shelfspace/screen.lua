@@ -79,6 +79,12 @@ function ShelfScreen:switchTab(id)
     self:refresh()
 end
 
+-- Jump to the Browse tab showing `dir`.
+function ShelfScreen:openBrowse(dir)
+    self.tab = "browse"
+    self:setDir(dir)
+end
+
 function ShelfScreen:setDir(dir)
     self.dir = dir
     self.pages.browse = 1

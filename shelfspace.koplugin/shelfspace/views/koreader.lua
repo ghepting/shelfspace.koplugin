@@ -3,11 +3,9 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
-local InfoMessage = require("ui/widget/infomessage")
 local LineWidget = require("ui/widget/linewidget")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
-local UIManager = require("ui/uimanager")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
@@ -61,7 +59,7 @@ return function(screen, th, width)
             enabled = clearable,
             callback = function()
                 if t.blocked then
-                    UIManager:show(InfoMessage:new { text = t.blocked })
+                    plugin:notify(t.blocked)
                 else
                     plugin:confirmClear({ t }, t.title:lower())
                 end
