@@ -1,5 +1,7 @@
 local BookList = require("ui/widget/booklist")
+local _ = require("gettext")
 local DocSettings = require("docsettings")
+local DocumentRegistry = require("document/documentregistry")
 local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
 local ffiUtil = require("ffi/util")
@@ -35,10 +37,61 @@ function Deleter.countFiles(tree, entry)
     return n
 end
 
--- True when `open_file` (the book on screen, if any) is `entry` or inside it.
-function Deleter.holdsOpenBook(entry, open_file)
-    if not open_file then return false end
-    return open_file == entry.path or open_file:sub(1, #entry.path + 1) == entry.path .. "/"
+local function within(path, dir)
+    return path == dir or path:sub(1, #dir + 1) == dir .. "/"
+end
+
+-- Files that travel with a book and are harmless to remove along with it.
+local COMPANIONS = { jpg = true, jpeg = true, png = true, gif = true, webp = true, opf = true }
+
+local function isManaged(name, path)
+    local ext = (name:match("%.([^.]+)$") or ""):lower()
+    return COMPANIONS[ext] or DocumentRegistry:hasProvider(path)
+end
+
+-- True when every file under `entry` is a book KOReader can open or a companion
+-- of one. Sidecar folders are KOReader's own and don't count against it.
+local function holdsOnlyBooks(tree, entry, cache)
+    if cache[entry.path] ~= nil then return cache[entry.path] end
+    local ok = true
+    local function walk(e)
+        if not ok then return end
+        if not e.is_dir then
+            if not isManaged(e.name, e.path) then ok = false end
+        elseif not e.hidden then
+            local node = tree[e.path]
+            for i, child in ipairs(node and node.entries or {}) do walk(child) end
+        end
+    end
+    walk(entry)
+    cache[entry.path] = ok
+    return ok
+end
+
+-- Why `entry` can't be deleted from here (a short line for the row), or nil when it can.
+-- ctx = { tree, root, koreader_dir, open_file, cache }. Anything KOReader doesn't manage is
+-- off limits, which keeps system folders safe on every device without listing them:
+-- only books KOReader can open, and folders holding nothing else, can go.
+function Deleter.blockedReason(entry, ctx)
+    local path = entry.path
+    if ctx.open_file and within(ctx.open_file, path) then
+        return _("You are reading this book")
+    elseif within(ctx.koreader_dir, path) then
+        return _("KOReader is installed here")
+    elseif within(path, ctx.koreader_dir) then
+        return _("KOReader's data: see the KOReader tab")
+    end
+    local top = path:sub(#ctx.root + 2):match("^[^/]+")
+    if top and top:sub(1, 1) == "." then
+        return _("System folder")
+    end
+    if entry.is_dir then
+        if not holdsOnlyBooks(ctx.tree, entry, ctx.cache) then
+            return _("Has files KOReader doesn't manage")
+        end
+    elseif not isManaged(entry.name, path) then
+        return _("Not a book KOReader manages")
+    end
 end
 
 function Deleter.delete(entry)
