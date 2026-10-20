@@ -1,4 +1,5 @@
 local BookList = require("ui/widget/booklist")
+local _ = require("gettext")
 local DocSettings = require("docsettings")
 local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
@@ -39,6 +40,25 @@ end
 function Deleter.holdsOpenBook(entry, open_file)
     if not open_file then return false end
     return open_file == entry.path or open_file:sub(1, #entry.path + 1) == entry.path .. "/"
+end
+
+local function within(path, dir)
+    return path == dir or path:sub(1, #dir + 1) == dir .. "/"
+end
+
+-- Why `path` must not be deleted from here, or nil when it may be. Covers KOReader
+-- itself, its data (the KOReader tab clears the safe parts), and hidden top-level
+-- folders such as .kobo (the Kobo's own database) and .adds (where KOReader is installed).
+function Deleter.protectedReason(path, root, koreader_dir)
+    if within(koreader_dir, path) then
+        return _("KOReader is installed here.")
+    elseif within(path, koreader_dir) then
+        return _("This is KOReader's own data. Use the KOReader tab to clear what is safe.")
+    end
+    local top = path:sub(#root + 2):match("^[^/]+")
+    if top and top:sub(1, 1) == "." then
+        return _("This is a system folder, so it can't be deleted here.")
+    end
 end
 
 function Deleter.delete(entry)

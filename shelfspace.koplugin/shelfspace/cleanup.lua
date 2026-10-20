@@ -31,7 +31,8 @@ function Cleanup.orphans(tree, koreader_dir)
     local found = {}
     local data_prefix = koreader_dir .. "/"
     for dir, node in pairs(tree) do
-        if dir ~= koreader_dir and dir:sub(1, #data_prefix) ~= data_prefix then
+        -- Skip KOReader's own folder and hidden folders (.kobo and the like).
+        if dir ~= koreader_dir and dir:sub(1, #data_prefix) ~= data_prefix and not dir:find("/%.") then
             local stems = {}
             for _, e in ipairs(node.entries) do
                 if not e.is_dir then stems[e.name:match("(.*)%.") or e.name] = true end
@@ -46,7 +47,8 @@ function Cleanup.orphans(tree, koreader_dir)
     return found
 end
 
--- Each target: { title, size, clear = function, blocked = reason or nil, detail }.
+-- Each target: { title, note, size, clear = function, blocked = reason or nil, safe = true if
+-- it is always harmless to clear }.
 -- `book_open` is true while a document is on screen.
 function Cleanup.targets(tree, koreader_dir, book_open)
     local data = koreader_dir
@@ -55,6 +57,8 @@ function Cleanup.targets(tree, koreader_dir, book_open)
     local cache_size = sizeOf(tree, data .. "/cache/cr3cache") + sizeOf(tree, data .. "/cache/tmpcr3cache")
     table.insert(targets, {
         title = _("Rendering cache"),
+        note = _("Rebuilt as needed"),
+        safe = true,
         size = cache_size,
         blocked = book_open and _("Close the book first; its cache is in use.") or nil,
         clear = function()
@@ -65,6 +69,8 @@ function Cleanup.targets(tree, koreader_dir, book_open)
 
     table.insert(targets, {
         title = _("Update downloads"),
+        note = _("Old KOReader packages"),
+        safe = true,
         size = sizeOf(tree, data .. "/ota"),
         clear = function() clearContents(data .. "/ota") end,
     })
@@ -78,6 +84,8 @@ function Cleanup.targets(tree, koreader_dir, book_open)
     end
     table.insert(targets, {
         title = _("Crash logs"),
+        note = _("crash.log and friends"),
+        safe = true,
         size = log_size,
         clear = function()
             -- Truncate: the running process may hold the file open, so deleting wouldn't free it.
@@ -90,6 +98,7 @@ function Cleanup.targets(tree, koreader_dir, book_open)
 
     table.insert(targets, {
         title = _("Screenshots"),
+        note = _("Saved by KOReader"),
         size = sizeOf(tree, data .. "/screenshots"),
         clear = function() clearContents(data .. "/screenshots") end,
     })
@@ -98,6 +107,7 @@ function Cleanup.targets(tree, koreader_dir, book_open)
     for _, e in ipairs(orphans) do orphan_size = orphan_size + e.size end
     table.insert(targets, {
         title = _("Orphaned reading progress"),
+        note = _("Notes for books no longer here"),
         size = orphan_size,
         count = #orphans,
         clear = function()

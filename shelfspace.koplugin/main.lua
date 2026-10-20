@@ -3,7 +3,6 @@ local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
-local Menu = require("ui/widget/menu")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
@@ -11,10 +10,9 @@ local util = require("util")
 local N_ = _.ngettext
 local T = ffiUtil.template
 
-local Cleanup = require("shelfspace/cleanup")
 local Deleter = require("shelfspace/deleter")
-local Overview = require("shelfspace/overview")
 local Scanner = require("shelfspace/scanner")
+local ShelfScreen = require("shelfspace/screen")
 
 local ShelfSpace = WidgetContainer:extend {
     name = "shelfspace",
@@ -70,10 +68,11 @@ function ShelfSpace:breakdown(usage)
     return { books = books, koreader = koreader, other = math.max(usage.used - books - koreader, 0) }
 end
 
-function ShelfSpace:refreshOverview()
-    if not self.overview or self.overview.closed then return end
-    local usage = util.diskUsage(self.root)
-    self.overview:update(usage, self:breakdown(usage))
+-- Re-reads free space and redraws whichever tab is showing.
+function ShelfSpace:refresh()
+    if not self.screen or self.screen.closed then return end
+    self.usage = util.diskUsage(self.root)
+    self.screen:refresh()
 end
 
 function ShelfSpace:showOverview()
@@ -82,17 +81,19 @@ function ShelfSpace:showOverview()
         UIManager:show(InfoMessage:new { text = _("Could not read storage usage.") })
         return
     end
-    self.overview = Overview:new {
-        usage = usage,
-        on_browse = function() self:browse() end,
-        on_koreader = function() self:showKoreaderData() end,
-    }
-    UIManager:show(self.overview)
-    self:scan(function() self:refreshOverview() end)
+    self.usage = usage
+    self.screen = ShelfScreen:new { plugin = self }
+    UIManager:show(self.screen)
+    self:scan(function() self:refresh() end)
 end
 
--- Asks before deleting `entry` (listed in `dir`), then updates the tree and screens.
-function ShelfSpace:confirmDelete(entry, dir, redraw)
+-- Asks before deleting `entry` (listed in `dir`), then updates the tree and screen.
+function ShelfSpace:confirmDelete(entry, dir)
+    local reason = Deleter.protectedReason(entry.path, self.root, self.koreader_dir)
+    if reason then
+        UIManager:show(InfoMessage:new { text = reason })
+        return
+    end
     local open_file = self.ui.document and self.ui.document.file
     if Deleter.holdsOpenBook(entry, open_file) then
         UIManager:show(InfoMessage:new { text = _("You are reading this book, so it can't be deleted.") })
@@ -118,8 +119,7 @@ function ShelfSpace:confirmDelete(entry, dir, redraw)
         ok_callback = function()
             if Deleter.delete(entry) then
                 Scanner.remove(self.tree, self.root, dir, entry)
-                redraw()
-                self:refreshOverview()
+                self:refresh()
             else
                 UIManager:show(InfoMessage:new { text = T(_("Failed to delete:\n%1"), entry.path) })
             end
@@ -127,121 +127,21 @@ function ShelfSpace:confirmDelete(entry, dir, redraw)
     })
 end
 
--- Shows folders and files largest-first. Tap a folder to open it; tap a file,
--- or hold anything, to delete it.
-function ShelfSpace:browse()
-    local root, tree = self.root, self.tree
-    if not tree then return end
-    local menu
-    local function show(dir)
-        local items = {}
-        if dir ~= root then
-            local parent = dir:match("^(.*)/[^/]+$")
-            table.insert(items, {
-                text = "⬆ " .. _("Up"),
-                callback = function() show(tree[parent] and parent or root) end,
-            })
-        end
-        local entries = {}
-        for _, e in ipairs(tree[dir].entries) do
-            if not e.hidden then table.insert(entries, e) end
-        end
-        table.sort(entries, function(a, b) return a.size > b.size end)
-        for _, e in ipairs(entries) do
-            local ask = function() self:confirmDelete(e, dir, function() show(dir) end) end
-            table.insert(items, {
-                text = e.is_dir and (e.name .. "/") or e.name,
-                mandatory = util.getFriendlySize(e.size),
-                callback = e.is_dir and function() show(e.path) end or ask,
-                hold_callback = ask,
-            })
-        end
-        local name = dir == root and _("Library") or dir:match("[^/]+$")
-        local title = T(_("%1 (%2)"), name, util.getFriendlySize(tree[dir].size))
-        if menu then
-            menu:switchItemTable(title, items)
-        else
-            menu = Menu:new {
-                title = title,
-                item_table = items,
-                covers_fullscreen = true,
-                is_borderless = true,
-                -- Menu closes itself after a selection by default; here a tap drills in.
-                onMenuSelect = function(_, item)
-                    if item.callback then item.callback() end
-                    return true
-                end,
-                onMenuHold = function(_, item)
-                    if item.hold_callback then item.hold_callback() end
-                    return true
-                end,
-                close_callback = function() UIManager:close(menu) end,
-            }
-            UIManager:show(menu)
-        end
-    end
-    show(root)
-end
-
--- Lists what KOReader can regenerate or no longer needs; tap one to clear it.
-function ShelfSpace:showKoreaderData()
-    local book_open = self.ui.document ~= nil
-    local menu
-    local function show()
-        local targets = Cleanup.targets(self.tree, self.koreader_dir, book_open)
-        local items, total = {}, 0
-        for _i, t in ipairs(targets) do
-            local label = t.title
-            if t.count then label = T(_("%1 (%2)"), t.title, t.count) end
-            local clearable = t.size > 0 and not t.blocked
-            if clearable then total = total + t.size end
-            table.insert(items, {
-                text = label,
-                mandatory = util.getFriendlySize(t.size),
-                dim = not clearable,
-                callback = function()
-                    if t.blocked then
-                        UIManager:show(InfoMessage:new { text = t.blocked })
-                    elseif t.size > 0 then
-                        self:confirmClear(t, show)
-                    end
-                end,
-            })
-        end
-        local title = T(_("KOReader data (%1)"), util.getFriendlySize(self.tree[self.koreader_dir].size))
-        if menu then
-            menu:switchItemTable(title, items)
-        else
-            menu = Menu:new {
-                title = title,
-                item_table = items,
-                covers_fullscreen = true,
-                is_borderless = true,
-                onMenuSelect = function(_, item)
-                    if item.callback then item.callback() end
-                    return true
-                end,
-                close_callback = function() UIManager:close(menu) end,
-            }
-            UIManager:show(menu)
-        end
-    end
-    show()
-end
-
-function ShelfSpace:confirmClear(target, redraw)
+-- Asks before clearing `targets` (from Cleanup), then rescans and redraws.
+function ShelfSpace:confirmClear(targets, label)
+    local size = 0
+    for i, t in ipairs(targets) do size = size + t.size end
     UIManager:show(ConfirmBox:new {
-        text = T(_("Clear %1?\n\nFrees %2."), target.title:lower(), util.getFriendlySize(target.size)),
+        text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size)),
         ok_text = _("Clear"),
         ok_callback = function()
-            target.clear()
+            for i, t in ipairs(targets) do t.clear() end
             local busy = InfoMessage:new { text = _("Updating…") }
             UIManager:show(busy)
             UIManager:nextTick(function()
                 self:scan(function()
                     UIManager:close(busy)
-                    redraw()
-                    self:refreshOverview()
+                    self:refresh()
                 end)
             end)
         end,
