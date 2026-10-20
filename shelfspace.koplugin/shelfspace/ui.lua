@@ -73,6 +73,44 @@ function UI.rounded(th, widget, radius, border)
     return RoundedClip:new{ radius = radius, bg = th.bg, color = th.ink, border = border or 0, widget }
 end
 
+-- A rounded button of our own. KOReader's Button flashes by inverting its whole rectangle
+-- when tapped and doesn't restore the rounded corners afterwards, and it only greys a disabled
+-- button's label. Here a disabled button is a flat pale pill, and a tap just calls back.
+-- opts: text, size, width (fixed, else as wide as the label), enabled, callback,
+-- background (fill of an enabled button; none = white with an outline), disabled_background.
+function UI.button(th, opts)
+    local enabled = opts.enabled ~= false
+    local border = Size.border.button
+    local pad_h, pad_v = sp(12), sp(6)
+    local label = UI.text(opts.text, opts.size or 15, { bold = true, color = enabled and th.ink or th.muted })
+    local content = label
+    if opts.width then
+        content = CenterContainer:new{
+            dimen = Geom:new{ w = opts.width - 2 * (border + pad_h), h = label:getSize().h },
+            label,
+        }
+    end
+    local fill, line
+    if not enabled then
+        fill = opts.disabled_background or th.free
+        line = fill
+    elseif opts.background then
+        fill = opts.background
+        line = fill
+    else
+        fill, line = th.white, th.ink
+    end
+    local frame = FrameContainer:new{
+        bordersize = border, color = line, background = fill, radius = Size.radius.button, margin = 0,
+        padding = pad_v, padding_left = pad_h, padding_right = pad_h,
+        content,
+    }
+    if enabled and opts.callback then
+        return UI.tappable(frame, opts.callback)
+    end
+    return frame
+end
+
 function UI.chip(th, text)
     return FrameContainer:new{
         bordersize = Size.border.thin, color = th.ink, radius = sp(14),
