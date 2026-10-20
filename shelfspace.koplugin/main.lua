@@ -11,6 +11,7 @@ local util = require("util")
 local N_ = _.ngettext
 local T = ffiUtil.template
 
+local Cleanup = require("shelfspace/cleanup")
 local Deleter = require("shelfspace/deleter")
 local Overview = require("shelfspace/overview")
 local Scanner = require("shelfspace/scanner")
@@ -84,6 +85,7 @@ function ShelfSpace:showOverview()
     self.overview = Overview:new {
         usage = usage,
         on_browse = function() self:browse() end,
+        on_koreader = function() self:showKoreaderData() end,
     }
     UIManager:show(self.overview)
     self:scan(function() self:refreshOverview() end)
@@ -179,6 +181,71 @@ function ShelfSpace:browse()
         end
     end
     show(root)
+end
+
+-- Lists what KOReader can regenerate or no longer needs; tap one to clear it.
+function ShelfSpace:showKoreaderData()
+    local book_open = self.ui.document ~= nil
+    local menu
+    local function show()
+        local targets = Cleanup.targets(self.tree, self.koreader_dir, book_open)
+        local items, total = {}, 0
+        for _i, t in ipairs(targets) do
+            local label = t.title
+            if t.count then label = T(_("%1 (%2)"), t.title, t.count) end
+            local clearable = t.size > 0 and not t.blocked
+            if clearable then total = total + t.size end
+            table.insert(items, {
+                text = label,
+                mandatory = util.getFriendlySize(t.size),
+                dim = not clearable,
+                callback = function()
+                    if t.blocked then
+                        UIManager:show(InfoMessage:new { text = t.blocked })
+                    elseif t.size > 0 then
+                        self:confirmClear(t, show)
+                    end
+                end,
+            })
+        end
+        local title = T(_("KOReader data (%1)"), util.getFriendlySize(self.tree[self.koreader_dir].size))
+        if menu then
+            menu:switchItemTable(title, items)
+        else
+            menu = Menu:new {
+                title = title,
+                item_table = items,
+                covers_fullscreen = true,
+                is_borderless = true,
+                onMenuSelect = function(_, item)
+                    if item.callback then item.callback() end
+                    return true
+                end,
+                close_callback = function() UIManager:close(menu) end,
+            }
+            UIManager:show(menu)
+        end
+    end
+    show()
+end
+
+function ShelfSpace:confirmClear(target, redraw)
+    UIManager:show(ConfirmBox:new {
+        text = T(_("Clear %1?\n\nFrees %2."), target.title:lower(), util.getFriendlySize(target.size)),
+        ok_text = _("Clear"),
+        ok_callback = function()
+            target.clear()
+            local busy = InfoMessage:new { text = _("Updating…") }
+            UIManager:show(busy)
+            UIManager:nextTick(function()
+                self:scan(function()
+                    UIManager:close(busy)
+                    redraw()
+                    self:refreshOverview()
+                end)
+            end)
+        end,
+    })
 end
 
 return ShelfSpace
