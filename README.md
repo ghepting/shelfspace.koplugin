@@ -1,19 +1,31 @@
 # Shelf Space
 
 A [KOReader](https://github.com/koreader/koreader) plugin to see where your
-device storage went and free it up. Works wherever KOReader runs (Kobo, Kindle,
-PocketBook, Android, desktop).
+device storage went and free it up. It uses only KOReader's own APIs, so it is
+meant to work on every device KOReader supports; so far it has only been run
+in the desktop emulator.
+
+## Screenshots
+
+| Overview (colour) | Overview (grayscale) | Browse by size |
+| --- | --- | --- |
+| <img src="assets/overview-color.png" width="260"> | <img src="assets/overview-gray.png" width="260"> | <img src="assets/browse.png" width="260"> |
+
+Taken in the KOReader desktop emulator, so the totals are a Mac's. Colour
+shows on Kaleido screens such as the Kobo Libra Colour; other screens get the
+grayscale version.
 
 ## Status
 
-Early scaffold. Today it shows free, used and total space for the library
-partition under **Tools › Shelf Space**.
+Early. **Tools › Shelf Space** opens an overview with free space, a usage bar,
+and a books / KOReader data / other breakdown. **Browse by size** lists folders
+and files largest-first.
 
 ## Planned
 
-- Biggest folders and files
-- KOReader's own usage (cache, sidecars, logs, update downloads)
 - Delete with proper sidecar cleanup
+- KOReader's own usage (cache, logs, update downloads)
+- A shelf view where spine width matches size
 
 ## Install
 
