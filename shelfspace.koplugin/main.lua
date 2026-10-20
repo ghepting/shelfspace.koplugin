@@ -6,6 +6,7 @@ local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
+local lfs = require("libs/libkoreader-lfs")
 local util = require("util")
 local N_ = _.ngettext
 local T = ffiUtil.template
@@ -89,6 +90,18 @@ function ShelfSpace:showOverview()
 end
 
 -- Asks before deleting `entry` (listed in `dir`), then updates the tree and screen.
+-- One dialog at a time: a second tap while one is up (easy on a slow e-ink screen) is ignored,
+-- so confirmations can't stack on top of each other.
+function ShelfSpace:showDialog(make)
+    if self.dialog and UIManager:isWidgetShown(self.dialog) then return end
+    self.dialog = make()
+    UIManager:show(self.dialog)
+end
+
+function ShelfSpace:notify(text)
+    self:showDialog(function() return InfoMessage:new { text = text } end)
+end
+
 function ShelfSpace:deleteContext()
     return {
         tree = self.tree, root = self.root, koreader_dir = self.koreader_dir,
@@ -100,7 +113,7 @@ end
 function ShelfSpace:confirmDelete(entry, dir)
     local reason = Deleter.blockedReason(entry, self:deleteContext())
     if reason then
-        UIManager:show(InfoMessage:new { text = reason })
+        self:notify(reason)
         return
     end
     local lines = {
@@ -117,40 +130,46 @@ function ShelfSpace:confirmDelete(entry, dir)
             "Also removes the reading progress and notes of %1 books.", sidecars), sidecars))
     end
     table.insert(lines, _("This cannot be undone."))
-    UIManager:show(ConfirmBox:new {
-        text = table.concat(lines, "\n\n"),
-        ok_text = _("Delete"),
-        ok_callback = function()
-            if Deleter.delete(entry) then
-                self.block_cache = {}
-                Scanner.remove(self.tree, self.root, dir, entry)
-                self:refresh()
-            else
-                UIManager:show(InfoMessage:new { text = T(_("Failed to delete:\n%1"), entry.path) })
-            end
-        end,
-    })
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = table.concat(lines, "\n\n"),
+            ok_text = _("Delete"),
+            ok_callback = function()
+                -- Already gone (deleted elsewhere in the meantime) counts as done.
+                local gone = lfs.attributes(entry.path, "mode") == nil
+                if gone or Deleter.delete(entry) then
+                    self.block_cache = {}
+                    Scanner.remove(self.tree, self.root, dir, entry)
+                    self:refresh()
+                else
+                    self:notify(T(_("Failed to delete:\n%1"), entry.path))
+                end
+            end,
+        }
+    end)
 end
 
 -- Asks before clearing `targets` (from Cleanup), then rescans and redraws.
 function ShelfSpace:confirmClear(targets, label)
     local size = 0
     for i, t in ipairs(targets) do size = size + t.size end
-    UIManager:show(ConfirmBox:new {
-        text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size)),
-        ok_text = _("Clear"),
-        ok_callback = function()
-            for i, t in ipairs(targets) do t.clear() end
-            local busy = InfoMessage:new { text = _("Updating…") }
-            UIManager:show(busy)
-            UIManager:nextTick(function()
-                self:scan(function()
-                    UIManager:close(busy)
-                    self:refresh()
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size)),
+            ok_text = _("Clear"),
+            ok_callback = function()
+                for i, t in ipairs(targets) do t.clear() end
+                local busy = InfoMessage:new { text = _("Updating…") }
+                UIManager:show(busy)
+                UIManager:nextTick(function()
+                    self:scan(function()
+                        UIManager:close(busy)
+                        self:refresh()
+                    end)
                 end)
-            end)
-        end,
-    })
+            end,
+        }
+    end)
 end
 
 return ShelfSpace

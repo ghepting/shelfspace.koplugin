@@ -24,7 +24,7 @@ other screens get the grayscale version.
 Open **Tools › Shelf Space**. Three tabs:
 
 - **Overview**: free space, and where the rest went (books, KOReader data,
-  everything else).
+  everything else). Tap Books or KOReader data to jump to that tab.
 - **Browse**: your library, largest first, with a share bar per row. Tap a
   folder to open it; every row has its own **Delete** button, and you always
   get a confirmation first, including how many books lose their reading

@@ -46,12 +46,14 @@ return function(screen, th, width)
     table.insert(row, UI.block(width - used_w, bar_h, th.free))
     local bar = UI.rounded(th, row, math.floor(bar_h / 2), Size.border.button)
 
-    local function legend(color, label, size_text)
+    -- Rows with an on_tap show a chevron and open the matching tab; the others are plain.
+    local function legend(color, label, size_text, on_tap)
         local dot, gap = sp(14), sp(12)
+        local chevron_w = sp(30)
         local label_w = UI.text(label, 22, { bold = true, color = th.ink })
         local size_w = UI.text(size_text, 22, { color = th.ink })
-        local spacer = width - dot - gap - label_w:getSize().w - size_w:getSize().w
-        return VerticalGroup:new{
+        local spacer = width - dot - gap - label_w:getSize().w - size_w:getSize().w - chevron_w
+        local row = VerticalGroup:new{
             align = "left",
             VerticalSpan:new{ width = sp(10) },
             HorizontalGroup:new{
@@ -63,18 +65,21 @@ return function(screen, th, width)
                 },
                 HorizontalSpan:new{ width = gap }, label_w,
                 HorizontalSpan:new{ width = math.max(spacer, 0) }, size_w,
+                HorizontalSpan:new{ width = sp(8) },
+                on_tap and UI.text("›", 28, { color = th.muted }) or HorizontalSpan:new{ width = sp(14) },
             },
             VerticalSpan:new{ width = sp(10) },
             LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
         }
+        return on_tap and UI.tappable(row, on_tap) or row
     end
 
     local body = VerticalGroup:new{ align = "left", bar, VerticalSpan:new{ width = sp(8) } }
     local rows
     if b then
         rows = {
-            { th.books, _("Books"), util.getFriendlySize(b.books) },
-            { th.koreader, _("KOReader data"), util.getFriendlySize(b.koreader) },
+            { th.books, _("Books"), util.getFriendlySize(b.books), function() screen:openBrowse(plugin.root) end },
+            { th.koreader, _("KOReader data"), util.getFriendlySize(b.koreader), function() screen:switchTab("koreader") end },
             { th.other, _("Other files"), util.getFriendlySize(b.other) },
             { th.free, _("Free"), util.getFriendlySize(u.available) },
         }
@@ -85,7 +90,7 @@ return function(screen, th, width)
         }
     end
     for i, r in ipairs(rows) do
-        table.insert(body, legend(r[1], r[2], r[3]))
+        table.insert(body, legend(r[1], r[2], r[3], r[4]))
     end
     return { hero = hero, body = body }
 end
