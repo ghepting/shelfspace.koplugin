@@ -1,3 +1,4 @@
+local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local Device = require("device")
 local Font = require("ui/font")
@@ -71,6 +72,25 @@ end
 
 function UI.rounded(th, widget, radius, border)
     return RoundedClip:new{ radius = radius, bg = th.bg, color = th.ink, border = border or 0, widget }
+end
+
+-- A button that recedes as a whole when disabled: KOReader only greys a disabled button's
+-- label, so the outline and fill are swapped for a flat pale pill. `background` fills the
+-- enabled button (none = white with an outline); `disabled_background` the disabled one.
+function UI.button(th, opts)
+    local enabled = opts.enabled ~= false
+    local background = opts.background
+    if not enabled then background = opts.disabled_background or th.free end
+    return Button:new{
+        text = opts.text,
+        width = opts.width,
+        text_font_size = opts.size or 15,
+        radius = opts.radius or Size.radius.button,
+        show_parent = opts.show_parent,
+        callback = opts.callback,
+        enabled = enabled,
+        background = background,
+    }
 end
 
 function UI.chip(th, text)

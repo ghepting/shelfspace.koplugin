@@ -1,4 +1,3 @@
-local Button = require("ui/widget/button")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
@@ -56,10 +55,9 @@ return function(screen, th, width)
     local body = VerticalGroup:new{ align = "left" }
     for i, t in ipairs(targets) do
         local clearable = t.size > 0
-        local button = Button:new{
+        local button = UI.button(th, {
             text = _("Clear"),
-            radius = Size.radius.button,
-            text_font_size = 15,
+            size = 15,
             show_parent = screen,
             enabled = clearable,
             callback = function()
@@ -69,7 +67,7 @@ return function(screen, th, width)
                     plugin:confirmClear({ t }, t.title:lower())
                 end
             end,
-        }
+        })
         local label = t.count and T(_("%1 (%2)"), t.title, t.count) or t.title
         local text_w = width - size_w - button:getSize().w - 2 * gap
         local title = UI.text(label, 19, { bold = true, color = clearable and th.ink or th.muted, max_width = text_w })
@@ -97,16 +95,16 @@ return function(screen, th, width)
             },
         })
     end
-    local bottom = Button:new{
+    local bottom = UI.button(th, {
         text = T(_("Clear cache, updates and logs · %1"), util.getFriendlySize(safe_free)),
         width = width,
-        radius = Size.radius.button,
-        background = th.chip,
         show_parent = screen,
         enabled = safe_free > 0,
+        background = th.chip,
+        disabled_background = th.bg,
         callback = function()
             plugin:confirmClear(safe, _("cache, updates and logs"))
         end,
-    }
+    })
     return { hero = hero, body = body, bottom = bottom }
 end
