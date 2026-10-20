@@ -26,10 +26,12 @@ Open **Tools › Shelf Space**. Three tabs:
 - **Overview**: free space, and where the rest went (books, KOReader data,
   everything else).
 - **Browse**: your library, largest first, with a share bar per row. Tap a
-  folder to open it. Tap a file, or hold anything, to delete it; you always
+  folder to open it; every row has its own **Delete** button, and you always
   get a confirmation first, including how many books lose their reading
-  progress. System folders (such as `.kobo`), KOReader itself and the book you
-  are reading can't be deleted here.
+  progress. Only books KOReader can open, and folders holding nothing else, can
+  be deleted here. Anything else (system folders, other files) is shown with
+  the reason it is locked, and so are KOReader itself and the book you are
+  reading.
 - **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
   update downloads, crash logs, screenshots, reading progress of books that are
   gone), each with a Clear button.

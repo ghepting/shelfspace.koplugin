@@ -1,3 +1,4 @@
+local Button = require("ui/widget/button")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
@@ -67,11 +68,10 @@ return function(screen, th, width)
         progress = { fraction = share, left = percent(share), right = util.getFriendlySize(dir_size) },
     })
 
-    local items = entries
     local largest = entries[1] and math.max(entries[1].size, 1) or 1
 
-    local size_w = sp(84)
-    local gap = sp(12)
+    local size_w = sp(80)
+    local gap = sp(10)
     local thumb_w, thumb_h = sp(34), sp(44)
 
     local function frame(content)
@@ -85,11 +85,27 @@ return function(screen, th, width)
         }
     end
 
+    local ctx = plugin:deleteContext()
+
+    -- Tapping a folder opens it; deleting is always the explicit Delete button.
     local function build(i)
-        local item = items[i]
-        local ask = function() plugin:confirmDelete(item, dir) end
-        local locked = Deleter.protectedReason(item.path, root, plugin.koreader_dir) ~= nil
-        local mid_w = width - thumb_w - size_w - 3 * gap
+        local item = entries[i]
+        local reason = Deleter.blockedReason(item, ctx)
+        local button = Button:new{
+            text = _("Delete"),
+            radius = Size.radius.button,
+            text_font_size = 14,
+            show_parent = screen,
+            enabled = reason == nil,
+            callback = function() plugin:confirmDelete(item, dir) end,
+        }
+        local mid_w = width - thumb_w - size_w - button:getSize().w - 4 * gap
+        local under
+        if reason then
+            under = UI.text(reason, 13, { color = th.muted, max_width = mid_w })
+        else
+            under = UI.bar(th, mid_w, sp(8), item.size / largest, th.accent)
+        end
         local row = frame(HorizontalGroup:new{
             align = "center",
             UI.block(thumb_w, thumb_h, Theme.kind(th, item), sp(5)),
@@ -97,17 +113,22 @@ return function(screen, th, width)
             VerticalGroup:new{
                 align = "left",
                 UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
-                    { bold = true, color = locked and th.muted or th.ink, max_width = mid_w }),
+                    { bold = true, color = reason and th.muted or th.ink, max_width = mid_w }),
                 VerticalSpan:new{ width = sp(5) },
-                UI.bar(th, mid_w, sp(8), item.size / largest, th.accent),
+                under,
             },
             HorizontalSpan:new{ width = gap },
             RightContainer:new{
                 dimen = Geom:new{ w = size_w, h = thumb_h },
-                UI.text(util.getFriendlySize(item.size), 17, { bold = true, color = th.ink }),
+                UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }),
             },
+            HorizontalSpan:new{ width = gap },
+            button,
         })
-        return UI.tappable(row, item.is_dir and function() screen:setDir(item.path) end or ask, ask)
+        if item.is_dir then
+            return UI.tappable(row, function() screen:setDir(item.path) end)
+        end
+        return row
     end
 
     -- "Up" stays above the list on every page.
@@ -120,5 +141,5 @@ return function(screen, th, width)
         }), function() screen:setDir(parent) end)
     end
 
-    return { hero = hero, header = header, count = #items, row_h = ROW_H, build = build }
+    return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build }
 end

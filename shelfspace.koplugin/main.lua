@@ -39,6 +39,7 @@ end
 -- Scans the library (and KOReader's data dir when it lives elsewhere), keeping
 -- the result in self.tree for the browser.
 function ShelfSpace:scan(on_done)
+    self.block_cache = {}
     self.root = libraryPath()
     local koreader_dir = DataStorage:getDataDir()
     self.koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
@@ -88,15 +89,18 @@ function ShelfSpace:showOverview()
 end
 
 -- Asks before deleting `entry` (listed in `dir`), then updates the tree and screen.
+function ShelfSpace:deleteContext()
+    return {
+        tree = self.tree, root = self.root, koreader_dir = self.koreader_dir,
+        open_file = self.ui.document and self.ui.document.file,
+        cache = self.block_cache,
+    }
+end
+
 function ShelfSpace:confirmDelete(entry, dir)
-    local reason = Deleter.protectedReason(entry.path, self.root, self.koreader_dir)
+    local reason = Deleter.blockedReason(entry, self:deleteContext())
     if reason then
         UIManager:show(InfoMessage:new { text = reason })
-        return
-    end
-    local open_file = self.ui.document and self.ui.document.file
-    if Deleter.holdsOpenBook(entry, open_file) then
-        UIManager:show(InfoMessage:new { text = _("You are reading this book, so it can't be deleted.") })
         return
     end
     local lines = {
@@ -118,6 +122,7 @@ function ShelfSpace:confirmDelete(entry, dir)
         ok_text = _("Delete"),
         ok_callback = function()
             if Deleter.delete(entry) then
+                self.block_cache = {}
                 Scanner.remove(self.tree, self.root, dir, entry)
                 self:refresh()
             else
