@@ -42,6 +42,14 @@ T.test("the README logos are the generated ones: coup de grâce for light pages,
     end
 end)
 
+T.test("a bare icon has no canvas and no tile, so it can sit over a native tile", function()
+    local svg = Icons.svg("shelfspace", "2a363b", nil, { bg = "f4f2ed", named = true, bare = true })
+    assert(not svg:find('width="154.6"', 1, true), "tile in a bare icon")
+    assert(not svg:find("#f4f2ed", 1, true), "canvas in a bare icon")
+    assert(svg:find('fill="#ffffff"', 1, true), "no glyph")
+    assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
+end)
+
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
     local svg = Icons.svg("shelfspace", "99b898", nil, { glyph = "2a363b", named = true })
     assert(svg:find('fill="#2a363b"', 1, true), "glyph colour missing")

@@ -1,5 +1,11 @@
 local DataStorage = require("datastorage")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Geom = require("ui/geometry")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local IconWidget = require("ui/widget/iconwidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
 local lfs = require("libs/libkoreader-lfs")
 
 -- The three header icons: a portrait book-shaped tile with a white glyph, the shape of KOReader's own
@@ -8,7 +14,8 @@ local Icons = {}
 
 -- Same 195 x 195 canvas and cover outline as KOReader's logo (it starts 18.3 from the left and is 154.6
 -- wide), so the three line up when drawn at one size.
-local TILE = '<rect x="18.3" y="0.6" width="154.6" height="193.8" rx="22.5" ry="22.5" fill="#%s"/>'
+local TILE_X, TILE_Y, TILE_W, TILE_H, TILE_R = 18.3, 0.6, 154.6, 193.8, 22.5
+local TILE = string.format('<rect x="%s" y="%s" width="%s" height="%s" rx="%s" ry="%s" fill="#%%s"/>', TILE_X, TILE_Y, TILE_W, TILE_H, TILE_R, TILE_R)
 local WHITE = "#ffffff"
 local CENTER_X, CENTER_Y = 95.6, 97.5
 
@@ -65,10 +72,11 @@ end
 -- `koreader_logo` is KOReader's own logo as text, used for "koreader". `opts`: `glyph` (hex, default
 -- white) is the colour of the drawing on the tile; `bg` (hex) fills the
 -- whole canvas first so the icon has no transparency; `named` puts the ShelfSpace wordmark under
--- the mark (the mark is then raised to make room, and centred with it).
+-- the mark (the mark is then raised to make room, and centred with it); `bare` leaves out the canvas
+-- and the tile, for a glyph drawn over a tile that is not part of the SVG.
 function Icons.svg(name, hex, koreader_logo, opts)
     opts = opts or {}
-    local canvas = opts.bg and string.format('<rect width="195" height="195" fill="#%s"/>', opts.bg) or ""
+    local canvas = opts.bg and not opts.bare and string.format('<rect width="195" height="195" fill="#%s"/>', opts.bg) or ""
     if name == "koreader" then
         if not koreader_logo then return nil end
         local svg = koreader_logo:gsub("#00a89c", "#" .. hex)
@@ -79,7 +87,7 @@ function Icons.svg(name, hex, koreader_logo, opts)
     if not draw then return nil end
     local named = opts.named and name == "shelfspace"
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="195" height="195" '
-        .. 'viewBox="0 0 195 195">' .. canvas .. string.format(TILE, hex)
+        .. 'viewBox="0 0 195 195">' .. canvas .. (opts.bare and "" or string.format(TILE, hex))
         .. draw(hex, named and 13 or nil, named and 0 or nil, opts.glyph or "ffffff")
         .. (named and wordmark(opts.glyph or "ffffff") or "") .. "</svg>"
 end
@@ -113,35 +121,56 @@ local function readFile(path)
     return text
 end
 
--- An icon drawn `size` pixels square on a tile of colour `tile`, painted over the page colour `bg` so
--- it has no transparency to blend; nil if it can't be produced. The SVG is kept in KOReader's cache
--- folder, one per pair of colours, and rewritten whenever the drawing changes.
-function Icons.widget(name, size, tile, bg, named)
-    local function hexOf(color)
-        local c = color:getColorRGB32()
-        return string.format("%02x%02x%02x", c.r, c.g, c.b)
-    end
-    local hex, bg_hex = hexOf(tile), hexOf(bg)
+-- Writes `svg` to `path` under another name first and renames it into place, so a reader (this plugin,
+-- redrawing, or a second KOReader) never meets a half-written file.
+local function store(path, svg)
+    if readFile(path) == svg then return true end
     local cache = DataStorage:getDataDir() .. "/cache"
-    local dir = cache .. "/shelfspace"
-    local path = string.format("%s/%s%s-%s-%s.svg", dir, name, named and "-named" or "", hex, bg_hex)
-    local svg = Icons.svg(name, hex, name == "koreader" and readFile("resources/koreader.svg") or nil, { bg = bg_hex, named = named })
-    if not svg then return nil end
-    if readFile(path) ~= svg then
-        lfs.mkdir(cache)
-        lfs.mkdir(dir)
-        -- Written under another name and renamed into place, so a reader (this plugin, redrawing, or
-        -- a second KOReader) never meets a half-written file.
-        local tmp = string.format("%s.%d.tmp", path, os.time())
-        local f = io.open(tmp, "w")
-        if not f then return nil end
-        f:write(svg)
-        f:close()
-        if not os.rename(tmp, path) then
-            os.remove(tmp)
-            return nil
-        end
+    lfs.mkdir(cache)
+    lfs.mkdir(cache .. "/shelfspace")
+    local tmp = string.format("%s.%d.tmp", path, os.time())
+    local f = io.open(tmp, "w")
+    if not f then return false end
+    f:write(svg)
+    f:close()
+    if not os.rename(tmp, path) then
+        os.remove(tmp)
+        return false
     end
+    return true
+end
+
+local function hexOf(color)
+    local c = color:getColorRGB32()
+    return string.format("%02x%02x%02x", c.r, c.g, c.b)
+end
+
+-- An icon drawn `size` pixels square on a tile of colour `tile`; nil if it can't be produced. The SVG is
+-- kept in KOReader's cache folder and rewritten whenever the drawing changes. The ShelfSpace tile is a
+-- native rounded box with a transparent SVG on top, so the Kobo's SVG renderer never fills it; the other
+-- two are painted over the page colour `bg`, so they have no transparency to blend.
+function Icons.widget(name, size, tile, bg, named)
+    local hex, bg_hex = hexOf(tile), hexOf(bg)
+    local dir = DataStorage:getDataDir() .. "/cache/shelfspace"
+    if name == "shelfspace" then
+        local path = string.format("%s/shelfspace%s-glyph.svg", dir, named and "-named" or "")
+        local svg = Icons.svg(name, hex, nil, { named = named, bare = true })
+        if not svg or not store(path, svg) then return nil end
+        local k = size / 195
+        local box = FrameContainer:new{
+            bordersize = 0, padding = 0, margin = 0, radius = math.floor(TILE_R * k), background = tile,
+            overlap_offset = { math.floor(TILE_X * k), math.floor(TILE_Y * k) },
+            HorizontalGroup:new{ HorizontalSpan:new{ width = math.floor(TILE_W * k) }, VerticalSpan:new{ width = math.floor(TILE_H * k) } },
+        }
+        return OverlapGroup:new{
+            dimen = Geom:new{ w = size, h = size },
+            box,
+            IconWidget:new{ file = path, width = size, height = size, alpha = true },
+        }
+    end
+    local path = string.format("%s/%s-%s-%s.svg", dir, name, hex, bg_hex)
+    local svg = Icons.svg(name, hex, name == "koreader" and readFile("resources/koreader.svg") or nil, { bg = bg_hex })
+    if not svg or not store(path, svg) then return nil end
     return IconWidget:new{ file = path, width = size, height = size }
 end
 
