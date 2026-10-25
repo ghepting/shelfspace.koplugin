@@ -129,9 +129,11 @@ end
 -- One dialog at a time: a second tap while one is up (easy on a slow e-ink screen) is ignored,
 -- so confirmations can't stack on top of each other.
 function ShelfSpace:showDialog(make)
-    if self.dialog and UIManager:isWidgetShown(self.dialog) then return end
-    self.dialog = make()
-    UIManager:show(self.dialog)
+    -- Not called `dialog`: inside a book the reader gives every plugin a `dialog` field that
+    -- points at itself, which would make this guard refuse to show anything.
+    if self.popup and UIManager:isWidgetShown(self.popup) then return end
+    self.popup = make()
+    UIManager:show(self.popup)
 end
 
 -- Opens a book in the reader, remembering where we were so closing it brings us back.

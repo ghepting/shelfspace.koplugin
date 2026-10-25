@@ -152,7 +152,7 @@ function ShelfScreen:askQuery()
         }
         return dialog
     end)
-    self.plugin.dialog:onShowKeyboard()
+    self.plugin.popup:onShowKeyboard()
 end
 
 function ShelfScreen:setPage(n)
