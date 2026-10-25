@@ -1,0 +1,35 @@
+name: Release
+
+# Keeps a "release vX.Y.Z" pull request up to date from the conventional commits on main.
+# Merging it tags the release, publishes it on GitHub and attaches the plugin zip.
+# The tests run first and must pass.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  # A failing test on main stops here: no release PR is updated and nothing is published.
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  release-please:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+
+      - uses: actions/checkout@v4
+        if: ${{ steps.release.outputs.release_created }}
+
+      - name: Build and attach the plugin zip
+        if: ${{ steps.release.outputs.release_created }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          zip -r shelfspace.koplugin.zip shelfspace.koplugin
+          gh release upload "${{ steps.release.outputs.tag_name }}" shelfspace.koplugin.zip
