@@ -1,10 +1,10 @@
 name: CI
 
 # Syntax-checks the Lua under LuaJIT (KOReader's runtime) and runs the unit tests.
+# Runs on every pull request, and release.yml calls it on main before any release.
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_call:
 
 jobs:
   check:
