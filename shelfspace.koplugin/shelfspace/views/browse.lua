@@ -26,8 +26,6 @@ local function percent(fraction)
     return math.floor(100 * fraction + 0.5) .. "%"
 end
 
-local SORT_LABELS = { size = _("Largest"), name = _("A–Z"), new = _("Newest") }
-
 -- At most `max` characters, cut on a character boundary.
 local function shorten(text, max)
     local count, cut = 0, #text
@@ -63,7 +61,7 @@ return function(screen, th, width)
             if not e.hidden then table.insert(entries, e) end
         end
     end
-    Search.sort(entries, screen.sort)
+    Search.sort(entries, Search.OPTIONS[screen.sort])
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
@@ -158,8 +156,8 @@ return function(screen, th, width)
 
     -- Search and sort, then "Up": pinned above the list on every page.
     local sort_button = UI.button(th, {
-        text = T(_("Sort: %1"), SORT_LABELS[screen.sort]), size = 15,
-        callback = function() screen:cycleSort() end,
+        text = T(_("Sort: %1 ▾"), Search.OPTIONS[screen.sort].short), size = 15,
+        callback = function() screen:askSort() end,
     })
     local clear_button = screen.query and UI.button(th, {
         text = "✕", size = 15, callback = function() screen:setQuery(nil) end,

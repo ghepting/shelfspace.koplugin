@@ -131,18 +131,24 @@ function UI.bar(th, width, height, fraction, fill)
 end
 
 -- Wraps a widget so a tap (and optionally a hold) on it calls back.
+local tappables = 0
+
 function UI.tappable(widget, on_tap, on_hold)
     local size = widget:getSize()
     local c = InputContainer:new{ dimen = Geom:new{ w = size.w, h = size.h }, widget }
+    -- Event names are unique per tappable: events travel down to child widgets, so a
+    -- button inside a tappable row would otherwise answer the row's tap with its own.
+    tappables = tappables + 1
+    local tap, hold = "TapRow" .. tappables, "HoldRow" .. tappables
     c.ges_events = {
-        TapRow = { GestureRange:new{ ges = "tap", range = c.dimen } },
-        HoldRow = { GestureRange:new{ ges = "hold", range = c.dimen } },
+        [tap] = { GestureRange:new{ ges = "tap", range = c.dimen } },
+        [hold] = { GestureRange:new{ ges = "hold", range = c.dimen } },
     }
-    c.onTapRow = function()
+    c["on" .. tap] = function()
         if on_tap then on_tap() end
         return true
     end
-    c.onHoldRow = function()
+    c["on" .. hold] = function()
         if on_hold then on_hold() end
         return true
     end

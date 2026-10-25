@@ -5,6 +5,7 @@ local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
 local InputContainer = require("ui/widget/container/inputcontainer")
+local ButtonDialog = require("ui/widget/buttondialog")
 local InputDialog = require("ui/widget/inputdialog")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
@@ -54,7 +55,7 @@ local ShelfScreen = InputContainer:extend{
     plugin = nil, -- the ShelfSpace plugin: usage, tree, and the delete / clear actions
     tab = "overview",
     dir = nil, -- folder shown on the Browse tab
-    sort = "size", -- how Browse orders rows: size, name or new
+    sort = 1, -- how Browse orders rows: an index into Search.OPTIONS
     query = nil, -- name search on Browse, over the shown folder and everything under it
 }
 
@@ -98,16 +99,29 @@ function ShelfScreen:setDir(dir)
     self:refresh()
 end
 
--- Next sort order: largest first, then A to Z, then newest first.
-function ShelfScreen:cycleSort()
-    for i, mode in ipairs(Search.MODES) do
-        if mode == self.sort then
-            self.sort = Search.MODES[i % #Search.MODES + 1]
-            break
-        end
-    end
+function ShelfScreen:setSort(index)
+    self.sort = index
     self.pages.browse = 1
     self:refresh()
+end
+
+-- Every sort order at once, the current one ticked.
+function ShelfScreen:askSort()
+    self.plugin:showDialog(function()
+        local dialog
+        local buttons = {}
+        for i, option in ipairs(Search.OPTIONS) do
+            table.insert(buttons, { {
+                text = (i == self.sort and "✓  " or "     ") .. option.label,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:setSort(i)
+                end,
+            } })
+        end
+        dialog = ButtonDialog:new{ title = _("Sort by"), title_align = "center", buttons = buttons }
+        return dialog
+    end)
 end
 
 function ShelfScreen:setQuery(query)
