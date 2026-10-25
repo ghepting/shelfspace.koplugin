@@ -21,7 +21,7 @@ local GLYPHS = {
     -- The Shelf Space mark: a shelf used as a usage bar. Books stand on the left (what is used) and
     -- one long slot, drawn as a dashed outline, is left empty on the right (what is free). It is also
     -- the Overview's icon.
-    shelfspace = function(tile, lift)
+    shelfspace = function(tile, lift, shift)
         local out = { rect(CENTER_X - 54, 140, 108, 9, 4.5, WHITE) }
         local base = 132
         for _, book in ipairs({ { 46.6, 76 }, { 67.6, 54 }, { 88.6, 84 } }) do -- x, top
@@ -32,8 +32,10 @@ local GLYPHS = {
         end
         out[#out + 1] = string.format('<rect x="111.1" y="71.5" width="35" height="%d" rx="3.5" fill="none" stroke="%s" '
             .. 'stroke-width="3" stroke-dasharray="7 5"/>', base - 70 - 3, WHITE)
-        -- Raised so the mark sits at the tile's centre (4), or higher with a name under it (13).
-        return string.format('<g transform="translate(0 %d)">', -(lift or 4)) .. table.concat(out) .. "</g>"
+        -- The default places the mark by weight, not by its bounding box: the shelf and books carry the ink
+        -- low and to the left (the empty slot is only an outline), so it is raised 9 and moved right 4.
+        -- With a name under it (the logo) it is raised 13 instead, and not shifted.
+        return string.format('<g transform="translate(%d %d)">', shift or 4, -(lift or 9)) .. table.concat(out) .. "</g>"
     end,
     -- Three books lying in a stack, a band near each end of every spine: the Library.
     library = function(tile)
@@ -62,13 +64,13 @@ function Icons.svg(name, hex, koreader_logo, opts)
     local draw = GLYPHS[name]
     if not draw then return nil end
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="195" height="195" '
-        .. 'viewBox="0 0 195 195">' .. canvas .. string.format(TILE, hex) .. draw(hex, opts.lift) .. "</svg>"
+        .. 'viewBox="0 0 195 195">' .. canvas .. string.format(TILE, hex) .. draw(hex, opts.lift, opts.shift) .. "</svg>"
 end
 
 -- The full logo for use as a standalone image (the README's): the mark cropped to its tile, with the
 -- name under the shelf. The text is given a fixed width so it comes out the same in any font.
 function Icons.logo(hex)
-    local svg = Icons.svg("shelfspace", hex, nil, { lift = 13 })
+    local svg = Icons.svg("shelfspace", hex, nil, { lift = 13, shift = 0 })
     svg = svg:gsub('width="195" height="195" viewBox="0 0 195 195"', 'width="154.6" height="193.8" viewBox="18.3 0.6 154.6 193.8"')
     local wordmark = string.format('<text x="%.1f" y="162" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" '
         .. 'font-size="19" font-weight="700" fill="%s" textLength="104" lengthAdjust="spacingAndGlyphs">ShelfSpace</text>', CENTER_X, WHITE)

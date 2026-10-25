@@ -48,9 +48,9 @@ T.test("an icon can be painted over the page colour, so it has no transparent co
 end)
 
 T.test("the mark sits higher when it has a name under it, and the name is centred with it", function()
-    assert(Icons.svg("shelfspace", "000000"):find("translate(0 -4)", 1, true), "icon not nudged to the centre")
+    assert(Icons.svg("shelfspace", "000000"):find("translate(4 -9)", 1, true), "icon not centred by weight")
     local logo = Icons.logo("000000")
-    assert(logo:find("translate(0 -13)", 1, true), "logo mark not raised")
+    assert(logo:find("translate(0 -13)", 1, true), "logo mark not raised and centred under the name")
     assert(logo:find('y="162"', 1, true), "wordmark not under the shelf")
 end)
 
