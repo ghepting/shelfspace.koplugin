@@ -59,7 +59,12 @@ Open **Tools › ShelfSpace**. Three tabs:
 ## Planned
 
 - A shelf view where spine width matches size
-- A faster scan with a cached result
+
+## Scan speed
+
+The last scan is kept in KOReader's cache folder (`cache/shelfspace/scan.lua`). The next
+one only reads folders whose modification time changed. KOReader's own data folder is always
+read afresh, since its files change in place. Delete the file to force a full scan.
 
 ## Install
 
