@@ -25,6 +25,22 @@ T.test("sizes add up per type, below visible folders only", function()
     T.eq(out.exts.lua, nil)
 end)
 
+T.test("type chips count only the books asked for, and never look in dot-folders", function()
+    local function f(n, s) return { name = n, size = s } end
+    local tree = {
+        ["/r"] = { entries = { f("a.epub", 10), f("notes.txt", 7), { name = ".kobo", path = "/r/.kobo", is_dir = true },
+                               { name = "Manga", path = "/r/Manga", is_dir = true }, { name = "x.sdr", path = "/r/x.sdr", is_dir = true, hidden = true } } },
+        ["/r/.kobo"] = { entries = { f("KoboReader.sqlite", 999), f("system.epub", 500) } },
+        ["/r/Manga"] = { entries = { f("v1.cbz", 40) } },
+        ["/r/x.sdr"] = { entries = { f("m.cbz", 5) } },
+    }
+    local exts = Stats.typeBytes(tree, "/r", function(e) return not e.name:match("%.txt$") end)
+    T.eq(exts.epub, 10)      -- the library's epub, not the one under .kobo
+    T.eq(exts.cbz, 40)       -- nothing from the sidecar folder
+    T.eq(exts.sqlite, nil)   -- the device's database is not a type of book
+    T.eq(exts.txt, nil)      -- and what the caller leaves out stays out
+end)
+
 T.test("the biggest types come first with their share", function()
     local top = Stats.topExtensions({ cbz = 80, pdf = 15, epub = 5 }, 2)
     T.eq(#top, 2)

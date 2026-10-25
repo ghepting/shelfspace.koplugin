@@ -61,25 +61,6 @@ local function wordmark(glyph)
     return '<path d="' .. WORDMARK .. '" fill="#' .. glyph .. '"/>'
 end
 
--- Which glyph colour reads better on a tile: white, or `ink` (a hex like "2a363b"). Whichever has the
--- higher contrast ratio, so a light tile (sage, peach, coral) gets the dark ink. KOReader's own
--- teal is the exception: it keeps its white K.
-function Icons.glyphFor(tile, ink)
-    -- KOReader's own teal is always shown the way its makers drew it: with the white K.
-    if tile == "00a89c" then return "ffffff" end
-    local function luminance(hex)
-        local function channel(i)
-            local v = tonumber(hex:sub(i, i + 1), 16) / 255
-            return v <= 0.03928 and v / 12.92 or ((v + 0.055) / 1.055) ^ 2.4
-        end
-        return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5)
-    end
-    local lt = luminance(tile)
-    local on_white = 1.05 / (lt + 0.05)
-    local on_ink = (math.max(lt, luminance(ink)) + 0.05) / (math.min(lt, luminance(ink)) + 0.05)
-    return on_white >= on_ink and "ffffff" or ink
-end
-
 -- The SVG text for icon `name` on a tile of colour `hex` ("2f6f5e"), or nil when it can't be made.
 -- `koreader_logo` is KOReader's own logo as text, used for "koreader". `opts`: `glyph` (hex, default
 -- white) is the colour of the drawing on the tile; `bg` (hex) fills the
@@ -135,17 +116,16 @@ end
 -- An icon drawn `size` pixels square on a tile of colour `tile`, painted over the page colour `bg` so
 -- it has no transparency to blend; nil if it can't be produced. The SVG is kept in KOReader's cache
 -- folder, one per pair of colours, and rewritten whenever the drawing changes.
-function Icons.widget(name, size, tile, bg, named, ink)
+function Icons.widget(name, size, tile, bg, named)
     local function hexOf(color)
         local c = color:getColorRGB32()
         return string.format("%02x%02x%02x", c.r, c.g, c.b)
     end
     local hex, bg_hex = hexOf(tile), hexOf(bg)
-    local glyph = Icons.glyphFor(hex, ink and hexOf(ink) or "000000")
     local cache = DataStorage:getDataDir() .. "/cache"
     local dir = cache .. "/shelfspace"
-    local path = string.format("%s/%s%s-%s-%s-%s.svg", dir, name, named and "-named" or "", hex, glyph, bg_hex)
-    local svg = Icons.svg(name, hex, name == "koreader" and readFile("resources/koreader.svg") or nil, { bg = bg_hex, named = named, glyph = glyph })
+    local path = string.format("%s/%s%s-%s-%s.svg", dir, name, named and "-named" or "", hex, bg_hex)
+    local svg = Icons.svg(name, hex, name == "koreader" and readFile("resources/koreader.svg") or nil, { bg = bg_hex, named = named })
     if not svg then return nil end
     if readFile(path) ~= svg then
         lfs.mkdir(cache)

@@ -49,7 +49,9 @@ function Search.find(tree, dir, query, ext)
         local node = tree[path]
         if not node then return end
         for _, e in ipairs(node.entries) do
-            if not e.hidden then
+            -- Dot-entries are the device's own (.kobo, .adds, AppleDouble files) and sidecar folders are
+            -- KOReader's: neither is part of a search through the library.
+            if not e.hidden and e.name:sub(1, 1) ~= "." then
                 local lower, hit = e.name:lower(), true
                 for _, word in ipairs(words) do
                     if not lower:find(word, 1, true) then hit = false break end

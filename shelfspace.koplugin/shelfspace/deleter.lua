@@ -49,6 +49,11 @@ local function isManaged(name, path)
     return COMPANIONS[ext] or DocumentRegistry:hasProvider(path)
 end
 
+-- A book KOReader can open (not just a companion file such as a cover image).
+function Deleter.isBook(entry)
+    return DocumentRegistry:hasProvider(entry.path) and true or false
+end
+
 -- True when every file under `entry` is a book KOReader can open or a companion
 -- of one. Sidecar folders are KOReader's own and don't count against it.
 local function holdsOnlyBooks(tree, entry, cache)

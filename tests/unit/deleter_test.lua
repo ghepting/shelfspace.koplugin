@@ -86,6 +86,12 @@ T.test("a name that merely starts like a locked one is not locked", function()
     T.eq(reason(dir("/lib/.adds/koreader-old")), "System folder")                   -- hidden, not "installed here"
 end)
 
+T.test("only a book KOReader can open counts as a book, not a cover or an unknown file", function()
+    T.eq(Deleter.isBook(file("/lib/Dune.epub")), true)
+    T.eq(Deleter.isBook(file("/lib/Sci-Fi/cover.JPG")), false)
+    T.eq(Deleter.isBook(file("/lib/Mixed/plugin.so")), false)
+end)
+
 T.test("companion file types match whatever their case", function()
     T.eq(reason(file("/lib/Sci-Fi/cover.JPG")), nil)
 end)

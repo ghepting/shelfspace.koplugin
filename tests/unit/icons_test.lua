@@ -40,17 +40,6 @@ T.test("assets/logo.svg is the generated logo, in melonjolly (run tools/make-log
     T.eq(text, Icons.plainLogo("e84a5f"))
 end)
 
-T.test("the glyph colour is whichever of white and the ink reads better on the tile", function()
-    local ink = "2a363b"
-    T.eq(Icons.glyphFor("2a363b", ink), "ffffff")   -- slate: white
-    T.eq(Icons.glyphFor("e84a5f", ink), "ffffff")   -- raspberry: white
-    T.eq(Icons.glyphFor("99b898", ink), ink)        -- sage: the ink
-    T.eq(Icons.glyphFor("ff847c", ink), ink)        -- coral: the ink
-    T.eq(Icons.glyphFor("fecea8", ink), ink)        -- peach: the ink
-    T.eq(Icons.glyphFor("000000", "000000"), "ffffff") -- gray screens: black tile, white
-    T.eq(Icons.glyphFor("00a89c", ink), "ffffff")   -- KOReader's own teal keeps its white K, however the contrast scores
-end)
-
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
     local svg = Icons.svg("shelfspace", "99b898", nil, { glyph = "2a363b", named = true })
     assert(svg:find('fill="#2a363b"', 1, true), "glyph colour missing")
