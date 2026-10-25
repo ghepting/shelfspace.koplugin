@@ -136,8 +136,8 @@ return function(screen, th, width)
                 dimen = Geom:new{ w = diameter, h = diameter },
                 VerticalGroup:new{
                     align = "center",
-                    UI.text(string.format("%d%%", math.floor(used_share * 100 + 0.5)), 34, { face = "tfont", color = th.ink }),
-                    UI.text(_("used"), 16, { color = th.muted }),
+                    UI.text(string.format("%d%%", 100 - math.floor(used_share * 100 + 0.5)), 34, { face = "tfont", color = th.ink }),
+                    UI.text(_("free"), 16, { color = th.muted }),
                 },
             },
         },

@@ -33,9 +33,9 @@ function Theme.get()
             line = hex(n.line), chip = hex(n.chip), free = hex(n.track), -- free: tracks and disabled buttons
             accent = hex(t.slate), danger = hex(t.melon), white = Blitbuffer.COLOR_WHITE,
             -- what the chart and the header tiles stand for
-            brand = hex(t.sage),                                    -- the ShelfSpace tile
+            brand = hex(t.slate),                                   -- the ShelfSpace tile
             koreader_tile = hex(Theme.OFFICIAL.koreader),           -- the KOReader tile
-            books = hex(t.skin), koreader = hex(t.coral), other = hex(t.gray), free_space = hex(t.sage),
+            books = hex(t.melon), koreader = hex(t.coral), other = hex(t.gray), free_space = hex(t.sage),
             -- the tiles beside files in Browse
             folder = hex(t.sage), epub = hex(t.melon), pdf = hex(t.coral), comic = hex(t.skin),
         }
