@@ -16,6 +16,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+local Icons = require("shelfspace/icons")
 local Screen = Device.screen
 
 -- Small building blocks shared by the screens.
@@ -234,25 +236,13 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { color, label, title, subtitle, chips = { text | { text, active, on_tap }... } }
+-- spec: { icon ("storage", "library" or "koreader"), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
 function UI.hero(th, width, spec)
-    local cover_w, cover_h = sp(84), sp(108)
-    local gap = sp(14)
-    local info_w = width - cover_w - gap
-    -- Shrink the label until it fits the tile.
-    local label_max = cover_w - sp(12)
-    local label
-    for size = 15, 10, -1 do
-        label = UI.text(spec.label, size, { bold = true, color = th.white })
-        if label:getSize().w <= label_max then break end
-    end
-    if label:getSize().w > label_max then
-        label = UI.text(spec.label, 10, { bold = true, color = th.white, max_width = label_max })
-    end
-    local cover = FrameContainer:new{
-        bordersize = 0, padding = 0, margin = 0, radius = sp(8), background = spec.color,
-        CenterContainer:new{ dimen = Geom:new{ w = cover_w, h = cover_h }, label },
-    }
+    local icon_size = sp(108)
+    local gap = sp(4) -- the icon is drawn with a margin of its own
+    local info_w = width - icon_size - gap
+    local cover = Icons.widget(spec.icon, icon_size, spec.color)
+        or UI.block(sp(84), icon_size, spec.color, sp(8))
     local info = VerticalGroup:new{ align = "left" }
     table.insert(info, UI.text(spec.title, 30, { face = "tfont", color = th.ink, max_width = info_w }))
     table.insert(info, UI.text(spec.subtitle, 18, { color = th.muted, max_width = info_w }))
@@ -276,7 +266,7 @@ function UI.hero(th, width, spec)
         + UI.text("Ag", 18):getSize().h
         + sp(6) + UI.chip(th, "Ag"):getSize().h
     return LeftContainer:new{
-        dimen = Geom:new{ w = width, h = math.max(cover_h, full) },
+        dimen = Geom:new{ w = width, h = math.max(icon_size, full) },
         HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info },
     }
 end

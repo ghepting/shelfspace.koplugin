@@ -25,7 +25,7 @@ return function(screen, th, width)
 
     local hero = UI.hero(th, width, {
         color = th.accent,
-        label = _("STORAGE"),
+        icon = "storage",
         title = util.getFriendlySize(u.available),
         subtitle = T(_("free of %1"), util.getFriendlySize(u.total)),
         chips = { b and _("SCANNED") or _("SCANNING…") },

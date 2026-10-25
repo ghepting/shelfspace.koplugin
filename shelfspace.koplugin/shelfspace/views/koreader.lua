@@ -24,7 +24,7 @@ return function(screen, th, width)
     local tree = plugin.tree
     if not tree then
         return { hero = UI.hero(th, width, {
-            color = th.koreader, label = _("DATA"), title = _("KOReader"), subtitle = _("Scanning…"),
+            color = th.koreader, icon = "koreader", title = _("KOReader"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
 
@@ -40,7 +40,7 @@ return function(screen, th, width)
 
     local hero = UI.hero(th, width, {
         color = th.koreader,
-        label = _("DATA"),
+        icon = "koreader",
         title = util.getFriendlySize(tree[plugin.koreader_dir].size),
         subtitle = _("KOReader data"),
         chips = { util.getFriendlySize(can_free) },

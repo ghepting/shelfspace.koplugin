@@ -18,6 +18,8 @@ package.preload["ffi/util"] = function()
 end
 package.preload["util"] = function() return { getFriendlySize = function(n) return n .. " B" end } end
 package.preload["libs/libkoreader-lfs"] = function() return {} end
+package.preload["datastorage"] = function() return { getDataDir = function() return "/data" end } end
+package.preload["ui/widget/iconwidget"] = function() return { new = function(_, t) return t end } end
 
 local T = {}
 
