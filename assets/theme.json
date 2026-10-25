@@ -10,7 +10,7 @@
 				184,
 				152
 			],
-			"weight": 0.07
+			"weight": 0.15
 		},
 		{
 			"name": "comfortable skin",
@@ -20,7 +20,7 @@
 				206,
 				168
 			],
-			"weight": 0.08
+			"weight": 0.12
 		},
 		{
 			"name": "complete coral",
@@ -40,7 +40,7 @@
 				74,
 				95
 			],
-			"weight": 0.14
+			"weight": 0.12
 		},
 		{
 			"name": "coup de grâce",
@@ -50,7 +50,7 @@
 				54,
 				59
 			],
-			"weight": 0.59
+			"weight": 0.11
 		},
 		{
 			"name": "other gray",
@@ -60,7 +60,7 @@
 				191,
 				201
 			],
-			"weight": 0
+			"weight": 0.15
 		},
 		{
 			"name": "beige ink",
@@ -70,7 +70,7 @@
 				242,
 				237
 			],
-			"weight": 0
+			"weight": 0.23
 		}
 	]
 }
