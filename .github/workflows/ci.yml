@@ -1,0 +1,28 @@
+name: CI
+
+# Syntax-checks the Lua under LuaJIT (KOReader's runtime) and runs the unit tests.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LuaJIT
+        run: sudo apt-get update && sudo apt-get install -y luajit
+
+      # -b compiles without running, so KOReader's FFI declarations aren't needed.
+      - name: Lua syntax check
+        run: |
+          fail=0
+          while IFS= read -r -d '' f; do
+            luajit -b "$f" /dev/null || { echo "syntax FAIL: $f"; fail=1; }
+          done < <(find . -name '*.lua' -not -path './.git/*' -not -path './.emulator/*' -print0)
+          exit $fail
+
+      - name: Unit tests
+        run: tests/run.sh

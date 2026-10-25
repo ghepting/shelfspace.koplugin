@@ -64,8 +64,12 @@ read afresh, since its files change in place. Delete the file to force a full sc
 
 ## Install
 
-Copy the `shelfspace.koplugin` folder into KOReader's `plugins` directory and
-restart KOReader.
+Download `shelfspace.koplugin.zip` from the
+[latest release](https://github.com/ghepting/shelfspace.koreader/releases/latest), unzip it
+into KOReader's `plugins` directory and restart KOReader.
+
+ShelfSpace is 0.x: it has been run in the desktop emulator and on one Kobo
+(Libra Colour). Reports from other devices are welcome.
 
 ## Development
 
@@ -75,6 +79,14 @@ Run the KOReader desktop emulator (`./kodev run`), then link the plugin in:
 
 `tools/make-wordmark.py` draws the name under the logo as outlines from a font
 file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
+
+## Contributing
+
+Pull requests are squash-merged, so the title must be a conventional commit:
+`feat:`, `fix:`, `docs:`, `chore:`, `test:`, `refactor:` (`feat!:` for a breaking
+change). Releases are automatic: release-please keeps a "release" pull request open
+from those titles (a `fix` bumps the patch version, a `feat` the minor one) and
+merging it tags the release and attaches `shelfspace.koplugin.zip`.
 
 ## Tests
 
