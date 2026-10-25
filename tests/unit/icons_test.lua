@@ -22,45 +22,22 @@ T.test("the library icon is a stack of three banded books", function()
     T.eq(select(2, Icons.svg("library", "000000"):gsub("<rect", "")), 1 + 3 * 3)
 end)
 
-T.test("the full logo is the mark with the name under the shelf, and only the logo has the name", function()
-    local logo = Icons.logo("2a363b")
-    assert(logo:find('<path d="M', 1, true), "no wordmark outlines")
-    assert(not logo:find("<text", 1, true), "the renderer ignores <text>; the name must be outlines")
-    assert(not Icons.svg("shelfspace", "2a363b"):find("<text", 1, true), "the in-app icon should be the mark alone")
+T.test("the README logo is the mark and the name with no tile behind them, in one colour", function()
+    local svg = Icons.plainLogo("e84a5f")
+    assert(svg:find('fill="#e84a5f"', 1, true), "colour missing")
+    assert(not svg:find('rx="22.5"', 1, true), "the tile is still there")
+    assert(svg:find("<mask", 1, true), "the spine bands are not cut out of the books")
+    assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
+    assert(svg:find('<path transform="translate(0 13)" d="M', 1, true), "no wordmark outlines")
+    assert(not svg:find("<text", 1, true), "the renderer ignores <text>; the name must be outlines")
 end)
 
-T.test("the README logos are the mark and the name with no tile behind them, in one colour", function()
-    for _, color in ipairs({ "2a363b", "fecea8" }) do
-        local svg = Icons.plainLogo(color)
-        assert(svg:find('fill="#' .. color .. '"', 1, true), "colour missing")
-        assert(not svg:find('rx="22.5"', 1, true), "the tile is still there")
-        assert(not svg:find('<rect width="195" height="195" fill="#', 1, true) or svg:find("<mask", 1, true), "an opaque canvas")
-        assert(svg:find("<mask", 1, true), "the spine bands are not cut out of the books")
-        assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
-        assert(svg:find('<path transform="translate(0 13)" d="M', 1, true), "no wordmark outlines")
-    end
-end)
-
-T.test("the files in assets are the generated logos", function()
+T.test("assets/logo.svg is the generated logo, in melonjolly (run tools/make-logos.lua after changing icons.lua)", function()
     local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
-    for file, expected in pairs({
-        ["logo.svg"] = Icons.logo("2a363b"),
-        ["logo-light.svg"] = Icons.plainLogo("2a363b"),
-        ["logo-dark.svg"] = Icons.plainLogo("fecea8"),
-    }) do
-        local f = assert(io.open(here .. "/../../assets/" .. file), file .. " is missing; run tools/make-logos.lua")
-        local text = f:read("*a")
-        f:close()
-        T.eq(text, expected, file)
-    end
-end)
-
-T.test("the logo in assets is the ShelfSpace logo on the brand green", function()
-    local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
-    local f = assert(io.open(here .. "/../../assets/logo.svg"))
-    local file = f:read("*a")
+    local f = assert(io.open(here .. "/../../assets/logo.svg"), "assets/logo.svg is missing")
+    local text = f:read("*a")
     f:close()
-    T.eq(file, Icons.logo("2a363b"))
+    T.eq(text, Icons.plainLogo("e84a5f"))
 end)
 
 T.test("the glyph colour is whichever of white and the ink reads better on the tile", function()
@@ -94,9 +71,10 @@ end)
 
 T.test("the mark sits higher when it has a name under it, and the name is centred with it", function()
     assert(Icons.svg("shelfspace", "000000"):find("translate(4 -9)", 1, true), "icon not centred by weight")
-    local logo = Icons.logo("000000")
-    assert(logo:find("translate(0 -13)", 1, true), "logo mark not raised and centred under the name")
-    assert(logo:find("Q", 1, true) and logo:find(' fill="#ffffff"/></svg>$'), "wordmark not last, in white")
+    local named = Icons.svg("shelfspace", "000000", nil, { named = true })
+    assert(named:find("translate(0 -13)", 1, true), "mark not raised over the name")
+    assert(named:find('<path d="M', 1, true) and not named:find("<text", 1, true), "name is not outlines")
+    assert(not Icons.svg("shelfspace", "000000"):find('<path d="M', 1, true), "the in-app icon should be the mark alone")
 end)
 
 T.test("KOReader's own logo is recoloured, white left alone", function()

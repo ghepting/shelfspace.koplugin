@@ -100,14 +100,7 @@ function Icons.svg(name, hex, koreader_logo, opts)
         .. (named and wordmark(opts.glyph or "ffffff") or "") .. "</svg>"
 end
 
--- The full logo for use as a standalone image (the README's): the mark and the name, cropped to the tile.
-function Icons.logo(hex, glyph)
-    local svg = Icons.svg("shelfspace", hex, nil, { named = true, glyph = glyph })
-    return (svg:gsub('width="195" height="195" viewBox="0 0 195 195"', 'width="154.6" height="193.8" viewBox="18.3 0.6 154.6 193.8"'))
-end
-
--- The mark and the name in one colour on a transparent background, with no tile: for the README, where
--- GitHub picks the light or the dark version. The spines' bands are cut out with a mask so the page shows
+-- The mark and the name in one colour on a transparent background, with no tile: the README's logo. The spines' bands are cut out with a mask so the page shows
 -- through them. (The same coordinates as the tile version, which is raised 13 to centre it over the name.)
 function Icons.plainLogo(hex)
     local fill = "#" .. hex

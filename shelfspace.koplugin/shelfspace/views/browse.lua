@@ -40,7 +40,7 @@ return function(screen, th, width)
     local tree = plugin.tree
     if not tree then
         return { hero = UI.hero(th, width, {
-            color = th.library, icon = "library", title = _("Library"), subtitle = _("Scanning…"),
+            color = th.books, icon = "library", title = _("Library"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
 
@@ -75,7 +75,7 @@ return function(screen, th, width)
     local dir_size = tree[dir].size
 
     local hero = UI.hero(th, width, {
-        color = th.library,
+        color = th.books,
         icon = "library",
         title = name,
         subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(dir_size)),

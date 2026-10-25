@@ -25,7 +25,7 @@ return function(screen, th, width)
     local b = plugin.tree and plugin:breakdown(u) or nil
 
     local hero = UI.hero(th, width, {
-        color = th.accent,
+        color = th.brand,
         icon = "shelfspace",
         named = true, -- the mark with the ShelfSpace wordmark under it
         title = _("ShelfSpace"),
@@ -96,22 +96,22 @@ return function(screen, th, width)
             { th.books, _("Books"), util.getFriendlySize(b.books), go.books },
             { th.koreader, _("KOReader data"), util.getFriendlySize(b.koreader), go.koreader },
             { th.other, _("Other files"), util.getFriendlySize(b.other), nil, _("System files, locked"), go.other },
-            { th.peach, _("Free"), util.getFriendlySize(u.available) },
+            { th.free_space, _("Free"), util.getFriendlySize(u.available) },
         }
         slices = {
             { fraction = b.books / u.total, color = th.books, on_tap = go.books },
             { fraction = b.koreader / u.total, color = th.koreader, on_tap = go.koreader },
             { fraction = b.other / u.total, color = th.other, on_tap = go.other },
-            { fraction = u.available / u.total, color = th.peach },
+            { fraction = u.available / u.total, color = th.free_space },
         }
     else
         rows = {
             { th.other, _("Used"), util.getFriendlySize(u.used) },
-            { th.peach, _("Free"), util.getFriendlySize(u.available) },
+            { th.free_space, _("Free"), util.getFriendlySize(u.available) },
         }
         slices = {
             { fraction = u.used / u.total, color = th.other },
-            { fraction = u.available / u.total, color = th.peach },
+            { fraction = u.available / u.total, color = th.free_space },
         }
     end
     local legend_rows = VerticalGroup:new{ align = "left" }

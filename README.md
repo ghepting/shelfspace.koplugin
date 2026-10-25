@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
-    <img src="assets/logo-light.svg" width="140" alt="ShelfSpace: books on a shelf with one empty slot">
-  </picture>
+  <img src="assets/logo.svg" width="140" alt="ShelfSpace: books on a shelf with one empty slot">
 </p>
 
 <h1>ShelfSpace</h1>
@@ -88,5 +85,6 @@ reading progress, the donut's geometry and the icons:
 
 MIT
 
-The colours are the palette [Coup de Grâce](https://www.colourlovers.com/palette/1098589/coup-de-grce)
-from COLOURlovers, on a beige page.
+The colours are the design tokens in [`assets/theme.json`](assets/theme.json): the palette
+[Coup de Grâce](https://www.colourlovers.com/palette/1098589/coup-de-grce) from COLOURlovers, plus two
+neutrals, on a beige page.
