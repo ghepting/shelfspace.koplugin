@@ -10,6 +10,6 @@ local function write(path, text)
     print("wrote " .. path)
 end
 
-write("assets/logo.svg", Icons.logo("2f6f5e"))              -- the tile, for places that want an app icon
-write("assets/logo-light.svg", Icons.plainLogo("2f6f5e"))   -- brand green, for light pages
-write("assets/logo-dark.svg", Icons.plainLogo("ffffff"))    -- white, for dark pages
+write("assets/logo.svg", Icons.logo("2a363b"))              -- the tile, for places that want an app icon
+write("assets/logo-light.svg", Icons.plainLogo("2a363b"))   -- slate, for light pages
+write("assets/logo-dark.svg", Icons.plainLogo("fecea8"))    -- peach, for dark pages

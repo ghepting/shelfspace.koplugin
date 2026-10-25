@@ -241,7 +241,7 @@ function UI.hero(th, width, spec)
     local icon_size = sp(108)
     local gap = sp(4) -- the icon is drawn with a margin of its own
     local info_w = width - icon_size - gap
-    local cover = Icons.widget(spec.icon, icon_size, spec.color, th.bg, spec.named)
+    local cover = Icons.widget(spec.icon, icon_size, spec.color, th.bg, spec.named, th.ink)
         or UI.block(sp(84), icon_size, spec.color, sp(8))
     local info = VerticalGroup:new{ align = "left" }
     table.insert(info, UI.text(spec.title, 30, { face = "tfont", color = th.ink, max_width = info_w }))

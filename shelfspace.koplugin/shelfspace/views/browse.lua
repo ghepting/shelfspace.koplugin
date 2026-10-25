@@ -40,7 +40,7 @@ return function(screen, th, width)
     local tree = plugin.tree
     if not tree then
         return { hero = UI.hero(th, width, {
-            color = th.books, icon = "library", title = _("Library"), subtitle = _("Scanning…"),
+            color = th.library, icon = "library", title = _("Library"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
 
@@ -75,7 +75,7 @@ return function(screen, th, width)
     local dir_size = tree[dir].size
 
     local hero = UI.hero(th, width, {
-        color = th.books,
+        color = th.library,
         icon = "library",
         title = name,
         subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(dir_size)),
@@ -212,7 +212,7 @@ return function(screen, th, width)
             callback = function() screen:select(deletable, not all_chosen) end,
         })
         local delete_button = UI.button(th, {
-            text = _("Delete"), size = 15, enabled = #chosen > 0, background = th.accent, color = th.white,
+            text = _("Delete"), size = 15, enabled = #chosen > 0, background = th.danger, color = th.white,
             callback = function() plugin:confirmDeleteMany(chosen) end,
         })
         local label_w = width - all_button:getSize().w - delete_button:getSize().w - 3 * gap

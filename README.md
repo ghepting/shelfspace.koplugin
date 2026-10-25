@@ -87,3 +87,6 @@ reading progress, the donut's geometry and the icons:
 ## License
 
 MIT
+
+The colours are the palette [Coup de Grâce](https://www.colourlovers.com/palette/1098589/coup-de-grce)
+from COLOURlovers, on a beige page.

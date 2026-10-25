@@ -92,7 +92,7 @@ return function(screen, th, width)
             end,
         })
         local clear_button = UI.button(th, {
-            text = _("Clear"), size = 15, enabled = #chosen > 0, background = th.accent, color = th.white,
+            text = _("Clear"), size = 15, enabled = #chosen > 0, background = th.danger, color = th.white,
             disabled_background = th.free,
             callback = function() plugin:confirmClear(chosen) end,
         })
@@ -171,7 +171,7 @@ return function(screen, th, width)
         text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
         width = width,
         enabled = can_free > 0,
-        background = th.accent,
+        background = th.danger,
         color = th.white,
         disabled_background = th.free,
         callback = function()
