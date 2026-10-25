@@ -27,7 +27,7 @@ return function(screen, th, width)
     local tree = plugin.tree
     if not tree then
         return { hero = UI.hero(th, width, {
-            color = th.koreader, icon = "koreader", title = _("KOReader"), subtitle = _("Scanning…"),
+            color = th.koreader_tile, icon = "koreader", title = _("KOReader"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
 
@@ -52,7 +52,7 @@ return function(screen, th, width)
     table.insert(parts, { name = _("OTHER"), bytes = math.max(data_size - listed, 0) })
 
     local hero = UI.hero(th, width, {
-        color = th.koreader,
+        color = th.koreader_tile,
         icon = "koreader",
         title = _("KOReader"),
         subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(data_size)),

@@ -18,6 +18,9 @@ Theme.TOKENS = {
     beige = "#F4F2ED",  -- beige ink
 }
 
+-- KOReader's own brand colour, for its header tile: the logo is shown the way its makers drew it.
+Theme.OFFICIAL = { koreader = "#00A89C" }
+
 -- Tints of the page for rules, chips, tracks and disabled buttons, and the muted text colour. These are
 -- not in theme.json; they are chosen to sit between the beige and the slate.
 Theme.NEUTRALS = { muted = "#66737A", line = "#DCD8CE", chip = "#E9E5DB", track = "#E3DFD4" }
@@ -30,8 +33,9 @@ function Theme.get()
             line = hex(n.line), chip = hex(n.chip), free = hex(n.track), -- free: tracks and disabled buttons
             accent = hex(t.slate), danger = hex(t.melon), white = Blitbuffer.COLOR_WHITE,
             -- what the chart and the header tiles stand for
-            brand = hex(t.melon),                                   -- the ShelfSpace tile
-            books = hex(t.slate), koreader = hex(t.coral), other = hex(t.gray), free_space = hex(t.sage),
+            brand = hex(t.sage),                                    -- the ShelfSpace tile
+            koreader_tile = hex(Theme.OFFICIAL.koreader),           -- the KOReader tile
+            books = hex(t.skin), koreader = hex(t.coral), other = hex(t.gray), free_space = hex(t.sage),
             -- the tiles beside files in Browse
             folder = hex(t.sage), epub = hex(t.melon), pdf = hex(t.coral), comic = hex(t.skin),
         }
@@ -40,7 +44,7 @@ function Theme.get()
         bg = Blitbuffer.COLOR_WHITE, ink = Blitbuffer.COLOR_BLACK, muted = Blitbuffer.COLOR_GRAY_5,
         line = Blitbuffer.COLOR_GRAY_B, chip = Blitbuffer.COLOR_GRAY_E, free = Blitbuffer.COLOR_GRAY_E,
         accent = Blitbuffer.COLOR_BLACK, danger = Blitbuffer.COLOR_BLACK, white = Blitbuffer.COLOR_WHITE,
-        brand = Blitbuffer.COLOR_BLACK,
+        brand = Blitbuffer.COLOR_BLACK, koreader_tile = Blitbuffer.COLOR_GRAY_7,
         books = Blitbuffer.COLOR_GRAY_4, koreader = Blitbuffer.COLOR_GRAY_7, other = Blitbuffer.COLOR_GRAY_B,
         free_space = Blitbuffer.COLOR_GRAY_D,
         folder = Blitbuffer.COLOR_GRAY_9, epub = Blitbuffer.COLOR_GRAY_5, pdf = Blitbuffer.COLOR_GRAY_7,

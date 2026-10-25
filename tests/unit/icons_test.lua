@@ -48,6 +48,7 @@ T.test("the glyph colour is whichever of white and the ink reads better on the t
     T.eq(Icons.glyphFor("ff847c", ink), ink)        -- coral: the ink
     T.eq(Icons.glyphFor("fecea8", ink), ink)        -- peach: the ink
     T.eq(Icons.glyphFor("000000", "000000"), "ffffff") -- gray screens: black tile, white
+    T.eq(Icons.glyphFor("00a89c", ink), "ffffff")   -- KOReader's own teal keeps its white K, however the contrast scores
 end)
 
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()

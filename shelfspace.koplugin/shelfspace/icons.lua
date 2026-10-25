@@ -62,8 +62,11 @@ local function wordmark(glyph)
 end
 
 -- Which glyph colour reads better on a tile: white, or `ink` (a hex like "2a363b"). Whichever has the
--- higher contrast ratio, so a light tile (sage, peach, coral) gets the dark ink.
+-- higher contrast ratio, so a light tile (sage, peach, coral) gets the dark ink. KOReader's own
+-- teal is the exception: it keeps its white K.
 function Icons.glyphFor(tile, ink)
+    -- KOReader's own teal is always shown the way its makers drew it: with the white K.
+    if tile == "00a89c" then return "ffffff" end
     local function luminance(hex)
         local function channel(i)
             local v = tonumber(hex:sub(i, i + 1), 16) / 255
