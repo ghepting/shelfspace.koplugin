@@ -17,12 +17,14 @@ local T = require("ffi/util").template
 local Deleter = require("shelfspace/deleter")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
+local Shelf = require("shelfspace/shelf")
 local Stats = require("shelfspace/stats")
 local Theme = require("shelfspace/theme")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
 local ROW_H = sp(60)
+local SPINE_H = sp(100) -- the tallest spine on a shelf
 
 -- At most `max` characters, cut on a character boundary.
 local function shorten(text, max)
@@ -168,6 +170,48 @@ return function(screen, th, width)
         end)
     end
 
+    -- Shelf view: one row per shelf, a spine per entry as wide as the file is big. Tapping a
+    -- spine does what tapping a row does; Delete is only through Select here.
+    local shelves, build_shelf
+    if screen.shelf then
+        local min_w, max_w, spine_gap = sp(30), math.floor(width * 0.4), sp(6)
+        shelves = Shelf.pack(entries, width, min_w, max_w, spine_gap)
+        local border = sp(3)
+        build_shelf = function(i)
+            local group = HorizontalGroup:new{ align = "bottom", VerticalSpan:new{ width = SPINE_H } }
+            for j, spine in ipairs(shelves[i]) do
+                local item = spine.entry
+                local reason = Deleter.blockedReason(item, ctx)
+                local color = Theme.kind(th, item)
+                local h = Shelf.spineHeight(item.name, SPINE_H)
+                local picked = screen.selected[item.path] ~= nil
+                if j > 1 then table.insert(group, HorizontalSpan:new{ width = spine_gap }) end
+                table.insert(group, UI.tappable(FrameContainer:new{
+                    bordersize = picked and border or 0, color = th.ink, background = color,
+                    radius = sp(5), padding = picked and 0 or border, margin = 0,
+                    CenterContainer:new{
+                        dimen = Geom:new{ w = spine.w - 2 * border, h = h - 2 * border },
+                        UI.text((item.name:match("%w") or "?"):upper(), 20, { bold = true, color = th.white }),
+                    },
+                }, function()
+                    if item.is_dir then
+                        screen:setDir(item.path)
+                    elseif screen.selecting and not reason then
+                        screen:toggle(item)
+                    else
+                        plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)
+                    end
+                end))
+            end
+            return VerticalGroup:new{
+                align = "left",
+                LeftContainer:new{ dimen = Geom:new{ w = width, h = SPINE_H }, group },
+                UI.block(width, sp(6), th.ink, sp(3)),
+                VerticalSpan:new{ width = sp(16) },
+            }
+        end
+    end
+
     -- Search and sort, then "Up": pinned above the list on every page.
     local sort_button = UI.button(th, {
         text = T(_("Sort: %1 ▾"), Search.OPTIONS[screen.sort].short), size = 15,
@@ -180,7 +224,11 @@ return function(screen, th, width)
         text = screen.selecting and _("Done") or _("Select"), size = 15,
         callback = function() screen:setSelecting(not screen.selecting) end,
     })
-    local search_w = width - sort_button:getSize().w - select_button:getSize().w - 2 * gap
+    local shelf_button = UI.button(th, {
+        text = screen.shelf and _("List") or _("Shelf"), size = 15,
+        callback = function() screen:setShelf(not screen.shelf) end,
+    })
+    local search_w = width - sort_button:getSize().w - select_button:getSize().w - shelf_button:getSize().w - 3 * gap
         - (clear_button and (clear_button:getSize().w + gap) or 0)
     local controls = HorizontalGroup:new{
         align = "center",
@@ -195,6 +243,8 @@ return function(screen, th, width)
         table.insert(controls, HorizontalSpan:new{ width = gap })
     end
     table.insert(controls, sort_button)
+    table.insert(controls, HorizontalSpan:new{ width = gap })
+    table.insert(controls, shelf_button)
     table.insert(controls, HorizontalSpan:new{ width = gap })
     table.insert(controls, select_button)
 
@@ -250,5 +300,8 @@ return function(screen, th, width)
         }), function() screen:setDir(parent) end))
     end
 
+    if shelves then
+        return { hero = hero, header = header, count = #shelves, row_h = SPINE_H + sp(22), build = build_shelf }
+    end
     return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build }
 end

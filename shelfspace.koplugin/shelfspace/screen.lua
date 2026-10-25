@@ -60,6 +60,7 @@ local ShelfScreen = InputContainer:extend{
     query = nil, -- name search on Browse, over the shown folder and everything under it
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
     selecting = false, -- Browse is in select mode: rows get checkboxes
+    shelf = false, -- Browse shows books standing on shelves, spine width by size, instead of rows
 }
 
 function ShelfScreen:init()
@@ -144,6 +145,12 @@ function ShelfScreen:chosen()
     local list = {}
     for _, e in pairs(self.selected) do table.insert(list, e) end
     return Selection.collapse(list)
+end
+
+function ShelfScreen:setShelf(on)
+    self.shelf = on
+    self.pages.browse = 1
+    self:refresh()
 end
 
 function ShelfScreen:setSort(index)
