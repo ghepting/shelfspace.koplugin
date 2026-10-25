@@ -21,6 +21,7 @@ local Screen = Device.screen
 
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
+local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
@@ -57,6 +58,8 @@ local ShelfScreen = InputContainer:extend{
     dir = nil, -- folder shown on the Browse tab
     sort = 1, -- how Browse orders rows: an index into Search.OPTIONS
     query = nil, -- name search on Browse, over the shown folder and everything under it
+    filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
+    selecting = false, -- Browse is in select mode: rows get checkboxes
 }
 
 function ShelfScreen:init()
@@ -64,6 +67,7 @@ function ShelfScreen:init()
     self.covers_fullscreen = true
     self.theme = Theme.get()
     self.pages = {}
+    self.selected = {} -- path -> entry; survives paging, folders and searches
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
@@ -82,6 +86,7 @@ function ShelfScreen:refresh()
 end
 
 function ShelfScreen:switchTab(id)
+    if id ~= "browse" then self.selecting, self.selected = false, {} end
     self.tab = id
     self:refresh()
 end
@@ -95,8 +100,39 @@ end
 function ShelfScreen:setDir(dir)
     self.dir = dir
     self.query = nil
+    self.filter = nil
     self.pages.browse = 1
     self:refresh()
+end
+
+-- Switches the file-type filter to `ext`, or off when it is already on.
+function ShelfScreen:toggleFilter(ext)
+    self.filter = self.filter ~= ext and ext or nil
+    self.pages.browse = 1
+    self:refresh()
+end
+
+function ShelfScreen:setSelecting(on)
+    self.selecting = on
+    if not on then self.selected = {} end
+    self:refresh()
+end
+
+function ShelfScreen:toggle(entry)
+    self.selected[entry.path] = (not self.selected[entry.path]) and entry or nil
+    self:refresh()
+end
+
+function ShelfScreen:select(entries, on)
+    for _, e in ipairs(entries) do self.selected[e.path] = on and e or nil end
+    self:refresh()
+end
+
+-- What a delete would act on: the selection, minus anything inside a selected folder.
+function ShelfScreen:chosen()
+    local list = {}
+    for _, e in pairs(self.selected) do table.insert(list, e) end
+    return Selection.collapse(list)
 end
 
 function ShelfScreen:setSort(index)

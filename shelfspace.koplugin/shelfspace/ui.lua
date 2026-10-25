@@ -114,12 +114,30 @@ function UI.button(th, opts)
     return frame
 end
 
-function UI.chip(th, text)
+-- A rounded square, filled with a tick when `checked`.
+function UI.checkbox(th, checked)
+    local size = sp(32)
+    local inner = checked and CenterContainer:new{
+        dimen = Geom:new{ w = size, h = size },
+        UI.text("✓", 20, { bold = true, color = th.white }),
+    } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
     return FrameContainer:new{
-        bordersize = Size.border.thin, color = th.ink, radius = sp(14),
-        padding = sp(2), padding_left = sp(9), padding_right = sp(9), margin = 0,
-        UI.text(text, 13, { bold = true, color = th.ink }),
+        bordersize = Size.border.button, color = th.ink, radius = sp(8), margin = 0, padding = 0,
+        background = checked and th.accent or th.white,
+        inner,
     }
+end
+
+-- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable).
+function UI.chip(th, text, opts)
+    opts = opts or {}
+    local chip = FrameContainer:new{
+        bordersize = Size.border.thin, color = th.ink, radius = sp(16), margin = 0,
+        background = opts.active and th.accent or nil,
+        padding = sp(4), padding_left = sp(10), padding_right = sp(10),
+        UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
+    }
+    return opts.on_tap and UI.tappable(chip, opts.on_tap) or chip
 end
 
 -- A rounded track with a filled share of it.
@@ -216,7 +234,7 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { color, label, title, subtitle, chips = { text... }, progress = { fraction, left, right } }
+-- spec: { color, label, title, subtitle, chips = { text | { text, active, on_tap }... }, progress = { fraction, left, right } }
 function UI.hero(th, width, spec)
     local cover_w, cover_h = sp(84), sp(108)
     local gap = sp(14)
@@ -240,9 +258,14 @@ function UI.hero(th, width, spec)
     table.insert(info, UI.text(spec.subtitle, 18, { color = th.muted, max_width = info_w }))
     if spec.chips and #spec.chips > 0 then
         local chips = HorizontalGroup:new{}
-        for i, text in ipairs(spec.chips) do
+        for i, chip in ipairs(spec.chips) do
             if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
-            table.insert(chips, UI.chip(th, text))
+            -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
+            if type(chip) == "table" then
+                table.insert(chips, UI.chip(th, chip.text, chip))
+            else
+                table.insert(chips, UI.chip(th, chip))
+            end
         end
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)

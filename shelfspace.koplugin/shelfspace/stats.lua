@@ -1,6 +1,11 @@
 -- Facts about a folder, read from the scan.
 local Stats = {}
 
+-- The type a file is counted under: its lower-cased extension, or "other" when it has none.
+function Stats.extension(name)
+    return (name:match("%.([^.]+)$") or "other"):lower()
+end
+
 -- How many files are under `path`, and the bytes per file extension.
 function Stats.summarize(tree, path)
     local out = { files = 0, exts = {} }
@@ -12,7 +17,7 @@ function Stats.summarize(tree, path)
                 if not e.hidden then walk(e.path) end
             else
                 out.files = out.files + 1
-                local ext = (e.name:match("%.([^.]+)$") or "other"):lower()
+                local ext = Stats.extension(e.name)
                 out.exts[ext] = (out.exts[ext] or 0) + e.size
             end
         end
