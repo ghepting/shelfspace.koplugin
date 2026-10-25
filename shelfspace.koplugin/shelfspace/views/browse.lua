@@ -24,7 +24,9 @@ local sp = UI.sp
 
 local ROW_H = sp(60)
 
+-- "42%", or "<1%" for a share too small to round to anything.
 local function percent(fraction)
+    if fraction > 0 and fraction < 0.005 then return "<1%" end
     return math.floor(100 * fraction + 0.5) .. "%"
 end
 
@@ -86,7 +88,13 @@ return function(screen, th, width)
         title = name,
         subtitle = T(N_("%1 file", "%1 files", summary.files), summary.files),
         chips = chips,
-        progress = { fraction = share, left = percent(share), right = util.getFriendlySize(dir_size) },
+        -- The bar is this folder's share of the one above it, or of the whole device at the top.
+        progress = {
+            fraction = share,
+            left = T(_("%1 of %2"), percent(share),
+                parent == root and _("Library") or parent and shorten(parent:match("[^/]+$") or "", 14) or _("storage")),
+            right = util.getFriendlySize(dir_size),
+        },
     })
 
     local largest = 1

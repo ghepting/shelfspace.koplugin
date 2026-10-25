@@ -278,12 +278,23 @@ function ShelfSpace:deleteMany(items)
 end
 
 -- Asks before clearing `targets` (from Cleanup), then rescans and redraws.
+-- `label` names what is cleared; left out, the targets' own titles are listed. Anything that
+-- is the person's own (not rebuilt by KOReader) is called out, since it cannot come back.
 function ShelfSpace:confirmClear(targets, label)
-    local size = 0
-    for i, t in ipairs(targets) do size = size + t.size end
+    local size, titles, own = 0, {}, false
+    for i, t in ipairs(targets) do
+        size = size + t.size
+        table.insert(titles, t.title:lower())
+        if not t.safe then own = true end
+    end
+    label = label or table.concat(titles, ", ")
+    local text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size))
+    if own and #targets > 1 then
+        text = text .. "\n\n" .. _("Screenshots and reading progress are yours, and cannot be recovered.")
+    end
     self:showDialog(function()
         return ConfirmBox:new {
-            text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size)),
+            text = text,
             ok_text = _("Clear"),
             ok_callback = function()
                 for i, t in ipairs(targets) do t.clear() end

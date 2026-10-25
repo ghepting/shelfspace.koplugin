@@ -29,13 +29,12 @@ return function(screen, th, width)
     end
 
     local targets = Cleanup.targets(tree, plugin.koreader_dir, plugin.ui.document ~= nil, plugin.root)
-    local safe_free, safe = 0, {}
+    -- Everything a row can clear right now: the header total and the bottom button both use it.
+    local can_free, clearable = 0, {}
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
-            if t.safe then
-                safe_free = safe_free + t.size
-                table.insert(safe, t)
-            end
+            can_free = can_free + t.size
+            table.insert(clearable, t)
         end
     end
 
@@ -44,7 +43,7 @@ return function(screen, th, width)
         label = _("DATA"),
         title = util.getFriendlySize(tree[plugin.koreader_dir].size),
         subtitle = _("KOReader data"),
-        chips = { T(_("%1"), util.getFriendlySize(safe_free)) },
+        chips = { util.getFriendlySize(can_free) },
     })
 
     local gap = sp(10)
@@ -92,14 +91,14 @@ return function(screen, th, width)
         })
     end
     local bottom = UI.button(th, {
-        text = T(_("Clear cache, updates and logs · %1"), util.getFriendlySize(safe_free)),
+        text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
         width = width,
-        enabled = safe_free > 0,
+        enabled = can_free > 0,
         background = th.accent,
         color = th.white,
         disabled_background = th.free,
         callback = function()
-            plugin:confirmClear(safe, _("cache, updates and logs"))
+            plugin:confirmClear(clearable)
         end,
     })
     return { hero = hero, body = body, bottom = bottom }
