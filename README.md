@@ -56,10 +56,6 @@ Open **Tools › ShelfSpace**. Three tabs:
   and **Clear all** clears everything listed. Either way you are asked first,
   with a warning that screenshots and reading progress cannot be recovered.
 
-## Planned
-
-- A shelf view where spine width matches size
-
 ## Scan speed
 
 The last scan is kept in KOReader's cache folder (`cache/shelfspace/scan.lua`). The next
