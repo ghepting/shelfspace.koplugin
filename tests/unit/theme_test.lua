@@ -53,8 +53,8 @@ T.test("the chart and the header tiles use the colours that were asked for", fun
     T.eq(th.free_space, Theme.TOKENS.sage)   -- free space: seeking sage
     T.eq(th.other, Theme.TOKENS.gray)        -- other files: other gray
     T.eq(th.koreader, Theme.TOKENS.coral)    -- KOReader data: complete coral
-    T.eq(th.brand, Theme.TOKENS.sage)        -- the ShelfSpace tile: seeking sage
-    T.eq(th.books, Theme.TOKENS.skin)        -- books, and the Library tile: comfortable skin
+    T.eq(th.brand, Theme.TOKENS.slate)       -- the ShelfSpace tile: coup de grâce
+    T.eq(th.books, Theme.TOKENS.melon)       -- books, and the Library tile: melonjolly
     T.eq(th.koreader_tile, Theme.OFFICIAL.koreader) -- the KOReader tile: KOReader's own teal
     T.eq(th.bg, Theme.TOKENS.beige)          -- the page
     T.eq(th.ink, Theme.TOKENS.slate)
