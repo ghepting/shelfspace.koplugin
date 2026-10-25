@@ -67,7 +67,7 @@ return function(screen, th, width)
     for i, x in ipairs(Stats.topExtensions(summary.exts, 3)) do
         local ext = x.ext
         table.insert(chips, {
-            text = T(_("%1 %2%"), ext:upper(), x.percent),
+            text = T(_("%1 %2%"), ext:upper(), x.percent == 0 and "<1" or x.percent),
             active = screen.filter == ext,
             on_tap = function() screen:toggleFilter(ext) end,
         })

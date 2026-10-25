@@ -14,6 +14,7 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 
 local Donut = require("shelfspace/donut")
+local Stats = require("shelfspace/stats")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
@@ -26,9 +27,14 @@ return function(screen, th, width)
     local hero = UI.hero(th, width, {
         color = th.accent,
         icon = "storage",
-        title = util.getFriendlySize(u.available),
-        subtitle = T(_("free of %1"), util.getFriendlySize(u.total)),
-        chips = { b and _("SCANNED") or _("SCANNING…") },
+        title = _("Shelf Space"),
+        subtitle = T(_("%1 free of %2"), util.getFriendlySize(u.available), util.getFriendlySize(u.total)),
+        chips = b and Stats.shareChips({
+            { name = _("BOOKS"), bytes = b.books },
+            { name = _("KOREADER"), bytes = b.koreader },
+            { name = _("OTHER"), bytes = b.other },
+            { name = _("FREE"), bytes = u.available },
+        }, u.total, 3) or { _("SCANNING…") },
     })
 
     -- Rows with an on_tap show a chevron and open the matching tab; the others are plain.

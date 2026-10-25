@@ -41,4 +41,24 @@ function Stats.topExtensions(exts, n)
     return top
 end
 
+-- The `n` biggest of `parts` ({ { name, bytes }, ... }) as chip texts like "CACHE 73%", each as a
+-- share of `total`; a share too small to round to 1% reads "<1%". Empty parts are left out.
+function Stats.shareChips(parts, total, n)
+    local list = {}
+    for _, p in ipairs(parts) do
+        if p.bytes > 0 then table.insert(list, p) end
+    end
+    table.sort(list, function(a, b)
+        if a.bytes ~= b.bytes then return a.bytes > b.bytes end
+        return a.name < b.name
+    end)
+    local chips = {}
+    for i = 1, math.min(n, #list) do
+        local share = total > 0 and list[i].bytes / total or 0
+        local text = share > 0 and share < 0.005 and "<1%" or math.floor(100 * share + 0.5) .. "%"
+        chips[i] = list[i].name .. " " .. text
+    end
+    return chips
+end
+
 return Stats

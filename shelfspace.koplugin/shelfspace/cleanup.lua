@@ -59,6 +59,7 @@ function Cleanup.targets(tree, koreader_dir, book_open, root)
     local cache_size = sizeOf(tree, data .. "/cache/cr3cache") + sizeOf(tree, data .. "/cache/tmpcr3cache")
     table.insert(targets, {
         title = _("Rendering cache"),
+        short = _("CACHE"),
         note = _("Rebuilt as needed"),
         safe = true,
         size = cache_size,
@@ -71,6 +72,7 @@ function Cleanup.targets(tree, koreader_dir, book_open, root)
 
     table.insert(targets, {
         title = _("Update downloads"),
+        short = _("UPDATES"),
         note = _("Old KOReader packages"),
         safe = true,
         size = sizeOf(tree, data .. "/ota"),
@@ -86,6 +88,7 @@ function Cleanup.targets(tree, koreader_dir, book_open, root)
     end
     table.insert(targets, {
         title = _("Crash logs"),
+        short = _("LOGS"),
         note = _("crash.log and friends"),
         safe = true,
         size = log_size,
@@ -100,6 +103,7 @@ function Cleanup.targets(tree, koreader_dir, book_open, root)
 
     table.insert(targets, {
         title = _("Screenshots"),
+        short = _("SCREENSHOTS"),
         note = _("Saved by KOReader"),
         size = sizeOf(tree, data .. "/screenshots"),
         clear = function() clearContents(data .. "/screenshots") end,
@@ -109,6 +113,7 @@ function Cleanup.targets(tree, koreader_dir, book_open, root)
     for _, e in ipairs(orphans) do orphan_size = orphan_size + e.size end
     table.insert(targets, {
         title = _("Orphaned reading progress"),
+        short = _("PROGRESS"),
         note = _("Notes for books no longer here"),
         size = orphan_size,
         count = #orphans,

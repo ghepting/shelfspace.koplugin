@@ -247,15 +247,16 @@ function UI.hero(th, width, spec)
     table.insert(info, UI.text(spec.title, 30, { face = "tfont", color = th.ink, max_width = info_w }))
     table.insert(info, UI.text(spec.subtitle, 18, { color = th.muted, max_width = info_w }))
     if spec.chips and #spec.chips > 0 then
-        local chips = HorizontalGroup:new{}
+        local chips, used = HorizontalGroup:new{}, 0
         for i, chip in ipairs(spec.chips) do
-            if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
             -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
-            if type(chip) == "table" then
-                table.insert(chips, UI.chip(th, chip.text, chip))
-            else
-                table.insert(chips, UI.chip(th, chip))
-            end
+            local widget = type(chip) == "table" and UI.chip(th, chip.text, chip) or UI.chip(th, chip)
+            local w = widget:getSize().w + (i > 1 and sp(6) or 0)
+            -- On a narrow screen, chips that would run off the edge are left out.
+            if used + w > info_w and i > 1 then break end
+            if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
+            table.insert(chips, widget)
+            used = used + w
         end
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)
