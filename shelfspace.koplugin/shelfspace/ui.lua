@@ -234,7 +234,7 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { color, label, title, subtitle, chips = { text | { text, active, on_tap }... }, progress = { fraction, left, right } }
+-- spec: { color, label, title, subtitle, chips = { text | { text, active, on_tap }... } }
 function UI.hero(th, width, spec)
     local cover_w, cover_h = sp(84), sp(108)
     local gap = sp(14)
@@ -270,26 +270,11 @@ function UI.hero(th, width, spec)
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)
     end
-    if spec.progress then
-        local p = spec.progress
-        local left = UI.text(p.left, 14, { bold = true, color = th.ink })
-        local right = UI.text(p.right, 14, { bold = true, color = th.ink })
-        local gap2 = sp(8)
-        local bar_w = info_w - left:getSize().w - right:getSize().w - 2 * gap2
-        table.insert(info, VerticalSpan:new{ width = sp(8) })
-        table.insert(info, HorizontalGroup:new{
-            align = "center",
-            left, HorizontalSpan:new{ width = gap2 },
-            UI.bar(th, math.max(bar_w, sp(20)), sp(12), p.fraction, th.accent),
-            HorizontalSpan:new{ width = gap2 }, right,
-        })
-    end
-    -- Every hero is as tall as the fullest one (title, subtitle, chips, progress),
+    -- Every hero is as tall as the fullest one (title, subtitle, chips),
     -- so the tab bar below it stays put when you switch tabs.
     local full = UI.text("Ag", 30, { face = "tfont" }):getSize().h
         + UI.text("Ag", 18):getSize().h
         + sp(6) + UI.chip(th, "Ag"):getSize().h
-        + sp(8) + UI.text("Ag", 14, { bold = true }):getSize().h
     return LeftContainer:new{
         dimen = Geom:new{ w = width, h = math.max(cover_h, full) },
         HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info },
