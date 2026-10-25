@@ -61,7 +61,9 @@ end
 -- Walks `root` in chunks and calls on_done(tree), where tree[dir] is
 -- { size = bytes, entries = { {name, path, is_dir, size}, ... } }.
 -- Symlinks are skipped so loops and other filesystems are never followed.
-function Scanner.scan(root, on_done)
+-- `previous` (an earlier tree) lets a folder whose modification time has not changed keep its
+-- listing without being read again; its sub-folders are still checked.
+function Scanner.scan(root, on_done, previous)
     local tree = {}
     local stack = { root }
 
@@ -69,10 +71,21 @@ function Scanner.scan(root, on_done)
         local n = 0
         while #stack > 0 and n < BATCH do
             local dir = table.remove(stack)
-            local node = { size = 0, entries = {} }
+            local modified = lfs.attributes(dir, "modification")
+            local old = previous and previous[dir]
+            local node = { size = 0, entries = {}, modified = modified }
             tree[dir] = node
             local prefix = dir:sub(-1) == "/" and dir or dir .. "/"
-            local ok, iter, dir_obj = pcall(lfs.dir, dir)
+            local ok, iter, dir_obj
+            if old and modified and old.modified == modified then
+                node.entries = old.entries
+                n = n + 1
+                for _, e in ipairs(node.entries) do
+                    if e.is_dir then table.insert(stack, e.path) end
+                end
+            else
+                ok, iter, dir_obj = pcall(lfs.dir, dir)
+            end
             if ok then
                 for name in iter, dir_obj do
                     if name ~= "." and name ~= ".." then

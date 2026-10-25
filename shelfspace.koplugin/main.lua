@@ -15,6 +15,7 @@ local T = ffiUtil.template
 
 local Deleter = require("shelfspace/deleter")
 local Details = require("shelfspace/details")
+local ScanCache = require("shelfspace/scancache")
 local Scanner = require("shelfspace/scanner")
 local ShelfScreen = require("shelfspace/screen")
 
@@ -62,8 +63,20 @@ function ShelfSpace:scan(on_done)
     local koreader_dir = DataStorage:getDataDir()
     self.koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
     local started = time.now()
+    local cache_dir = DataStorage:getDataDir() .. "/cache/shelfspace"
+    local cache_file = cache_dir .. "/scan.lua"
+    local previous = self.tree or ScanCache.load(cache_file, self.root)
+    if previous then -- KOReader's own files change in place, so that folder is always read afresh
+        local data = self.koreader_dir
+        for dir in pairs(previous) do
+            if dir == data or dir:sub(1, #data + 1) == data .. "/" then previous[dir] = nil end
+        end
+    end
     local function finish(tree)
         self.tree = tree
+        lfs.mkdir(DataStorage:getDataDir() .. "/cache")
+        lfs.mkdir(cache_dir)
+        ScanCache.save(cache_file, self.root, tree, self.koreader_dir)
         local dirs, files = Scanner.count(tree)
         logger.info(string.format("ShelfSpace: scanned %d folders, %d files in %d ms",
             dirs, files, time.to_ms(time.since(started))))
@@ -78,7 +91,7 @@ function ShelfSpace:scan(on_done)
             for dir, node in pairs(extra) do tree[dir] = node end
             finish(tree)
         end)
-    end)
+    end, previous)
 end
 
 -- Books = visible top-level entries; "other" is whatever the partition holds beyond that.
