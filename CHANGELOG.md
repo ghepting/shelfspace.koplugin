@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.1.0...v0.1.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* draw the ShelfSpace tile natively so the Kobo shows no vertical line ([#27](https://github.com/ghepting/shelfspace.koplugin/issues/27)) ([3062db9](https://github.com/ghepting/shelfspace.koplugin/commit/3062db950a4f3c461b4d1290352f3e37e0e1b9d0))
+
 ## 0.1.0 (2026-10-25)
 
 First release. ShelfSpace shows where your device's storage went and lets you free it up. It has been run in the KOReader desktop emulator and on a Kobo Libra Colour; other devices are untested.
