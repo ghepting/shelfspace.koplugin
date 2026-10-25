@@ -1,0 +1,32 @@
+name: It works on my device
+description: Tell us where ShelfSpace has run, or where it has not
+labels: [device]
+body:
+  - type: input
+    id: device
+    attributes:
+      label: Device and firmware
+      placeholder: Kindle Paperwhite 5, Boox Go 6, Kobo Clara BW, ...
+    validations:
+      required: true
+  - type: input
+    id: koreader
+    attributes:
+      label: KOReader version
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: How did it go?
+      options:
+        - Everything works
+        - Works, with problems (describe below)
+        - Does not start
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Scan time on your library, colours, anything that looked off.

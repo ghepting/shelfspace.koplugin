@@ -56,6 +56,23 @@ Open **Tools › ShelfSpace**. Three tabs:
   and **Clear all** clears everything listed. Either way you are asked first,
   with a warning that screenshots and reading progress cannot be recovered.
 
+## Safety
+
+Deleting is permanent: there is no trash. Every delete asks first, naming what goes. Only
+books KOReader can open, and folders holding nothing else, can be deleted; system folders,
+KOReader's own folder and the book you are reading are locked. If the library matters to
+you, keep a copy elsewhere.
+
+## Tested on
+
+| Device | KOReader | Status |
+| --- | --- | --- |
+| Kobo Libra Colour | v2026.07.1 | Works (the colour screen) |
+| KOReader desktop emulator (macOS) | nightly 2026.07.2 | Works |
+
+Anything else is untested. If you try it on another device, please
+[tell us how it went](https://github.com/ghepting/shelfspace.koreader/issues/new?template=device_report.yml).
+
 ## Scan speed
 
 The last scan is kept in KOReader's cache folder (`cache/shelfspace/scan.lua`). The next
