@@ -71,7 +71,7 @@ you, keep a copy elsewhere.
 | KOReader desktop emulator (macOS) | nightly 2026.07.2 | Works |
 
 Anything else is untested. If you try it on another device, please
-[tell us how it went](https://github.com/ghepting/shelfspace.koreader/issues/new?template=device_report.yml).
+[tell us how it went](https://github.com/ghepting/shelfspace.koplugin/issues/new?template=device_report.yml).
 
 ## Scan speed
 
@@ -82,7 +82,7 @@ read afresh, since its files change in place. Delete the file to force a full sc
 ## Install
 
 Download `shelfspace.koplugin.zip` from the
-[latest release](https://github.com/ghepting/shelfspace.koreader/releases/latest), unzip it
+[latest release](https://github.com/ghepting/shelfspace.koplugin/releases/latest), unzip it
 into KOReader's `plugins` directory and restart KOReader.
 
 ShelfSpace is 0.x: it has been run in the desktop emulator and on one Kobo
