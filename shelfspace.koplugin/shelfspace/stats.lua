@@ -1,6 +1,11 @@
 -- Facts about a folder, read from the scan.
 local Stats = {}
 
+-- The type a file is counted under: its lower-cased extension, or "other" when it has none.
+function Stats.extension(name)
+    return (name:match("%.([^.]+)$") or "other"):lower()
+end
+
 -- How many files are under `path`, and the bytes per file extension.
 function Stats.summarize(tree, path)
     local out = { files = 0, exts = {} }
@@ -12,7 +17,7 @@ function Stats.summarize(tree, path)
                 if not e.hidden then walk(e.path) end
             else
                 out.files = out.files + 1
-                local ext = (e.name:match("%.([^.]+)$") or "other"):lower()
+                local ext = Stats.extension(e.name)
                 out.exts[ext] = (out.exts[ext] or 0) + e.size
             end
         end
@@ -34,6 +39,26 @@ function Stats.topExtensions(exts, n)
         top[i] = { ext = list[i].ext, percent = total > 0 and math.floor(100 * list[i].bytes / total + 0.5) or 0 }
     end
     return top
+end
+
+-- The `n` biggest of `parts` ({ { name, bytes }, ... }) as chip texts like "CACHE 73%", each as a
+-- share of `total`; a share too small to round to 1% reads "<1%". Empty parts are left out.
+function Stats.shareChips(parts, total, n)
+    local list = {}
+    for _, p in ipairs(parts) do
+        if p.bytes > 0 then table.insert(list, p) end
+    end
+    table.sort(list, function(a, b)
+        if a.bytes ~= b.bytes then return a.bytes > b.bytes end
+        return a.name < b.name
+    end)
+    local chips = {}
+    for i = 1, math.min(n, #list) do
+        local share = total > 0 and list[i].bytes / total or 0
+        local text = share > 0 and share < 0.005 and "<1%" or math.floor(100 * share + 0.5) .. "%"
+        chips[i] = list[i].name .. " " .. text
+    end
+    return chips
 end
 
 return Stats

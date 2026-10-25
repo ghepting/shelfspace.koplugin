@@ -16,6 +16,8 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local _ = require("gettext")
 local T = require("ffi/util").template
+
+local Icons = require("shelfspace/icons")
 local Screen = Device.screen
 
 -- Small building blocks shared by the screens.
@@ -114,12 +116,30 @@ function UI.button(th, opts)
     return frame
 end
 
-function UI.chip(th, text)
+-- A rounded square, filled with a tick when `checked`.
+function UI.checkbox(th, checked)
+    local size = sp(32)
+    local inner = checked and CenterContainer:new{
+        dimen = Geom:new{ w = size, h = size },
+        UI.text("✓", 20, { bold = true, color = th.white }),
+    } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
     return FrameContainer:new{
-        bordersize = Size.border.thin, color = th.ink, radius = sp(14),
-        padding = sp(2), padding_left = sp(9), padding_right = sp(9), margin = 0,
-        UI.text(text, 13, { bold = true, color = th.ink }),
+        bordersize = Size.border.button, color = th.ink, radius = sp(8), margin = 0, padding = 0,
+        background = checked and th.accent or th.white,
+        inner,
     }
+end
+
+-- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable).
+function UI.chip(th, text, opts)
+    opts = opts or {}
+    local chip = FrameContainer:new{
+        bordersize = Size.border.thin, color = th.ink, radius = sp(16), margin = 0,
+        background = opts.active and th.accent or nil,
+        padding = sp(4), padding_left = sp(10), padding_right = sp(10),
+        UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
+    }
+    return opts.on_tap and UI.tappable(chip, opts.on_tap) or chip
 end
 
 -- A rounded track with a filled share of it.
@@ -216,59 +236,38 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { color, label, title, subtitle, chips = { text... }, progress = { fraction, left, right } }
+-- spec: { icon ("shelfspace", "library" or "koreader"), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
 function UI.hero(th, width, spec)
-    local cover_w, cover_h = sp(84), sp(108)
-    local gap = sp(14)
-    local info_w = width - cover_w - gap
-    -- Shrink the label until it fits the tile.
-    local label_max = cover_w - sp(12)
-    local label
-    for size = 15, 10, -1 do
-        label = UI.text(spec.label, size, { bold = true, color = th.white })
-        if label:getSize().w <= label_max then break end
-    end
-    if label:getSize().w > label_max then
-        label = UI.text(spec.label, 10, { bold = true, color = th.white, max_width = label_max })
-    end
-    local cover = FrameContainer:new{
-        bordersize = 0, padding = 0, margin = 0, radius = sp(8), background = spec.color,
-        CenterContainer:new{ dimen = Geom:new{ w = cover_w, h = cover_h }, label },
-    }
+    local icon_size = sp(108)
+    local gap = sp(4) -- the icon is drawn with a margin of its own
+    local info_w = width - icon_size - gap
+    local cover = Icons.widget(spec.icon, icon_size, spec.color, th.bg)
+        or UI.block(sp(84), icon_size, spec.color, sp(8))
     local info = VerticalGroup:new{ align = "left" }
     table.insert(info, UI.text(spec.title, 30, { face = "tfont", color = th.ink, max_width = info_w }))
     table.insert(info, UI.text(spec.subtitle, 18, { color = th.muted, max_width = info_w }))
     if spec.chips and #spec.chips > 0 then
-        local chips = HorizontalGroup:new{}
-        for i, text in ipairs(spec.chips) do
+        local chips, used = HorizontalGroup:new{}, 0
+        for i, chip in ipairs(spec.chips) do
+            -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
+            local widget = type(chip) == "table" and UI.chip(th, chip.text, chip) or UI.chip(th, chip)
+            local w = widget:getSize().w + (i > 1 and sp(6) or 0)
+            -- On a narrow screen, chips that would run off the edge are left out.
+            if used + w > info_w and i > 1 then break end
             if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
-            table.insert(chips, UI.chip(th, text))
+            table.insert(chips, widget)
+            used = used + w
         end
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)
     end
-    if spec.progress then
-        local p = spec.progress
-        local left = UI.text(p.left, 14, { bold = true, color = th.ink })
-        local right = UI.text(p.right, 14, { bold = true, color = th.ink })
-        local gap2 = sp(8)
-        local bar_w = info_w - left:getSize().w - right:getSize().w - 2 * gap2
-        table.insert(info, VerticalSpan:new{ width = sp(8) })
-        table.insert(info, HorizontalGroup:new{
-            align = "center",
-            left, HorizontalSpan:new{ width = gap2 },
-            UI.bar(th, math.max(bar_w, sp(20)), sp(12), p.fraction, th.accent),
-            HorizontalSpan:new{ width = gap2 }, right,
-        })
-    end
-    -- Every hero is as tall as the fullest one (title, subtitle, chips, progress),
+    -- Every hero is as tall as the fullest one (title, subtitle, chips),
     -- so the tab bar below it stays put when you switch tabs.
     local full = UI.text("Ag", 30, { face = "tfont" }):getSize().h
         + UI.text("Ag", 18):getSize().h
         + sp(6) + UI.chip(th, "Ag"):getSize().h
-        + sp(8) + UI.text("Ag", 14, { bold = true }):getSize().h
     return LeftContainer:new{
-        dimen = Geom:new{ w = width, h = math.max(cover_h, full) },
+        dimen = Geom:new{ w = width, h = math.max(icon_size, full) },
         HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info },
     }
 end

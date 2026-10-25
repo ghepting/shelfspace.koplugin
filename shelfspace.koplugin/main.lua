@@ -209,13 +209,92 @@ function ShelfSpace:confirmDelete(entry, dir)
     end)
 end
 
--- Asks before clearing `targets` (from Cleanup), then rescans and redraws.
-function ShelfSpace:confirmClear(targets, label)
-    local size = 0
-    for i, t in ipairs(targets) do size = size + t.size end
+-- Asks once before deleting everything in `entries` (already collapsed by Selection).
+function ShelfSpace:confirmDeleteMany(entries)
+    local ctx = self:deleteContext()
+    local items = {}
+    for i, e in ipairs(entries) do
+        if not Deleter.blockedReason(e, ctx) then table.insert(items, e) end
+    end
+    if #items == 0 then
+        self:notify(_("Nothing selected can be deleted."))
+        return
+    end
+    local size, files, sidecars, names = 0, 0, 0, {}
+    for i, e in ipairs(items) do
+        size = size + e.size
+        files = files + Deleter.countFiles(self.tree, e)
+        sidecars = sidecars + Deleter.countSidecars(self.tree, e)
+        if i <= 4 then table.insert(names, e.name .. (e.is_dir and "/" or "")) end
+    end
+    if #items > 4 then table.insert(names, T(_("and %1 more"), #items - 4)) end
+    local lines = {
+        T(N_("Delete %1 item?", "Delete %1 items?", #items), #items),
+        table.concat(names, "\n"),
+        T(_("Frees %1."), util.getFriendlySize(size)),
+        T(N_("%1 file in total.", "%1 files in total.", files), files),
+    }
+    if sidecars > 0 then
+        table.insert(lines, T(N_("Also removes the reading progress and notes of %1 book.",
+            "Also removes the reading progress and notes of %1 books.", sidecars), sidecars))
+    end
+    table.insert(lines, _("This cannot be undone."))
     self:showDialog(function()
         return ConfirmBox:new {
-            text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size)),
+            text = table.concat(lines, "\n\n"),
+            ok_text = _("Delete"),
+            ok_callback = function() self:deleteMany(items) end,
+        }
+    end)
+end
+
+-- Deletes one entry per tick so the screen stays alive, then leaves select mode.
+function ShelfSpace:deleteMany(items)
+    local busy = InfoMessage:new { text = T(N_("Deleting %1 item…", "Deleting %1 items…", #items), #items) }
+    UIManager:show(busy)
+    local failed, at = {}, 0
+    local function step()
+        at = at + 1
+        local entry = items[at]
+        if not entry then
+            UIManager:close(busy)
+            self.block_cache = {}
+            if self.screen and not self.screen.closed then self.screen:setSelecting(false) end
+            self:refresh()
+            if #failed > 0 then
+                self:notify(T(_("Could not delete %1 of %2:\n%3"), #failed, #items, table.concat(failed, "\n")))
+            end
+            return
+        end
+        local dir = entry.path:match("^(.*)/[^/]+$") or self.root
+        if lfs.attributes(entry.path, "mode") == nil or Deleter.delete(entry) then
+            Scanner.remove(self.tree, self.root, dir, entry)
+        else
+            table.insert(failed, entry.name)
+        end
+        UIManager:scheduleIn(0, step)
+    end
+    UIManager:nextTick(step)
+end
+
+-- Asks before clearing `targets` (from Cleanup), then rescans and redraws.
+-- `label` names what is cleared; left out, the targets' own titles are listed. Anything that
+-- is the person's own (not rebuilt by KOReader) is called out, since it cannot come back.
+function ShelfSpace:confirmClear(targets, label)
+    local size, titles, own = 0, {}, false
+    for i, t in ipairs(targets) do
+        size = size + t.size
+        table.insert(titles, t.title:lower())
+        if not t.safe then own = true end
+    end
+    label = label or table.concat(titles, ", ")
+    local text = T(_("Clear %1?\n\nFrees %2."), label, util.getFriendlySize(size))
+    if own and #targets > 1 then
+        text = text .. "\n\n" .. _("Screenshots and reading progress are yours, and cannot be recovered.")
+    end
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = text,
             ok_text = _("Clear"),
             ok_callback = function()
                 for i, t in ipairs(targets) do t.clear() end

@@ -1,3 +1,5 @@
+local Stats = require("shelfspace/stats")
+
 local Search = {}
 
 -- Every way Browse can be ordered; `reverse` flips the primary key only.
@@ -34,12 +36,14 @@ function Search.sort(entries, option)
 end
 
 -- Every visible file and folder under `dir` whose name holds all the words in `query`
--- (any case). Returns the entries and, for each, the folder it sits in relative to `dir`.
-function Search.find(tree, dir, query)
+-- (any case), and, when `ext` is given, only files of that type (see Stats.extension).
+-- Needs a query or an `ext`. Returns the entries and, for each, the folder it sits in
+-- relative to `dir`.
+function Search.find(tree, dir, query, ext)
     local words = {}
-    for word in query:lower():gmatch("%S+") do table.insert(words, word) end
+    for word in (query or ""):lower():gmatch("%S+") do table.insert(words, word) end
     local found, where = {}, {}
-    if #words == 0 then return found, where end
+    if #words == 0 and not ext then return found, where end
 
     local function walk(path, rel)
         local node = tree[path]
@@ -50,6 +54,7 @@ function Search.find(tree, dir, query)
                 for _, word in ipairs(words) do
                     if not lower:find(word, 1, true) then hit = false break end
                 end
+                if hit and ext and (e.is_dir or Stats.extension(e.name) ~= ext) then hit = false end
                 if hit then
                     table.insert(found, e)
                     where[e] = rel

@@ -10,9 +10,11 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Cleanup = require("shelfspace/cleanup")
+local Stats = require("shelfspace/stats")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
@@ -24,27 +26,36 @@ return function(screen, th, width)
     local tree = plugin.tree
     if not tree then
         return { hero = UI.hero(th, width, {
-            color = th.koreader, label = _("DATA"), title = _("KOReader"), subtitle = _("Scanning…"),
+            color = th.koreader, icon = "koreader", title = _("KOReader"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
 
     local targets = Cleanup.targets(tree, plugin.koreader_dir, plugin.ui.document ~= nil, plugin.root)
-    local safe_free, safe = 0, {}
+    -- Everything a row can clear right now: the header total and the bottom button both use it.
+    local can_free, clearable = 0, {}
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
-            if t.safe then
-                safe_free = safe_free + t.size
-                table.insert(safe, t)
-            end
+            can_free = can_free + t.size
+            table.insert(clearable, t)
         end
     end
 
+    -- What KOReader's data folder is made of: the kinds of thing that can be cleared, and the rest.
+    local data_size = tree[plugin.koreader_dir].size
+    local summary = Stats.summarize(tree, plugin.koreader_dir)
+    local parts, listed = {}, 0
+    for i, t in ipairs(targets) do
+        table.insert(parts, { name = t.short, bytes = t.size })
+        listed = listed + t.size
+    end
+    table.insert(parts, { name = _("OTHER"), bytes = math.max(data_size - listed, 0) })
+
     local hero = UI.hero(th, width, {
         color = th.koreader,
-        label = _("DATA"),
-        title = util.getFriendlySize(tree[plugin.koreader_dir].size),
-        subtitle = _("KOReader's own data"),
-        chips = { T(_("CAN FREE %1"), util.getFriendlySize(safe_free)) },
+        icon = "koreader",
+        title = _("KOReader"),
+        subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(data_size)),
+        chips = Stats.shareChips(parts, data_size, 3),
     })
 
     local gap = sp(10)
@@ -92,14 +103,14 @@ return function(screen, th, width)
         })
     end
     local bottom = UI.button(th, {
-        text = T(_("Clear cache, updates and logs · %1"), util.getFriendlySize(safe_free)),
+        text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
         width = width,
-        enabled = safe_free > 0,
+        enabled = can_free > 0,
         background = th.accent,
         color = th.white,
         disabled_background = th.free,
         callback = function()
-            plugin:confirmClear(safe, _("cache, updates and logs"))
+            plugin:confirmClear(clearable)
         end,
     })
     return { hero = hero, body = body, bottom = bottom }
