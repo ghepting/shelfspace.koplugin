@@ -59,6 +59,7 @@ end
 
 function Details.show(plugin, entry, dir, reason)
     local book = DocumentRegistry:hasProvider(entry.path)
+    local current = plugin.ui.document and plugin.ui.document.file == entry.path
     plugin:showDialog(function()
         local dialog
         local function act(fn)
@@ -71,13 +72,8 @@ function Details.show(plugin, entry, dir, reason)
         if book then
             table.insert(rows, {
                 {
-                    text = _("Open"),
-                    callback = act(function()
-                        if plugin.screen then plugin.screen:onClose() end
-                        UIManager:nextTick(function()
-                            require("apps/reader/readerui"):showReader(entry.path)
-                        end)
-                    end),
+                    text = current and _("Continue reading") or _("Open"),
+                    callback = act(function() plugin:openBook(entry.path) end),
                 },
                 {
                     text = _("Book info"),

@@ -25,6 +25,20 @@ local ShelfSpace = WidgetContainer:extend {
 
 function ShelfSpace:init()
     self.ui.menu:registerToMainMenu(self)
+
+    -- Opening a book from Shelf Space hands the screen over to the reader. ShelfSpace.resume
+    -- remembers where the person was; it lives on the class because the file manager and the
+    -- reader each load their own copy of this plugin. When the file manager is back after
+    -- that book, Shelf Space is shown again as it was.
+    local resume = ShelfSpace.resume
+    if not resume then return end
+    local document = self.ui.document
+    if document then
+        if document.file == resume.file then resume.opened = true end
+    elseif resume.opened then
+        ShelfSpace.resume = nil
+        UIManager:scheduleIn(0.3, function() self:showOverview(resume) end)
+    end
 end
 
 function ShelfSpace:addToMainMenu(menu_items)
@@ -96,14 +110,17 @@ function ShelfSpace:refresh()
     self.screen:refresh()
 end
 
-function ShelfSpace:showOverview()
+-- `state` (from openBook) brings back the tab, folder, search, sort and page that were showing.
+function ShelfSpace:showOverview(state)
     local usage = util.diskUsage(libraryPath())
     if not usage.total or usage.total == 0 then
         UIManager:show(InfoMessage:new { text = _("Could not read storage usage.") })
         return
     end
     self.usage = usage
-    self.screen = ShelfScreen:new { plugin = self }
+    state = state or {}
+    self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, sort = state.sort }
+    self.screen.pages.browse = state.page
     UIManager:show(self.screen)
     self:scan(function() self:refresh() end)
 end
@@ -115,6 +132,24 @@ function ShelfSpace:showDialog(make)
     if self.dialog and UIManager:isWidgetShown(self.dialog) then return end
     self.dialog = make()
     UIManager:show(self.dialog)
+end
+
+-- Opens a book in the reader, remembering where we were so closing it brings us back.
+function ShelfSpace:openBook(path)
+    local screen = self.screen
+    -- The book already open: close Shelf Space and carry on reading it.
+    if self.ui.document and self.ui.document.file == path then
+        screen:onClose()
+        return
+    end
+    ShelfSpace.resume = {
+        file = path, tab = screen.tab, dir = screen.dir, query = screen.query, sort = screen.sort,
+        page = screen.pages.browse,
+    }
+    screen:onClose()
+    UIManager:nextTick(function()
+        require("apps/reader/readerui"):showReader(path)
+    end)
 end
 
 function ShelfSpace:showDetails(entry, dir)
