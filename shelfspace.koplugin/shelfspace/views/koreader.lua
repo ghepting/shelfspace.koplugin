@@ -43,8 +43,8 @@ return function(screen, th, width)
         color = th.koreader,
         label = _("DATA"),
         title = util.getFriendlySize(tree[plugin.koreader_dir].size),
-        subtitle = _("KOReader's own data"),
-        chips = { T(_("CAN FREE %1"), util.getFriendlySize(safe_free)) },
+        subtitle = _("KOReader data"),
+        chips = { T(_("%1"), util.getFriendlySize(safe_free)) },
     })
 
     local gap = sp(10)
