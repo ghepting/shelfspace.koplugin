@@ -92,6 +92,21 @@ T.test("a filter finds nothing inside sidecar folders", function()
     end
 end)
 
+T.test("search and filters never look at dot-entries", function()
+    local dots = {
+        ["/r"] = { entries = {
+            e("book.epub", "/r/book.epub", 5, 1), e(".kobo", "/r/.kobo", 0, 1, true), e("._book.epub", "/r/._book.epub", 1, 1),
+            e("Fiction", "/r/Fiction", 0, 1, true),
+        } },
+        ["/r/.kobo"] = { entries = { e("system.epub", "/r/.kobo/system.epub", 9, 1), e("db.sqlite", "/r/.kobo/db.sqlite", 9, 1) } },
+        ["/r/Fiction"] = { entries = { e("novel.epub", "/r/Fiction/novel.epub", 3, 1) } },
+    }
+    T.eq(T.names((Search.find(dots, "/r", "", "epub"))), "book.epub|novel.epub")
+    T.eq(T.names((Search.find(dots, "/r", "", "sqlite"))), "")
+    T.eq(T.names((Search.find(dots, "/r", "kobo"))), "")
+    T.eq(T.names((Search.find(dots, "/r", "book"))), "book.epub")
+end)
+
 T.test("no query and no filter finds nothing", function()
     T.eq(#Search.find(mixed, "/r", "", nil), 0)
     T.eq(#Search.find(mixed, "/r", nil, nil), 0)

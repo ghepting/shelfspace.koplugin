@@ -1,0 +1,76 @@
+{
+	"name": "ShelfSpace",
+	"maker": "ghepting",
+	"colors": [
+		{
+			"name": "seeking sage",
+			"hex": "#99B898",
+			"rgb": [
+				153,
+				184,
+				152
+			],
+			"weight": 0.07
+		},
+		{
+			"name": "comfortable skin",
+			"hex": "#FECEA8",
+			"rgb": [
+				254,
+				206,
+				168
+			],
+			"weight": 0.08
+		},
+		{
+			"name": "complete coral",
+			"hex": "#FF847C",
+			"rgb": [
+				255,
+				132,
+				124
+			],
+			"weight": 0.12
+		},
+		{
+			"name": "melonjolly",
+			"hex": "#E84A5F",
+			"rgb": [
+				232,
+				74,
+				95
+			],
+			"weight": 0.14
+		},
+		{
+			"name": "coup de grâce",
+			"hex": "#2A363B",
+			"rgb": [
+				42,
+				54,
+				59
+			],
+			"weight": 0.59
+		},
+		{
+			"name": "other gray",
+			"hex": "#BBBFC9",
+			"rgb": [
+				187,
+				191,
+				201
+			],
+			"weight": 0
+		},
+		{
+			"name": "beige ink",
+			"hex": "#F4F2ED",
+			"rgb": [
+				244,
+				242,
+				237
+			],
+			"weight": 0
+		}
+	]
+}

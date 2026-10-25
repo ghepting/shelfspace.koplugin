@@ -26,6 +26,26 @@ function Stats.summarize(tree, path)
     return out
 end
 
+-- Bytes per file type for the files under `path` that `include(entry)` accepts, not looking inside dot-folders
+-- (.kobo, .adds and the like: the device's own, never part of a library). For the type chips.
+function Stats.typeBytes(tree, path, include)
+    local exts = {}
+    local function walk(dir)
+        local node = tree[dir]
+        if not node then return end
+        for _, e in ipairs(node.entries) do
+            if e.is_dir then
+                if not e.hidden and e.name:sub(1, 1) ~= "." then walk(e.path) end
+            elseif include(e) then
+                local ext = Stats.extension(e.name)
+                exts[ext] = (exts[ext] or 0) + e.size
+            end
+        end
+    end
+    walk(path)
+    return exts
+end
+
 -- The `n` biggest extensions as { { ext = "cbz", percent = 61 }, ... }.
 function Stats.topExtensions(exts, n)
     local total, list = 0, {}

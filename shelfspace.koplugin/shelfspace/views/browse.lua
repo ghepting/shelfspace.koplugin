@@ -64,7 +64,8 @@ return function(screen, th, width)
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
     local chips = {}
-    for i, x in ipairs(Stats.topExtensions(summary.exts, 3)) do
+    -- The chips are the types of book in the library, not everything on the device.
+    for i, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, dir, Deleter.isBook), 3)) do
         local ext = x.ext
         table.insert(chips, {
             text = T(_("%1 %2%"), ext:upper(), x.percent == 0 and "<1" or x.percent),
@@ -212,7 +213,7 @@ return function(screen, th, width)
             callback = function() screen:select(deletable, not all_chosen) end,
         })
         local delete_button = UI.button(th, {
-            text = _("Delete"), size = 15, enabled = #chosen > 0, background = th.accent, color = th.white,
+            text = _("Delete"), size = 15, enabled = #chosen > 0, background = th.danger, color = th.white,
             callback = function() plugin:confirmDeleteMany(chosen) end,
         })
         local label_w = width - all_button:getSize().w - delete_button:getSize().w - 3 * gap

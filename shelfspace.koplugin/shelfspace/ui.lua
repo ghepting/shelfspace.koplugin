@@ -236,12 +236,12 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { icon ("shelfspace", "library" or "koreader"), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
+-- spec: { icon ("shelfspace", "library" or "koreader"), named (the ShelfSpace mark with its name), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
 function UI.hero(th, width, spec)
     local icon_size = sp(108)
     local gap = sp(4) -- the icon is drawn with a margin of its own
     local info_w = width - icon_size - gap
-    local cover = Icons.widget(spec.icon, icon_size, spec.color, th.bg)
+    local cover = Icons.widget(spec.icon, icon_size, spec.color, th.bg, spec.named)
         or UI.block(sp(84), icon_size, spec.color, sp(8))
     local info = VerticalGroup:new{ align = "left" }
     table.insert(info, UI.text(spec.title, 30, { face = "tfont", color = th.ink, max_width = info_w }))
