@@ -6,8 +6,10 @@
   "release-as": "0.1.0",
   "packages": {
     ".": {
-      "package-name": "shelfspace.koreader",
-      "extra-files": ["shelfspace.koplugin/_meta.lua"]
+      "extra-files": [
+        "shelfspace.koplugin/_meta.lua"
+      ]
     }
-  }
+  },
+  "include-component-in-tag": false
 }
