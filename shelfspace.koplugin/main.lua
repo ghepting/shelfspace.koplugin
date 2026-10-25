@@ -4,6 +4,8 @@ local DataStorage = require("datastorage")
 local Device = require("device")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local time = require("ui/time")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
@@ -44,16 +46,22 @@ function ShelfSpace:scan(on_done)
     self.root = libraryPath()
     local koreader_dir = DataStorage:getDataDir()
     self.koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
+    local started = time.now()
+    local function finish(tree)
+        self.tree = tree
+        local dirs, files = Scanner.count(tree)
+        logger.info(string.format("ShelfSpace: scanned %d folders, %d files in %d ms",
+            dirs, files, time.to_ms(time.since(started))))
+        on_done()
+    end
     Scanner.scan(self.root, function(tree)
         if tree[self.koreader_dir] then
-            self.tree = tree
-            on_done()
+            finish(tree)
             return
         end
         Scanner.scan(self.koreader_dir, function(extra)
             for dir, node in pairs(extra) do tree[dir] = node end
-            self.tree = tree
-            on_done()
+            finish(tree)
         end)
     end)
 end

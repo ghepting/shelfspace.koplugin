@@ -29,10 +29,9 @@ return function(screen, th, width)
     end
 
     local targets = Cleanup.targets(tree, plugin.koreader_dir, plugin.ui.document ~= nil)
-    local can_free, safe_free, safe = 0, 0, {}
+    local safe_free, safe = 0, {}
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
-            can_free = can_free + t.size
             if t.safe then
                 safe_free = safe_free + t.size
                 table.insert(safe, t)
@@ -45,7 +44,7 @@ return function(screen, th, width)
         label = _("DATA"),
         title = util.getFriendlySize(tree[plugin.koreader_dir].size),
         subtitle = _("KOReader's own data"),
-        chips = { T(_("CAN FREE %1"), util.getFriendlySize(can_free)) },
+        chips = { T(_("CAN FREE %1"), util.getFriendlySize(safe_free)) },
     })
 
     local gap = sp(10)
