@@ -11,9 +11,13 @@ desktop emulator and on a Kobo Libra Colour.
 | --- | --- | --- |
 | <img src="assets/overview.png" width="260"> | <img src="assets/browse.png" width="260"> | <img src="assets/search.png" width="260"> |
 
-| Delete | KOReader data | Clear |
+| File details | Delete | KOReader data |
 | --- | --- | --- |
-| <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear.png" width="260"> |
+| <img src="assets/details.png" width="260"> | <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> |
+
+| Clear |
+| --- |
+| <img src="assets/clear.png" width="260"> |
 
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
 totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
@@ -29,8 +33,10 @@ Open **Tools › Shelf Space**. Three tabs:
   why it is left alone.
 - **Browse**: your library, largest first, with a share bar per row. Sort by
   size, name or date, or search by name across the folder you are in and
-  everything under it. Tap a folder to open it; every row has its own **Delete** button, and you always
-  get a confirmation first, including how many books lose their reading
+  everything under it. Tap a folder to open it, or tap a file to see what it is
+  (type, size, where it is, when it changed, your reading progress), with Open
+  and Book info buttons. Every row has its own **Delete** button, and you
+  always get a confirmation first, including how many books lose their reading
   progress. Only books KOReader can open, and folders holding nothing else, can
   be deleted here. Anything else (system folders, other files) is shown with
   the reason it is locked, and so are KOReader itself and the book you are

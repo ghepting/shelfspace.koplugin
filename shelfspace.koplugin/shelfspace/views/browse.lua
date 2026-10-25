@@ -151,7 +151,10 @@ return function(screen, th, width)
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)
         end
-        return row
+        -- Tapping a file says what it is; its Delete button is still the only thing that deletes.
+        return UI.tappable(row, function()
+            plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)
+        end)
     end
 
     -- Search and sort, then "Up": pinned above the list on every page.
