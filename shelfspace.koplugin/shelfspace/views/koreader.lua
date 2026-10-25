@@ -95,8 +95,9 @@ return function(screen, th, width)
         text = T(_("Clear cache, updates and logs · %1"), util.getFriendlySize(safe_free)),
         width = width,
         enabled = safe_free > 0,
-        background = th.chip,
-        disabled_background = th.bg,
+        background = th.accent,
+        color = th.white,
+        disabled_background = th.free,
         callback = function()
             plugin:confirmClear(safe, _("cache, updates and logs"))
         end,

@@ -78,12 +78,13 @@ end
 -- when tapped and doesn't restore the rounded corners afterwards, and it only greys a disabled
 -- button's label. Here a disabled button is a flat pale pill, and a tap just calls back.
 -- opts: text, size, width (fixed, else as wide as the label), enabled, callback,
--- background (fill of an enabled button; none = white with an outline), disabled_background.
+-- background (fill of an enabled button; none = white with an outline), color (its label), disabled_background.
 function UI.button(th, opts)
     local enabled = opts.enabled ~= false
     local border = Size.border.button
     local pad_h, pad_v = sp(12), sp(6)
-    local label = UI.text(opts.text, opts.size or 15, { bold = true, color = enabled and th.ink or th.muted })
+    local label = UI.text(opts.text, opts.size or 15,
+        { bold = true, color = enabled and (opts.color or th.ink) or th.muted })
     local content = label
     if opts.width then
         content = CenterContainer:new{
