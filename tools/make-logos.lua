@@ -3,7 +3,9 @@
 dofile("tests/unit/helper.lua") -- stand-ins for the few KOReader modules icons.lua loads
 local Icons = require("shelfspace/icons")
 
-local f = assert(io.open("assets/logo.svg", "w"))
-f:write(Icons.plainLogo("e84a5f")) -- melonjolly
-f:close()
-print("wrote assets/logo.svg")
+for name, hex in pairs({ light = "2a363b", dark = "ffffff" }) do -- coup de grâce on light pages, white on dark
+    local f = assert(io.open("assets/logo-" .. name .. ".svg", "w"))
+    f:write(Icons.plainLogo(hex))
+    f:close()
+    print("wrote assets/logo-" .. name .. ".svg")
+end

@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="assets/logo.svg" width="140" alt="ShelfSpace: books on a shelf with one empty slot">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo-light.svg" width="140" alt="ShelfSpace: books on a shelf with one empty slot">
+  </picture>
 </p>
 
 <h1>ShelfSpace</h1>

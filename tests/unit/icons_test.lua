@@ -32,12 +32,14 @@ T.test("the README logo is the mark and the name with no tile behind them, in on
     assert(not svg:find("<text", 1, true), "the renderer ignores <text>; the name must be outlines")
 end)
 
-T.test("assets/logo.svg is the generated logo, in melonjolly (run tools/make-logos.lua after changing icons.lua)", function()
+T.test("the README logos are the generated ones: coup de grâce for light pages, white for dark (run tools/make-logos.lua after changing icons.lua)", function()
     local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
-    local f = assert(io.open(here .. "/../../assets/logo.svg"), "assets/logo.svg is missing")
-    local text = f:read("*a")
-    f:close()
-    T.eq(text, Icons.plainLogo("e84a5f"))
+    for name, hex in pairs({ light = "2a363b", dark = "ffffff" }) do
+        local f = assert(io.open(here .. "/../../assets/logo-" .. name .. ".svg"), "assets/logo-" .. name .. ".svg is missing")
+        local text = f:read("*a")
+        f:close()
+        T.eq(text, Icons.plainLogo(hex))
+    end
 end)
 
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
