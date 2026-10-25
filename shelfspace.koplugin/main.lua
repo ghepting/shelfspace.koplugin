@@ -14,6 +14,7 @@ local N_ = _.ngettext
 local T = ffiUtil.template
 
 local Deleter = require("shelfspace/deleter")
+local Details = require("shelfspace/details")
 local Scanner = require("shelfspace/scanner")
 local ShelfScreen = require("shelfspace/screen")
 
@@ -114,6 +115,10 @@ function ShelfSpace:showDialog(make)
     if self.dialog and UIManager:isWidgetShown(self.dialog) then return end
     self.dialog = make()
     UIManager:show(self.dialog)
+end
+
+function ShelfSpace:showDetails(entry, dir)
+    Details.show(self, entry, dir, Deleter.blockedReason(entry, self:deleteContext()))
 end
 
 function ShelfSpace:notify(text)
