@@ -28,7 +28,7 @@ return function(screen, th, width)
         }), message = _("Scanning your library…") }
     end
 
-    local targets = Cleanup.targets(tree, plugin.koreader_dir, plugin.ui.document ~= nil)
+    local targets = Cleanup.targets(tree, plugin.koreader_dir, plugin.ui.document ~= nil, plugin.root)
     local safe_free, safe = 0, {}
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
