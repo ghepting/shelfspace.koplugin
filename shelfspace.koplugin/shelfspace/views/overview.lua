@@ -26,7 +26,7 @@ return function(screen, th, width)
 
     local hero = UI.hero(th, width, {
         color = th.accent,
-        icon = "storage",
+        icon = "shelfspace",
         title = _("Shelf Space"),
         subtitle = T(_("%1 free of %2"), util.getFriendlySize(u.available), util.getFriendlySize(u.total)),
         chips = b and Stats.shareChips({

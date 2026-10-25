@@ -236,7 +236,7 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { icon ("storage", "library" or "koreader"), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
+-- spec: { icon ("shelfspace", "library" or "koreader"), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
 function UI.hero(th, width, spec)
     local icon_size = sp(108)
     local gap = sp(4) -- the icon is drawn with a margin of its own

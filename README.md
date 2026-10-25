@@ -1,4 +1,8 @@
-# Shelf Space
+<p align="center">
+  <img src="assets/logo.svg" width="112" alt="Shelf Space logo: books on a shelf with one empty slot">
+</p>
+
+<h1 align="center">Shelf Space</h1>
 
 A [KOReader](https://github.com/koreader/koreader) plugin to see where your
 device storage went and free it up. It uses only KOReader's own APIs, so it is

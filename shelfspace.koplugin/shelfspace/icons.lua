@@ -13,21 +13,39 @@ local WHITE = "#ffffff"
 local CENTER_X, CENTER_Y = 95.6, 97.5
 
 -- Glyphs are white on the tile; `tile` is the tile colour, for details cut out of the glyph.
+local function rect(x, y, w, h, rx, fill)
+    return string.format('<rect x="%.1f" y="%.1f" width="%.1f" height="%.1f" rx="%.1f" fill="%s"/>', x, y, w, h, rx, fill)
+end
+
 local GLYPHS = {
-    -- A ring with a wedge missing: the chart on the Overview.
-    storage = function()
-        return string.format('<circle cx="%.1f" cy="%.1f" r="38" fill="none" stroke="%s" stroke-width="22" '
-            .. 'stroke-dasharray="180 59" transform="rotate(-70 %.1f %.1f)"/>', CENTER_X, CENTER_Y, WHITE, CENTER_X, CENTER_Y)
+    -- The Shelf Space mark: books standing on a shelf with one slot left empty, drawn as a dashed
+    -- outline. It is also the Overview's icon.
+    shelfspace = function(tile)
+        local out = { rect(CENTER_X - 48, 136, 96, 9, 4.5, WHITE) }
+        -- x, width, height; the third is the empty slot, wider than a book so it reads as room.
+        local slots = { { 52.1, 17, 58 }, { 73.1, 17, 80 }, { 94.1, 24, 66 }, { 122.1, 17, 70 } }
+        for i, slot in ipairs(slots) do
+            local x, w, h = slot[1], slot[2], slot[3]
+            local top = 132 - h
+            if i == 3 then
+                out[#out + 1] = string.format('<rect x="%.1f" y="%d" width="%d" height="%d" rx="3.5" fill="none" stroke="%s" '
+                    .. 'stroke-width="3" stroke-dasharray="7 5"/>', x + 1.5, top + 1.5, w - 3, h - 3, WHITE)
+            else
+                out[#out + 1] = rect(x, top, w, h, 3.5, WHITE)
+                out[#out + 1] = rect(x, top + 9, w, 3.5, 0, "#" .. tile)
+                out[#out + 1] = rect(x, 132 - 14, w, 3.5, 0, "#" .. tile)
+            end
+        end
+        return table.concat(out)
     end,
-    -- Four books on a shelf, each spine banded top and bottom.
+    -- Three books lying in a stack, a band near each end of every spine: the Library.
     library = function(tile)
-        local out = { string.format('<rect x="%.1f" y="136" width="96" height="9" rx="4.5" fill="%s"/>', CENTER_X - 48, WHITE) }
-        local heights = { 58, 80, 52, 70 }
-        for i, h in ipairs(heights) do
-            local x, top = CENTER_X - 40 + (i - 1) * 21, 132 - h
-            out[#out + 1] = string.format('<rect x="%.1f" y="%d" width="17" height="%d" rx="3.5" fill="%s"/>', x, top, h, WHITE)
-            out[#out + 1] = string.format('<rect x="%.1f" y="%d" width="17" height="3.5" fill="#%s"/>', x, top + 9, tile)
-            out[#out + 1] = string.format('<rect x="%.1f" y="%d" width="17" height="3.5" fill="#%s"/>', x, 132 - 14, tile)
+        local out = {}
+        local stack = { { 55, 84, 116 }, { 61, 76, 92 }, { 51, 88, 68 } } -- x, width, y (bottom to top)
+        for _, b in ipairs(stack) do
+            out[#out + 1] = rect(CENTER_X - 46 + (b[1] - 51), b[3], b[2], 20, 4, WHITE)
+            out[#out + 1] = rect(CENTER_X - 46 + (b[1] - 51) + 11, b[3], 3.5, 20, 0, "#" .. tile)
+            out[#out + 1] = rect(CENTER_X - 46 + (b[1] - 51) + b[2] - 15, b[3], 3.5, 20, 0, "#" .. tile)
         end
         return table.concat(out)
     end,
@@ -44,6 +62,12 @@ function Icons.svg(name, hex, koreader_logo)
     local glyph = draw(hex)
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="195" height="195" '
         .. 'viewBox="0 0 195 195">' .. string.format(TILE, hex) .. glyph .. "</svg>"
+end
+
+-- The mark on its own, cropped to the tile, for use as a standalone image (the README's logo).
+function Icons.logo(hex)
+    local svg = Icons.svg("shelfspace", hex)
+    return (svg:gsub('width="195" height="195" viewBox="0 0 195 195"', 'width="154.6" height="193.8" viewBox="18.3 0.6 154.6 193.8"'))
 end
 
 local function readFile(path)
