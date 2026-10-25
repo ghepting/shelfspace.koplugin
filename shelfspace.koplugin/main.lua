@@ -78,6 +78,16 @@ function ShelfSpace:breakdown(usage)
     return { books = books, koreader = koreader, other = math.max(usage.used - books - koreader, 0) }
 end
 
+-- Says what "Other files" is and why it can't be browsed or deleted.
+function ShelfSpace:explainOther(b)
+    self:showDialog(function()
+        return InfoMessage:new {
+            text = T(_("Other files: %1"), util.getFriendlySize(b.other)) .. "\n\n"
+                .. _("Everything that is not your books or KOReader's data: the system, its firmware, hidden folders and the filesystem itself. Shelf Space leaves it alone, because deleting the wrong thing could stop the device from starting."),
+        }
+    end)
+end
+
 -- Re-reads free space and redraws whichever tab is showing.
 function ShelfSpace:refresh()
     if not self.screen or self.screen.closed then return end
