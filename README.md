@@ -23,8 +23,10 @@ other screens get a grayscale version of the same layout.
 
 Open **Tools › Shelf Space**. Three tabs:
 
-- **Overview**: free space, and where the rest went (books, KOReader data,
-  everything else). Tap Books or KOReader data to jump to that tab.
+- **Overview**: free space as a donut chart, and where the rest went (books,
+  KOReader data, everything else). Tap a slice or a row to jump to Books or
+  KOReader data; the info icon on Other files explains what that space is and
+  why it is left alone.
 - **Browse**: your library, largest first, with a share bar per row. Sort by
   size, name or date, or search by name across the folder you are in and
   everything under it. Tap a folder to open it; every row has its own **Delete** button, and you always

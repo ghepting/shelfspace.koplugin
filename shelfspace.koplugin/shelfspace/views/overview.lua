@@ -1,8 +1,11 @@
+local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
+local IconWidget = require("ui/widget/iconwidget")
 local LineWidget = require("ui/widget/linewidget")
+local OverlapGroup = require("ui/widget/overlapgroup")
 local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
@@ -10,6 +13,7 @@ local util = require("util")
 local _ = require("gettext")
 local T = require("ffi/util").template
 
+local Donut = require("shelfspace/donut")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
@@ -27,32 +31,31 @@ return function(screen, th, width)
         chips = { b and _("SCANNED") or _("SCANNING…") },
     })
 
-    local parts
-    if b then
-        parts = { { b.books, th.books }, { b.koreader, th.koreader }, { b.other, th.other } }
-    else
-        parts = { { u.used, th.other } }
-    end
-    local bar_h = sp(20)
-    local row = HorizontalGroup:new{}
-    local used_w = 0
-    for i, part in ipairs(parts) do
-        local w = math.floor(width * part[1] / u.total)
-        if w > 0 then
-            table.insert(row, UI.block(w, bar_h, part[2]))
-            used_w = used_w + w
-        end
-    end
-    table.insert(row, UI.block(width - used_w, bar_h, th.free))
-    local bar = UI.rounded(th, row, math.floor(bar_h / 2), Size.border.button)
-
     -- Rows with an on_tap show a chevron and open the matching tab; the others are plain.
-    local function legend(color, label, size_text, on_tap)
+    -- `note` is a muted line under the label; `on_info` adds an info icon that is the only
+    -- thing on the row to tap. Every row ends in a slot of the same width so the sizes line up.
+    local function legend(color, label, size_text, on_tap, note, on_info)
         local dot, gap = sp(14), sp(12)
-        local chevron_w = sp(30)
+        local slot = Geom:new{ w = sp(40), h = sp(30) }
+        local tail
+        if on_info then
+            tail = UI.tappable(CenterContainer:new{
+                dimen = slot,
+                IconWidget:new{ icon = "notice-info", alpha = true, width = sp(24), height = sp(24) },
+            }, on_info)
+        else
+            tail = CenterContainer:new{
+                dimen = slot,
+                on_tap and UI.text("›", 28, { color = th.muted }) or HorizontalSpan:new{ width = 1 },
+            }
+        end
         local label_w = UI.text(label, 22, { bold = true, color = th.ink })
         local size_w = UI.text(size_text, 22, { color = th.ink })
-        local spacer = width - dot - gap - label_w:getSize().w - size_w:getSize().w - chevron_w
+        local text_w = label_w
+        if note then
+            text_w = VerticalGroup:new{ align = "left", label_w, UI.text(note, 14, { color = th.muted }) }
+        end
+        local spacer = width - dot - gap - text_w:getSize().w - size_w:getSize().w - sp(8) - slot.w
         local row = VerticalGroup:new{
             align = "left",
             VerticalSpan:new{ width = sp(10) },
@@ -63,10 +66,10 @@ return function(screen, th, width)
                     background = color,
                     HorizontalGroup:new{ HorizontalSpan:new{ width = dot }, VerticalSpan:new{ width = dot } },
                 },
-                HorizontalSpan:new{ width = gap }, label_w,
+                HorizontalSpan:new{ width = gap }, text_w,
                 HorizontalSpan:new{ width = math.max(spacer, 0) }, size_w,
                 HorizontalSpan:new{ width = sp(8) },
-                on_tap and UI.text("›", 28, { color = th.muted }) or HorizontalSpan:new{ width = sp(14) },
+                tail,
             },
             VerticalSpan:new{ width = sp(10) },
             LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
@@ -74,23 +77,64 @@ return function(screen, th, width)
         return on_tap and UI.tappable(row, on_tap) or row
     end
 
-    local body = VerticalGroup:new{ align = "left", bar, VerticalSpan:new{ width = sp(8) } }
-    local rows
+    -- What each slice and legend row does when tapped; Free has nothing to open.
+    local go = {
+        books = function() screen:openBrowse(plugin.root) end,
+        koreader = function() screen:switchTab("koreader") end,
+        other = function() plugin:explainOther(b) end,
+    }
+    local rows, slices
     if b then
         rows = {
-            { th.books, _("Books"), util.getFriendlySize(b.books), function() screen:openBrowse(plugin.root) end },
-            { th.koreader, _("KOReader data"), util.getFriendlySize(b.koreader), function() screen:switchTab("koreader") end },
-            { th.other, _("Other files"), util.getFriendlySize(b.other) },
+            { th.books, _("Books"), util.getFriendlySize(b.books), go.books },
+            { th.koreader, _("KOReader data"), util.getFriendlySize(b.koreader), go.koreader },
+            { th.other, _("Other files"), util.getFriendlySize(b.other), nil, _("System files, locked"), go.other },
             { th.free, _("Free"), util.getFriendlySize(u.available) },
+        }
+        slices = {
+            { fraction = b.books / u.total, color = th.books, on_tap = go.books },
+            { fraction = b.koreader / u.total, color = th.koreader, on_tap = go.koreader },
+            { fraction = b.other / u.total, color = th.other, on_tap = go.other },
+            { fraction = u.available / u.total, color = th.free },
         }
     else
         rows = {
             { th.other, _("Used"), util.getFriendlySize(u.used) },
             { th.free, _("Free"), util.getFriendlySize(u.available) },
         }
+        slices = {
+            { fraction = u.used / u.total, color = th.other },
+            { fraction = u.available / u.total, color = th.free },
+        }
     end
+    local legend_rows = VerticalGroup:new{ align = "left" }
     for i, r in ipairs(rows) do
-        table.insert(body, legend(r[1], r[2], r[3], r[4]))
+        table.insert(legend_rows, legend(r[1], r[2], r[3], r[4], r[5], r[6]))
     end
+
+    -- As large as the screen leaves room for once the header, tabs and legend are placed.
+    local room = screen.dimen.h - (sp(46) + sp(32) + hero:getSize().h + sp(62) + legend_rows:getSize().h + sp(24))
+    local diameter = math.max(sp(110), math.min(math.floor(width * 0.62), sp(260), room))
+    local used_share = u.total > 0 and u.used / u.total or 0
+    local donut = Donut:new{
+        diameter = diameter, bg = th.bg, slices = slices,
+        on_tap = function(slice) if slice.on_tap then slice.on_tap() end end,
+    }
+    local chart = CenterContainer:new{
+        dimen = Geom:new{ w = width, h = diameter + sp(16) },
+        OverlapGroup:new{
+            dimen = Geom:new{ w = diameter, h = diameter },
+            donut,
+            CenterContainer:new{
+                dimen = Geom:new{ w = diameter, h = diameter },
+                VerticalGroup:new{
+                    align = "center",
+                    UI.text(string.format("%d%%", math.floor(used_share * 100 + 0.5)), 34, { face = "tfont", color = th.ink }),
+                    UI.text(_("used"), 16, { color = th.muted }),
+                },
+            },
+        },
+    }
+    local body = VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(8) }, chart, legend_rows }
     return { hero = hero, body = body }
 end
