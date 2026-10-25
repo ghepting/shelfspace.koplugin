@@ -27,12 +27,14 @@ end
 
 -- Sidecar folders whose book is gone. Only the "next to the book" location is
 -- covered; the other two metadata locations can't be matched back to a book.
-function Cleanup.orphans(tree, koreader_dir)
+function Cleanup.orphans(tree, koreader_dir, root)
     local found = {}
     local data_prefix = koreader_dir .. "/"
     for dir, node in pairs(tree) do
-        -- Skip KOReader's own folder and hidden folders (.kobo and the like).
-        if dir ~= koreader_dir and dir:sub(1, #data_prefix) ~= data_prefix and not dir:find("/%.") then
+        -- Skip KOReader's own folder and hidden folders (.kobo and the like). Only the part
+        -- below the library counts: the library itself may sit under a dot-folder.
+        local rel = dir:sub(#root + 1)
+        if dir ~= koreader_dir and dir:sub(1, #data_prefix) ~= data_prefix and not rel:find("/%.") then
             local stems = {}
             for _, e in ipairs(node.entries) do
                 if not e.is_dir then stems[e.name:match("(.*)%.") or e.name] = true end
@@ -50,7 +52,7 @@ end
 -- Each target: { title, note, size, clear = function, blocked = reason or nil, safe = true if
 -- it is always harmless to clear }.
 -- `book_open` is true while a document is on screen.
-function Cleanup.targets(tree, koreader_dir, book_open)
+function Cleanup.targets(tree, koreader_dir, book_open, root)
     local data = koreader_dir
     local targets = {}
 
@@ -103,7 +105,7 @@ function Cleanup.targets(tree, koreader_dir, book_open)
         clear = function() clearContents(data .. "/screenshots") end,
     })
 
-    local orphans, orphan_size = Cleanup.orphans(tree, koreader_dir), 0
+    local orphans, orphan_size = Cleanup.orphans(tree, koreader_dir, root), 0
     for _, e in ipairs(orphans) do orphan_size = orphan_size + e.size end
     table.insert(targets, {
         title = _("Orphaned reading progress"),

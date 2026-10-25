@@ -83,11 +83,12 @@ function Scanner.scan(root, on_done)
                             -- Sidecar folders count toward sizes but aren't listed.
                             table.insert(node.entries, {
                                 name = name, path = path, is_dir = true, size = 0,
+                                modified = attr.modification,
                                 hidden = name:sub(-4) == ".sdr",
                             })
                             table.insert(stack, path)
                         elseif attr and attr.mode == "file" then
-                            table.insert(node.entries, { name = name, path = path, size = attr.size })
+                            table.insert(node.entries, { name = name, path = path, size = attr.size, modified = attr.modification })
                         end
                     end
                 end

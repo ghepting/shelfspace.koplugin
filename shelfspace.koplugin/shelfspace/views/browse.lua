@@ -14,6 +14,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Deleter = require("shelfspace/deleter")
+local Search = require("shelfspace/search")
 local Stats = require("shelfspace/stats")
 local Theme = require("shelfspace/theme")
 local UI = require("shelfspace/ui")
@@ -23,6 +24,16 @@ local ROW_H = sp(60)
 
 local function percent(fraction)
     return math.floor(100 * fraction + 0.5) .. "%"
+end
+
+-- At most `max` characters, cut on a character boundary.
+local function shorten(text, max)
+    local count, cut = 0, #text
+    for pos in text:gmatch("()[%z\1-\127\194-\244][\128-\191]*") do
+        count = count + 1
+        if count > max then cut = pos - 1 break end
+    end
+    return count > max and (text:sub(1, cut) .. "…") or text
 end
 
 -- The current folder as a hero card, then its contents largest-first with a share bar.
@@ -42,11 +53,15 @@ return function(screen, th, width)
     local parent = dir ~= root and dir:match("^(.*)/[^/]+$") or nil
     if parent and not tree[parent] then parent = root end
 
-    local entries = {}
-    for i, e in ipairs(tree[dir].entries) do
-        if not e.hidden then table.insert(entries, e) end
+    local entries, where = {}, nil
+    if screen.query then
+        entries, where = Search.find(tree, dir, screen.query)
+    else
+        for i, e in ipairs(tree[dir].entries) do
+            if not e.hidden then table.insert(entries, e) end
+        end
     end
-    table.sort(entries, function(a, b) return a.size > b.size end)
+    Search.sort(entries, Search.OPTIONS[screen.sort])
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
@@ -67,7 +82,8 @@ return function(screen, th, width)
         progress = { fraction = share, left = percent(share), right = util.getFriendlySize(dir_size) },
     })
 
-    local largest = entries[1] and math.max(entries[1].size, 1) or 1
+    local largest = 1
+    for i, e in ipairs(entries) do largest = math.max(largest, e.size) end
 
     local size_w = sp(80)
     local gap = sp(10)
@@ -96,6 +112,9 @@ return function(screen, th, width)
         local under
         if reason then
             under = UI.text(reason, 13, { color = th.muted, max_width = mid_w })
+        elseif where then
+            local rel = where[item]
+            under = UI.text(rel == "" and _("here") or T(_("in %1"), rel), 14, { color = th.muted, max_width = mid_w })
         else
             under = UI.bar(th, mid_w, sp(8), item.size / largest, th.accent)
         end
@@ -104,7 +123,7 @@ return function(screen, th, width)
             action = UI.button(th, {
                 text = _("Delete"),
                 size = 14,
-                callback = function() plugin:confirmDelete(item, dir) end,
+                callback = function() plugin:confirmDelete(item, item.path:match("^(.*)/[^/]+$") or dir) end,
             })
         end
         local row = frame(HorizontalGroup:new{
@@ -135,14 +154,44 @@ return function(screen, th, width)
         return row
     end
 
-    -- "Up" stays above the list on every page.
-    local header
+    -- Search and sort, then "Up": pinned above the list on every page.
+    local sort_button = UI.button(th, {
+        text = T(_("Sort: %1 ▾"), Search.OPTIONS[screen.sort].short), size = 15,
+        callback = function() screen:askSort() end,
+    })
+    local clear_button = screen.query and UI.button(th, {
+        text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
+    })
+    local search_w = width - sort_button:getSize().w - gap - (clear_button and (clear_button:getSize().w + gap) or 0)
+    local controls = HorizontalGroup:new{
+        align = "center",
+        UI.button(th, {
+            text = screen.query and shorten(screen.query, 20) or _("Search by name"), size = 15,
+            width = search_w, callback = function() screen:askQuery() end,
+        }),
+        HorizontalSpan:new{ width = gap },
+    }
+    if clear_button then
+        table.insert(controls, clear_button)
+        table.insert(controls, HorizontalSpan:new{ width = gap })
+    end
+    table.insert(controls, sort_button)
+
+    local header = VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, controls, VerticalSpan:new{ width = sp(6) } }
+    if screen.query then
+        local count = #entries
+        table.insert(header, UI.text(
+            count == 0 and T(_("No matches for “%1” in %2"), shorten(screen.query, 20), name)
+                or T(N_("%1 match in %2", "%1 matches in %2", count), count, name),
+            15, { color = th.muted, max_width = width }))
+        table.insert(header, VerticalSpan:new{ width = sp(6) })
+    end
     if parent then
-        header = UI.tappable(frame(HorizontalGroup:new{
+        table.insert(header, UI.tappable(frame(HorizontalGroup:new{
             align = "center",
             UI.text("⬆", 22, { color = th.ink }), HorizontalSpan:new{ width = gap },
             UI.text(_("Up"), 20, { bold = true, color = th.ink }),
-        }), function() screen:setDir(parent) end)
+        }), function() screen:setDir(parent) end))
     end
 
     return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build }

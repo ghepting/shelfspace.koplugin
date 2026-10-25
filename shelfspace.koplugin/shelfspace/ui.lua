@@ -78,12 +78,13 @@ end
 -- when tapped and doesn't restore the rounded corners afterwards, and it only greys a disabled
 -- button's label. Here a disabled button is a flat pale pill, and a tap just calls back.
 -- opts: text, size, width (fixed, else as wide as the label), enabled, callback,
--- background (fill of an enabled button; none = white with an outline), disabled_background.
+-- background (fill of an enabled button; none = white with an outline), color (its label), disabled_background.
 function UI.button(th, opts)
     local enabled = opts.enabled ~= false
     local border = Size.border.button
     local pad_h, pad_v = sp(12), sp(6)
-    local label = UI.text(opts.text, opts.size or 15, { bold = true, color = enabled and th.ink or th.muted })
+    local label = UI.text(opts.text, opts.size or 15,
+        { bold = true, color = enabled and (opts.color or th.ink) or th.muted })
     local content = label
     if opts.width then
         content = CenterContainer:new{
@@ -131,18 +132,24 @@ function UI.bar(th, width, height, fraction, fill)
 end
 
 -- Wraps a widget so a tap (and optionally a hold) on it calls back.
+local tappables = 0
+
 function UI.tappable(widget, on_tap, on_hold)
     local size = widget:getSize()
     local c = InputContainer:new{ dimen = Geom:new{ w = size.w, h = size.h }, widget }
+    -- Event names are unique per tappable: events travel down to child widgets, so a
+    -- button inside a tappable row would otherwise answer the row's tap with its own.
+    tappables = tappables + 1
+    local tap, hold = "TapRow" .. tappables, "HoldRow" .. tappables
     c.ges_events = {
-        TapRow = { GestureRange:new{ ges = "tap", range = c.dimen } },
-        HoldRow = { GestureRange:new{ ges = "hold", range = c.dimen } },
+        [tap] = { GestureRange:new{ ges = "tap", range = c.dimen } },
+        [hold] = { GestureRange:new{ ges = "hold", range = c.dimen } },
     }
-    c.onTapRow = function()
+    c["on" .. tap] = function()
         if on_tap then on_tap() end
         return true
     end
-    c.onHoldRow = function()
+    c["on" .. hold] = function()
         if on_hold then on_hold() end
         return true
     end
