@@ -17,6 +17,18 @@ function Scanner.total(tree, path)
     return sum
 end
 
+-- Folder and file counts across the whole tree, for the timing log.
+function Scanner.count(tree)
+    local dirs, files = 0, 0
+    for _, node in pairs(tree) do
+        dirs = dirs + 1
+        for _, e in ipairs(node.entries) do
+            if not e.is_dir then files = files + 1 end
+        end
+    end
+    return dirs, files
+end
+
 local function drop(tree, dir, entry)
     local entries = tree[dir].entries
     for i, e in ipairs(entries) do

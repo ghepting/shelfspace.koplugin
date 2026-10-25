@@ -10,6 +10,8 @@ local OverlapGroup = require("ui/widget/overlapgroup")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
+local logger = require("logger")
+local time = require("ui/time")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local _ = require("gettext")
@@ -97,6 +99,7 @@ function ShelfScreen:setPage(n)
 end
 
 function ShelfScreen:rebuild()
+    local started = time.now()
     local th = self.theme
     local pad = sp(16)
     local width = self.dimen.w - 2 * pad
@@ -154,6 +157,7 @@ function ShelfScreen:rebuild()
             FrameContainer:new{ bordersize = 0, padding = pad, margin = 0, background = th.bg, body },
         },
     }
+    logger.info(string.format("ShelfSpace: built %s tab in %d ms", self.tab, time.to_ms(time.since(started))))
 end
 
 function ShelfScreen:onSwipePage(arg, ges)

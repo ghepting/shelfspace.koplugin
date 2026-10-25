@@ -237,7 +237,16 @@ function UI.hero(th, width, spec)
             HorizontalSpan:new{ width = gap2 }, right,
         })
     end
-    return HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info }
+    -- Every hero is as tall as the fullest one (title, subtitle, chips, progress),
+    -- so the tab bar below it stays put when you switch tabs.
+    local full = UI.text("Ag", 30, { face = "tfont" }):getSize().h
+        + UI.text("Ag", 18):getSize().h
+        + sp(6) + UI.chip(th, "Ag"):getSize().h
+        + sp(8) + UI.text("Ag", 14, { bold = true }):getSize().h
+    return CenterContainer:new{
+        dimen = Geom:new{ w = width, h = math.max(cover_h, full) },
+        HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info },
+    }
 end
 
 return UI
