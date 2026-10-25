@@ -36,7 +36,7 @@ local function header(th, width, on_close)
             dimen = Geom:new{ w = width, h = h },
             CenterContainer:new{
                 dimen = Geom:new{ w = width, h = h },
-                UI.text(_("Shelf Space"), 22, { face = "tfont", color = th.ink }),
+                UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.ink }),
             },
             RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
         },
@@ -86,7 +86,8 @@ function ShelfScreen:refresh()
 end
 
 function ShelfScreen:switchTab(id)
-    if id ~= "browse" then self.selecting, self.selected = false, {} end
+    -- A selection belongs to the tab it was made on.
+    if id ~= self.tab then self.selecting, self.selected = false, {} end
     self.tab = id
     self:refresh()
 end
@@ -118,8 +119,18 @@ function ShelfScreen:setSelecting(on)
     self:refresh()
 end
 
+-- Ticks or unticks one row; `key` identifies it (a path on Browse, a title on the KOReader tab).
+function ShelfScreen:toggleKey(key, value)
+    self.selected[key] = (not self.selected[key]) and (value or true) or nil
+    self:refresh()
+end
+
 function ShelfScreen:toggle(entry)
-    self.selected[entry.path] = (not self.selected[entry.path]) and entry or nil
+    self:toggleKey(entry.path, entry)
+end
+
+function ShelfScreen:selectKeys(keys, on)
+    for _, key in ipairs(keys) do self.selected[key] = on and true or nil end
     self:refresh()
 end
 

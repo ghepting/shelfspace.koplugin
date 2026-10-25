@@ -3,7 +3,7 @@ local Icons = require("shelfspace/icons")
 
 print("icons")
 
-T.test("the Shelf Space and library icons are tiles in the asked-for colour with a white glyph", function()
+T.test("the ShelfSpace and library icons are tiles in the asked-for colour with a white glyph", function()
     for _, name in ipairs({ "shelfspace", "library" }) do
         local svg = Icons.svg(name, "2f6f5e")
         assert(svg:find("^<%?xml"), name .. " is not an svg document")
@@ -12,7 +12,7 @@ T.test("the Shelf Space and library icons are tiles in the asked-for colour with
     end
 end)
 
-T.test("the Shelf Space mark is books on a shelf and one long empty slot", function()
+T.test("the ShelfSpace mark is books on a shelf and one long empty slot", function()
     local svg = Icons.svg("shelfspace", "000000")
     T.eq(select(2, svg:gsub("stroke%-dasharray", "")), 1) -- the empty slot
     T.eq(select(2, svg:gsub("<rect", "")), 1 + 1 + 3 * 3 + 1) -- tile, shelf, three books with two bands each, the empty slot
@@ -24,12 +24,38 @@ end)
 
 T.test("the full logo is the mark with the name under the shelf, and only the logo has the name", function()
     local logo = Icons.logo("2f6f5e")
-    assert(logo:find(">ShelfSpace</text>", 1, true), "no wordmark")
-    assert(logo:find("textLength", 1, true), "wordmark width is not fixed")
+    assert(logo:find('<path d="M', 1, true), "no wordmark outlines")
+    assert(not logo:find("<text", 1, true), "the renderer ignores <text>; the name must be outlines")
     assert(not Icons.svg("shelfspace", "2f6f5e"):find("<text", 1, true), "the in-app icon should be the mark alone")
 end)
 
-T.test("the logo in assets is the Shelf Space logo on the brand green", function()
+T.test("the README logos are the mark and the name with no tile behind them, in one colour", function()
+    for _, color in ipairs({ "2f6f5e", "ffffff" }) do
+        local svg = Icons.plainLogo(color)
+        assert(svg:find('fill="#' .. color .. '"', 1, true), "colour missing")
+        assert(not svg:find('rx="22.5"', 1, true), "the tile is still there")
+        assert(not svg:find('<rect width="195" height="195" fill="#', 1, true) or svg:find("<mask", 1, true), "an opaque canvas")
+        assert(svg:find("<mask", 1, true), "the spine bands are not cut out of the books")
+        assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
+        assert(svg:find('<path transform="translate(0 13)" d="M', 1, true), "no wordmark outlines")
+    end
+end)
+
+T.test("the files in assets are the generated logos", function()
+    local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
+    for file, expected in pairs({
+        ["logo.svg"] = Icons.logo("2f6f5e"),
+        ["logo-light.svg"] = Icons.plainLogo("2f6f5e"),
+        ["logo-dark.svg"] = Icons.plainLogo("ffffff"),
+    }) do
+        local f = assert(io.open(here .. "/../../assets/" .. file), file .. " is missing; run tools/make-logos.lua")
+        local text = f:read("*a")
+        f:close()
+        T.eq(text, expected, file)
+    end
+end)
+
+T.test("the logo in assets is the ShelfSpace logo on the brand green", function()
     local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
     local f = assert(io.open(here .. "/../../assets/logo.svg"))
     local file = f:read("*a")
@@ -51,7 +77,7 @@ T.test("the mark sits higher when it has a name under it, and the name is centre
     assert(Icons.svg("shelfspace", "000000"):find("translate(4 -9)", 1, true), "icon not centred by weight")
     local logo = Icons.logo("000000")
     assert(logo:find("translate(0 -13)", 1, true), "logo mark not raised and centred under the name")
-    assert(logo:find('y="162"', 1, true), "wordmark not under the shelf")
+    assert(logo:find("Q", 1, true) and logo:find(' fill="#ffffff"/></svg>$'), "wordmark not last, in white")
 end)
 
 T.test("KOReader's own logo is recoloured, white left alone", function()

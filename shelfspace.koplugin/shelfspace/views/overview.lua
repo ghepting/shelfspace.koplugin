@@ -27,7 +27,8 @@ return function(screen, th, width)
     local hero = UI.hero(th, width, {
         color = th.accent,
         icon = "shelfspace",
-        title = _("Shelf Space"),
+        named = true, -- the mark with the ShelfSpace wordmark under it
+        title = _("ShelfSpace"),
         subtitle = T(_("%1 free of %2"), util.getFriendlySize(u.available), util.getFriendlySize(u.total)),
         chips = b and Stats.shareChips({
             { name = _("BOOKS"), bytes = b.books },

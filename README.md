@@ -1,8 +1,11 @@
 <p align="center">
-  <img src="assets/logo.svg" width="112" alt="Shelf Space logo: books on a shelf with one empty slot">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo-light.svg" width="140" alt="ShelfSpace: books on a shelf with one empty slot">
+  </picture>
 </p>
 
-<h1 align="center">Shelf Space</h1>
+<h1>ShelfSpace</h1>
 
 A [KOReader](https://github.com/koreader/koreader) plugin to see where your
 device storage went and free it up. It uses only KOReader's own APIs, so it is
@@ -19,9 +22,9 @@ desktop emulator and on a Kobo Libra Colour.
 | --- | --- | --- |
 | <img src="assets/search.png" width="260"> | <img src="assets/select.png" width="260"> | <img src="assets/details.png" width="260"> |
 
-| Delete | KOReader data | Clear |
+| Delete | KOReader data | Clear several |
 | --- | --- | --- |
-| <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear.png" width="260"> |
+| <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear-several.png" width="260"> |
 
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
 totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
@@ -29,7 +32,7 @@ other screens get a grayscale version of the same layout.
 
 ## What it does
 
-Open **Tools › Shelf Space**. Three tabs:
+Open **Tools › ShelfSpace**. Three tabs:
 
 - **Overview**: free space as a donut chart, and where the rest went (books,
   KOReader data, everything else). Tap a slice or a row to jump to Books or
@@ -49,11 +52,12 @@ Open **Tools › Shelf Space**. Three tabs:
   the book you are reading.
 - **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
   update downloads, crash logs, screenshots, reading progress of books that are
-  gone), each with a Clear button.
+  gone), each with a Clear button. **Select** ticks several to clear together,
+  and **Clear all** clears everything listed. Either way you are asked first,
+  with a warning that screenshots and reading progress cannot be recovered.
 
 ## Planned
 
-- Select several files at once
 - A shelf view where spine width matches size
 - A faster scan with a cached result
 
@@ -68,10 +72,15 @@ Run the KOReader desktop emulator (`./kodev run`), then link the plugin in:
 
     ./dev.sh /path/to/koreader/plugins
 
+`tools/make-wordmark.py` draws the name under the logo as outlines from a font
+file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
+
 ## Tests
 
-The logic that decides what can be deleted, how a selection collapses, how rows
-are searched and sorted and how the chart is cut runs under plain `luajit`:
+The logic runs under plain `luajit`, without KOReader: what may be deleted and
+why (system folders, KOReader itself, the book being read), how a selection
+collapses, search, sort and the file type filter, the share chips, orphaned
+reading progress, the donut's geometry and the icons:
 
     tests/run.sh
 

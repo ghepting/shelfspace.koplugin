@@ -26,10 +26,10 @@ local ShelfSpace = WidgetContainer:extend {
 function ShelfSpace:init()
     self.ui.menu:registerToMainMenu(self)
 
-    -- Opening a book from Shelf Space hands the screen over to the reader. ShelfSpace.resume
+    -- Opening a book from ShelfSpace hands the screen over to the reader. ShelfSpace.resume
     -- remembers where the person was; it lives on the class because the file manager and the
     -- reader each load their own copy of this plugin. When the file manager is back after
-    -- that book, Shelf Space is shown again as it was.
+    -- that book, ShelfSpace is shown again as it was.
     local resume = ShelfSpace.resume
     if not resume then return end
     local document = self.ui.document
@@ -44,7 +44,7 @@ end
 function ShelfSpace:addToMainMenu(menu_items)
     menu_items.shelfspace = {
         sorting_hint = "tools",
-        text = _("Shelf Space"),
+        text = _("ShelfSpace"),
         callback = function() self:showOverview() end,
     }
 end
@@ -98,7 +98,7 @@ function ShelfSpace:explainOther(b)
     self:showDialog(function()
         return InfoMessage:new {
             text = T(_("Other files: %1"), util.getFriendlySize(b.other)) .. "\n\n"
-                .. _("Everything that is not your books or KOReader's data: the system, its firmware, hidden folders and the filesystem itself. Shelf Space leaves it alone, because deleting the wrong thing could stop the device from starting."),
+                .. _("Everything that is not your books or KOReader's data: the system, its firmware, hidden folders and the filesystem itself. ShelfSpace leaves it alone, because deleting the wrong thing could stop the device from starting."),
         }
     end)
 end
@@ -139,7 +139,7 @@ end
 -- Opens a book in the reader, remembering where we were so closing it brings us back.
 function ShelfSpace:openBook(path)
     local screen = self.screen
-    -- The book already open: close Shelf Space and carry on reading it.
+    -- The book already open: close ShelfSpace and carry on reading it.
     if self.ui.document and self.ui.document.file == path then
         screen:onClose()
         return
@@ -298,6 +298,7 @@ function ShelfSpace:confirmClear(targets, label)
             ok_text = _("Clear"),
             ok_callback = function()
                 for i, t in ipairs(targets) do t.clear() end
+                if self.screen and not self.screen.closed then self.screen.selecting, self.screen.selected = false, {} end
                 local busy = InfoMessage:new { text = _("Updating…") }
                 UIManager:show(busy)
                 UIManager:nextTick(function()
