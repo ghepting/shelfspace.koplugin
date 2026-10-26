@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.3.0...v0.4.0) (2026-10-26)
+
+
+### Features
+
+* an About card with version and build, QR codes, and a check for updates ([#53](https://github.com/ghepting/shelfspace.koplugin/issues/53)) ([1ac0fd5](https://github.com/ghepting/shelfspace.koplugin/commit/1ac0fd563c5376dd6367c368b6f72ede09a22a91))
+
 ## [0.3.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.2.0...v0.3.0) (2026-10-26)
 
 ### Features
