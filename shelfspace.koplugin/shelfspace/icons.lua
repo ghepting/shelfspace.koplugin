@@ -113,20 +113,41 @@ function Icons.plainLogo(hex)
         .. string.format('<path transform="translate(0 13)" d="%s" fill="%s"/>', WORDMARK, fill) .. "</svg>"
 end
 
--- The sort direction button's icon: three bars and an arrow. An arrow pointing up means ascending (smallest,
--- oldest, A to Z), down means descending; the bars grow with the values, like a column sorted that way.
--- Painted on `bg` so it has no transparency to blend.
-function Icons.sortSvg(descending, ink, bg)
-    local widths = descending and { 24, 18, 12 } or { 12, 18, 24 }
+-- The sort button's icon: what is sorted, drawn the same way for all four, in one solid colour on `bg`
+-- (opaque, so it has no transparency to blend). `kind` is a category from Search.SORTS:
+--   size: three bars; date modified: a calendar; last opened: a clock, each with an arrow beside it that
+--         points up for ascending (smallest, oldest) and down for descending (biggest, newest).
+--   name: the letters A and Z, A on top for A to Z and Z on top for Z to A. The order is in the letters,
+--         so there is no arrow.
+function Icons.sortSvg(kind, descending, ink, bg)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"', ink)
     local out = {}
-    for i, w in ipairs(widths) do
-        out[#out + 1] = string.format('<rect x="4" y="%d" width="%d" height="5" rx="2" fill="#%s"/>', 8 + (i - 1) * 12, w, ink)
+    local function add(s) out[#out + 1] = s end
+    local function arrow()
+        local head = descending and "M33 30 L39 37 L45 30" or "M33 18 L39 11 L45 18"
+        add(string.format('<path d="M39 11 V37" %s/>', stroke))
+        add(string.format('<path d="%s" %s/>', head, stroke))
     end
-    local head = descending and "M31 29 L38 37 L45 29" or "M31 19 L38 11 L45 19"
-    out[#out + 1] = string.format('<path d="M38 11 V37" fill="none" stroke="#%s" stroke-width="4" '
-        .. 'stroke-linecap="round" stroke-linejoin="round"/>', ink)
-    out[#out + 1] = string.format('<path d="%s" fill="none" stroke="#%s" stroke-width="4" stroke-linecap="round" '
-        .. 'stroke-linejoin="round"/>', head, ink)
+    if kind == "name" then
+        local top_a = not descending
+        local a_y, z_y = top_a and 4 or 28, top_a and 28 or 4
+        add(string.format('<path d="M12 %d L24 %d L36 %d M17 %d H31" %s/>', a_y + 18, a_y, a_y + 18, a_y + 12, stroke))
+        add(string.format('<path d="M13 %d H35 L13 %d H35" %s/>', z_y, z_y + 18, stroke))
+    elseif kind == "new" then
+        add(string.format('<rect x="4" y="9" width="27" height="31" rx="6" %s/>', stroke))
+        add(string.format('<path d="M4 20 H31 M12 4 V13 M23 4 V13" %s/>', stroke))
+        arrow()
+    elseif kind == "opened" then
+        add(string.format('<circle cx="18" cy="24" r="15" %s/>', stroke))
+        add(string.format('<path d="M18 14 V24 L25 29" %s/>', stroke))
+        arrow()
+    else
+        local widths = descending and { 24, 18, 12 } or { 12, 18, 24 }
+        for i, w in ipairs(widths) do
+            add(string.format('<rect x="4" y="%d" width="%d" height="5" rx="2" fill="#%s"/>', 8 + (i - 1) * 12, w, ink))
+        end
+        arrow()
+    end
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
         .. 'viewBox="0 0 48 48"><rect width="48" height="48" fill="#' .. bg .. '"/>' .. table.concat(out) .. "</svg>"
 end
@@ -164,11 +185,11 @@ local function hexOf(color)
 end
 
 -- The sort direction icon, `size` pixels square, in the colour `ink` on `bg` (Blitbuffer colours).
-function Icons.sortWidget(descending, size, ink, bg)
+function Icons.sortWidget(kind, descending, size, ink, bg)
     local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
-    local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s.svg", DataStorage:getDataDir(),
+    local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s-%s.svg", DataStorage:getDataDir(), kind,
         descending and "desc" or "asc", ink_hex, bg_hex)
-    if not store(path, Icons.sortSvg(descending, ink_hex, bg_hex)) then return nil end
+    if not store(path, Icons.sortSvg(kind, descending, ink_hex, bg_hex)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size }
 end
 

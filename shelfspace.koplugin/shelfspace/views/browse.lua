@@ -225,7 +225,7 @@ return function(screen, th, width)
 
     -- An arrow down is biggest, newest or most recent first (Z to A for names), an arrow up the other way round.
     local direction_button = UI.button(th, {
-        icon = Icons.sortWidget(screen.descending, sp(22), th.ink, th.white), text = screen.descending and "↓" or "↑",
+        icon = Icons.sortWidget(screen.sort, screen.descending, sp(24), th.ink, th.white), text = screen.descending and "↓" or "↑",
         callback = function() screen:flipSort() end,
     })
     local sort_row = HorizontalGroup:new{
