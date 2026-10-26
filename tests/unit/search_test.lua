@@ -107,6 +107,21 @@ T.test("search and filters never look at dot-entries", function()
     T.eq(T.names((Search.find(dots, "/r", "book"))), "book.epub")
 end)
 
+T.test("a test on each file narrows the search, reaches into folders, and never returns a folder", function()
+    local done = { ["/r/b.epub"] = true, ["/r/Manga/Vol 1.cbz"] = true, ["/r/Manga"] = true }
+    local found, where = Search.find(tree, "/r", nil, nil, function(f) return done[f.path] end)
+    T.eq(#found, 2)
+    T.eq(T.names(found), "Vol 1.cbz|b.epub")
+    T.eq(where[found[1]], "Manga")
+end)
+
+T.test("a test on each file combines with a name and a type", function()
+    local all = function() return true end
+    T.eq(T.names((Search.find(tree, "/r", "vol", nil, all))), "Vol 1.cbz")
+    T.eq(T.names((Search.find(tree, "/r", nil, "epub", all))), "DELETE ME - a.epub|b.epub")
+    T.eq(#(Search.find(tree, "/r", nil, nil, function() return false end)), 0)
+end)
+
 T.test("no query and no filter finds nothing", function()
     T.eq(#Search.find(mixed, "/r", "", nil), 0)
     T.eq(#Search.find(mixed, "/r", nil, nil), 0)

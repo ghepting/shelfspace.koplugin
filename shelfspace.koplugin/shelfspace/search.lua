@@ -39,11 +39,17 @@ end
 -- (any case), and, when `ext` is given, only files of that type (see Stats.extension).
 -- Needs a query or an `ext`. Returns the entries and, for each, the folder it sits in
 -- relative to `dir`.
-function Search.find(tree, dir, query, ext)
+-- Which books Browse shows, by reading status. `id` is what KOReader's BookList.getBookStatus returns.
+Search.STATUSES = {
+    { id = nil, label = "All files", short = "All" },
+    { id = "complete", label = "Finished books", short = "Finished", noun = "finished" },
+}
+
+function Search.find(tree, dir, query, ext, include)
     local words = {}
     for word in (query or ""):lower():gmatch("%S+") do table.insert(words, word) end
     local found, where = {}, {}
-    if #words == 0 and not ext then return found, where end
+    if #words == 0 and not ext and not include then return found, where end
 
     local function walk(path, rel)
         local node = tree[path]
@@ -57,6 +63,8 @@ function Search.find(tree, dir, query, ext)
                     if not lower:find(word, 1, true) then hit = false break end
                 end
                 if hit and ext and (e.is_dir or Stats.extension(e.name) ~= ext) then hit = false end
+                -- `include` (a test on one file) leaves out folders: it asks about a book, not a place.
+                if hit and include and (e.is_dir or not include(e)) then hit = false end
                 if hit then
                     table.insert(found, e)
                     where[e] = rel

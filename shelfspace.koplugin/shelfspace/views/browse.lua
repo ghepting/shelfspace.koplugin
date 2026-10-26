@@ -9,6 +9,7 @@ local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local BookList = require("ui/widget/booklist")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -52,8 +53,10 @@ return function(screen, th, width)
     if parent and not tree[parent] then parent = root end
 
     local entries, where = {}, nil
-    if screen.query or screen.filter then
-        entries, where = Search.find(tree, dir, screen.query, screen.filter)
+    local status = screen.status
+    local include = status and function(e) return Deleter.isBook(e) and BookList.getBookStatus(e.path) == status end
+    if screen.query or screen.filter or include then
+        entries, where = Search.find(tree, dir, screen.query, screen.filter, include)
     else
         for i, e in ipairs(tree[dir].entries) do
             if not e.hidden then table.insert(entries, e) end
@@ -176,11 +179,15 @@ return function(screen, th, width)
     local clear_button = screen.query and UI.button(th, {
         text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
     })
+    local show_button = UI.button(th, {
+        text = T(_("Show: %1 ▾"), status and Search.STATUSES[2].short or Search.STATUSES[1].short), size = 15,
+        callback = function() screen:askStatus() end,
+    })
     local select_button = UI.button(th, {
         text = screen.selecting and _("Done") or _("Select"), size = 15,
         callback = function() screen:setSelecting(not screen.selecting) end,
     })
-    local search_w = width - sort_button:getSize().w - select_button:getSize().w - 2 * gap
+    local search_w = width - sort_button:getSize().w - show_button:getSize().w - select_button:getSize().w - 3 * gap
         - (clear_button and (clear_button:getSize().w + gap) or 0)
     local controls = HorizontalGroup:new{
         align = "center",
@@ -194,6 +201,8 @@ return function(screen, th, width)
         table.insert(controls, clear_button)
         table.insert(controls, HorizontalSpan:new{ width = gap })
     end
+    table.insert(controls, show_button)
+    table.insert(controls, HorizontalSpan:new{ width = gap })
     table.insert(controls, sort_button)
     table.insert(controls, HorizontalSpan:new{ width = gap })
     table.insert(controls, select_button)
@@ -228,16 +237,17 @@ return function(screen, th, width)
         })
         table.insert(header, VerticalSpan:new{ width = sp(6) })
     end
-    if screen.query or screen.filter then
+    if screen.query or screen.filter or include then
         local count = #entries
-        local kind = screen.filter and T(N_(" %1 file", " %1 files", count), screen.filter:upper()) or ""
+        -- "3 finished PDF files", "1 finished book", "No EPUB files": what the filters leave, in words.
+        local noun = screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count)
+        if include then noun = Search.STATUSES[2].noun .. " " .. noun end
         local text
         if screen.query then
-            text = count == 0 and T(_("No matches for “%1”%2 in %3"), shorten(screen.query, 20), kind, name)
-                or T(N_("%1 match%2 in %3", "%1 matches%2 in %3", count), count, kind, name)
+            text = count == 0 and T(_("No %1 match “%2” in %3"), noun, shorten(screen.query, 20), name)
+                or T(_("%1 %2 match “%3” in %4"), count, noun, shorten(screen.query, 20), name)
         else
-            text = count == 0 and T(_("No%1 in %2"), kind, name)
-                or T(N_("%1%2 in %3", "%1%2 in %3", count), count, kind, name)
+            text = count == 0 and T(_("No %1 in %2"), noun, name) or T(_("%1 %2 in %3"), count, noun, name)
         end
         table.insert(header, UI.text(text, 15, { color = th.muted, max_width = width }))
         table.insert(header, VerticalSpan:new{ width = sp(6) })

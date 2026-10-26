@@ -58,6 +58,7 @@ local ShelfScreen = InputContainer:extend{
     dir = nil, -- folder shown on the Browse tab
     sort = 1, -- how Browse orders rows: an index into Search.OPTIONS
     query = nil, -- name search on Browse, over the shown folder and everything under it
+    status = nil, -- a reading status (Search.STATUSES) Browse is narrowed to, e.g. "complete" for finished books
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
     selecting = false, -- Browse is in select mode: rows get checkboxes
 }
@@ -102,8 +103,34 @@ function ShelfScreen:setDir(dir)
     self.dir = dir
     self.query = nil
     self.filter = nil
+    self.status = nil
     self.pages.browse = 1
     self:refresh()
+end
+
+function ShelfScreen:setStatus(id)
+    self.status = id
+    self.pages.browse = 1
+    self:refresh()
+end
+
+-- Every status filter at once, the current one ticked.
+function ShelfScreen:askStatus()
+    self.plugin:showDialog(function()
+        local dialog
+        local buttons = {}
+        for _, option in ipairs(Search.STATUSES) do
+            table.insert(buttons, { {
+                text = (option.id == self.status and "✓  " or "     ") .. option.label,
+                callback = function()
+                    UIManager:close(dialog)
+                    self:setStatus(option.id)
+                end,
+            } })
+        end
+        dialog = ButtonDialog:new{ title = _("Show"), title_align = "center", buttons = buttons }
+        return dialog
+    end)
 end
 
 -- Switches the file-type filter to `ext`, or off when it is already on.
