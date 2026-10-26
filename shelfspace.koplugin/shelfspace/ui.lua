@@ -118,14 +118,14 @@ function UI.button(th, opts)
 end
 
 -- A rounded square, filled with a tick when `checked`.
--- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked).
+-- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked), size.
 function UI.checkbox(th, checked, opts)
     opts = opts or {}
-    local size = sp(32)
+    local size = opts.size or sp(32)
     local filled = (checked or opts.mixed) and not opts.disabled
     local inner = filled and CenterContainer:new{
         dimen = Geom:new{ w = size, h = size },
-        UI.text(opts.mixed and "–" or "✓", 20, { bold = true, color = th.white }),
+        UI.text(opts.mixed and "–" or "✓", math.floor(size * 0.62), { bold = true, color = th.white }),
     } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
     return FrameContainer:new{
         bordersize = Size.border.button, color = opts.disabled and th.muted or th.ink, radius = sp(8), margin = 0, padding = 0,

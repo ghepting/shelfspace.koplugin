@@ -98,84 +98,98 @@ return function(screen, th, width)
     local largest = 1
     for i, e in ipairs(entries) do largest = math.max(largest, e.size) end
 
-    local size_w = sp(80)
+    -- The table: a checkbox column, the name (with the book's progress under it) and the size, with thin
+    -- lines between the columns.
     local gap = sp(10)
-    local thumb_w, thumb_h = sp(34), sp(44)
+    local line = Size.line.thin
+    local cb_w = sp(44) -- the checkbox column, wide enough to tap
+    local tick_size = sp(26)
+    local size_cell_w = sp(88)
+    local name_cell_w = width - cb_w - size_cell_w - 2 * line
+    local dot_w, dot_gap = sp(10), sp(8)
+    local text_w = name_cell_w - 2 * gap - dot_w - dot_gap -- the name, and what is under it
+    local head_h = sp(40)
 
-    local function frame(content)
+    local function vline(h) return LineWidget:new{ dimen = Geom:new{ w = line, h = h }, background = th.line } end
+
+    -- One row of the table: `cells` are the three columns' contents, each placed in its own width.
+    local function frame(checkbox, name_cell, size_cell, h, fill)
         return FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0,
+            bordersize = 0, padding = 0, margin = 0, background = fill or th.white,
             VerticalGroup:new{
                 align = "left",
-                LeftContainer:new{ dimen = Geom:new{ w = width, h = ROW_H - Size.line.thin }, content },
-                LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
+                HorizontalGroup:new{
+                    align = "center",
+                    CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = h - line }, checkbox },
+                    vline(h - line),
+                    LeftContainer:new{
+                        dimen = Geom:new{ w = name_cell_w, h = h - line },
+                        HorizontalGroup:new{ HorizontalSpan:new{ width = gap }, name_cell },
+                    },
+                    vline(h - line),
+                    RightContainer:new{
+                        dimen = Geom:new{ w = size_cell_w, h = h - line },
+                        HorizontalGroup:new{ size_cell, HorizontalSpan:new{ width = gap } },
+                    },
+                },
+                LineWidget:new{ dimen = Geom:new{ w = width, h = line }, background = th.line },
             },
         }
     end
 
     local ctx = plugin:deleteContext()
-    local cb_w = sp(44) -- the checkbox column, wide enough to tap
     -- Room for the longest progress label, so every bar ends in the same place.
     local progress_w = 0
     for _, label in ipairs(Progress.samples()) do progress_w = math.max(progress_w, UI.text(label, 13):getSize().w) end
 
-    -- A row: checkbox, type swatch, name with the book's progress under it, and size. Tapping the row opens a
-    -- folder or says what a file is; ticking is the checkbox. Rows that can't be deleted have a greyed
-    -- checkbox and say why under the name.
+    -- A row: checkbox, then the name with a dot for its type and the book's progress under it, then the size.
+    -- Tapping the row opens a folder or says what a file is; ticking is the checkbox. Rows that can't be
+    -- deleted have a greyed checkbox and say why under the name.
     local function build(i)
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
-        local mid_w = width - cb_w - thumb_w - size_w - 4 * gap
         -- Under a book's name: how far through it you are. A folder shows nothing, and a search result says
         -- where the file is, then how far through it you are.
         local progress = Deleter.isBook(item) and Progress.describe(BookList.getBookInfo(item.path)) or nil
         local under
         if reason then
-            under = UI.text(reason, 13, { color = th.muted, max_width = mid_w })
+            under = UI.text(reason, 13, { color = th.muted, max_width = text_w })
         elseif where then
             local rel = where[item]
             local place = rel == "" and _("here") or T(_("in %1"), rel)
-            under = UI.text(progress and T(_("%1 · %2"), place, progress.label) or place, 14, { color = th.muted, max_width = mid_w })
+            under = UI.text(progress and T(_("%1 · %2"), place, progress.label) or place, 14, { color = th.muted, max_width = text_w })
         elseif progress then
             under = HorizontalGroup:new{
                 align = "center",
-                UI.bar(th, mid_w - progress_w - gap, sp(8), progress.fraction, th.accent),
+                UI.bar(th, text_w - progress_w - gap, sp(8), progress.fraction, th.accent),
                 HorizontalSpan:new{ width = gap },
                 UI.text(progress.label, 13, { color = th.muted, max_width = progress_w }),
             }
-        else
-            under = VerticalSpan:new{ width = 0 }
         end
         local tick
         if reason then
-            tick = UI.checkbox(th, false, { disabled = true })
+            tick = UI.checkbox(th, false, { disabled = true, size = tick_size })
         else
             tick = UI.tappable(CenterContainer:new{
-                dimen = Geom:new{ w = cb_w, h = thumb_h },
-                UI.checkbox(th, screen.selected[item.path] ~= nil),
+                dimen = Geom:new{ w = cb_w, h = ROW_H - line },
+                UI.checkbox(th, screen.selected[item.path] ~= nil, { size = tick_size }),
             }, function() screen:toggle(item) end)
         end
-        local row = frame(HorizontalGroup:new{
-            align = "center",
-            reason and CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = thumb_h }, tick } or tick,
-            UI.block(thumb_w, thumb_h, Theme.kind(th, item), sp(5)),
-            HorizontalSpan:new{ width = gap },
-            LeftContainer:new{
-                dimen = Geom:new{ w = mid_w, h = thumb_h },
-                VerticalGroup:new{
-                    align = "left",
-                    UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
-                        { bold = true, color = reason and th.muted or th.ink, max_width = mid_w }),
-                    VerticalSpan:new{ width = sp(5) },
-                    under,
-                },
+        local name = VerticalGroup:new{
+            align = "left",
+            HorizontalGroup:new{
+                align = "center",
+                VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, UI.block(dot_w, dot_w, Theme.kind(th, item), sp(3)) },
+                HorizontalSpan:new{ width = dot_gap },
+                UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
+                    { bold = true, color = reason and th.muted or th.ink, max_width = text_w }),
             },
-            HorizontalSpan:new{ width = gap },
-            RightContainer:new{
-                dimen = Geom:new{ w = size_w, h = thumb_h },
-                UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }),
-            },
-        })
+        }
+        if under then
+            table.insert(name, VerticalSpan:new{ width = sp(4) })
+            table.insert(name, HorizontalGroup:new{ HorizontalSpan:new{ width = dot_w + dot_gap }, under })
+        end
+        local row = frame(tick, name, UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }), ROW_H)
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)
         end
@@ -272,32 +286,20 @@ return function(screen, th, width)
         table.insert(header, VerticalSpan:new{ width = sp(6) })
     end
     -- The column labels, and a checkbox that ticks everything that can be deleted (a dash when only some are).
-    local head_h = sp(40)
     local all_ticked = #deletable > 0 and ticked == #deletable
-    local head_tick = UI.checkbox(th, all_ticked, { mixed = ticked > 0 and not all_ticked, disabled = #deletable == 0 })
-    table.insert(header, FrameContainer:new{
-        bordersize = 0, padding = 0, margin = 0, background = th.chip,
-        HorizontalGroup:new{
-            align = "center",
-            #deletable > 0 and UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h }, head_tick },
-                function() screen:select(deletable, not all_ticked) end)
-                or CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h }, head_tick },
-            LeftContainer:new{
-                dimen = Geom:new{ w = width - cb_w - size_w - gap, h = head_h },
-                HorizontalGroup:new{ HorizontalSpan:new{ width = thumb_w + gap }, UI.text(_("Name"), 14, { bold = true, color = th.muted }) },
-            },
-            RightContainer:new{ dimen = Geom:new{ w = size_w, h = head_h }, UI.text(_("Size"), 14, { bold = true, color = th.muted }) },
-            HorizontalSpan:new{ width = gap },
-        },
-    })
-    table.insert(header, LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line })
+    local head_tick = UI.checkbox(th, all_ticked, { mixed = ticked > 0 and not all_ticked, disabled = #deletable == 0, size = tick_size })
+    local head = frame(
+        #deletable > 0 and UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h - line }, head_tick },
+            function() screen:select(deletable, not all_ticked) end) or head_tick,
+        HorizontalGroup:new{ HorizontalSpan:new{ width = dot_w + dot_gap }, UI.text(_("Name"), 14, { bold = true, color = th.muted }) },
+        UI.text(_("Size"), 14, { bold = true, color = th.muted }), head_h, th.chip)
+    local table_head = VerticalGroup:new{ align = "left", head }
     if parent then
-        table.insert(header, UI.tappable(frame(HorizontalGroup:new{
-            align = "center",
-            UI.text("⬆", 22, { color = th.ink }), HorizontalSpan:new{ width = gap },
-            UI.text(_("Up"), 20, { bold = true, color = th.ink }),
-        }), function() screen:setDir(parent) end))
+        table.insert(table_head, UI.tappable(frame(
+            UI.text("⬆", 20, { color = th.ink }),
+            UI.text(_("Up"), 19, { bold = true, color = th.ink }),
+            HorizontalSpan:new{ width = 0 }, ROW_H), function() screen:setDir(parent) end))
     end
 
-    return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build }
+    return { hero = hero, header = header, table_head = table_head, count = #entries, row_h = ROW_H, build = build }
 end
