@@ -78,7 +78,9 @@ end)
 
 T.test("the book being read, and its folder, are locked", function()
     T.eq(reason(file("/lib/Sci-Fi/Hyperion.epub"), "/lib/Sci-Fi/Hyperion.epub"), "You are reading this book")
-    T.eq(reason(dir("/lib/Sci-Fi"), "/lib/Sci-Fi/Hyperion.epub"), "You are reading this book")
+    T.eq(reason(dir("/lib/Sci-Fi"), "/lib/Sci-Fi/Hyperion.epub"), "Holds the book you are reading")
+    T.eq(reason(dir("/lib/Deep"), "/lib/Deep/a/b/ok.pdf"), "Holds the book you are reading") -- however deep it is
+    T.eq(reason(file("/lib/Sci-Fi/book.opf"), "/lib/Sci-Fi/Hyperion.epub"), nil) -- a file beside it is not locked by it
 end)
 
 T.test("a name that merely starts like a locked one is not locked", function()

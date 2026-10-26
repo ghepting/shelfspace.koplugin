@@ -132,7 +132,7 @@ function ShelfSpace:showOverview(state)
     end
     self.usage = usage
     state = state or {}
-    self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, sort = state.sort, descending = state.descending }
+    self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, status = state.status, sort = state.sort, descending = state.descending }
     self.screen.pages.browse = state.page
     UIManager:show(self.screen)
     self:scan(function() self:refresh() end)
@@ -150,6 +150,17 @@ function ShelfSpace:showDialog(make)
 end
 
 -- Opens a book in the reader, remembering where we were so closing it brings us back.
+-- Where the person is in ShelfSpace (tab, folder, search, filters, sort, page), so it can be shown again as
+-- it was when a book they opened, or closed, from here is done with.
+function ShelfSpace:resumeState(file, opened)
+    local screen = self.screen
+    return {
+        file = file, opened = opened, tab = screen.tab, dir = screen.dir, query = screen.query, status = screen.status,
+        sort = screen.sort, descending = screen.descending, page = screen.pages.browse,
+    }
+end
+
+-- Opens a book in the reader, remembering where we were so closing it brings us back.
 function ShelfSpace:openBook(path)
     local screen = self.screen
     -- The book already open: close ShelfSpace and carry on reading it.
@@ -157,18 +168,30 @@ function ShelfSpace:openBook(path)
         screen:onClose()
         return
     end
-    ShelfSpace.resume = {
-        file = path, tab = screen.tab, dir = screen.dir, query = screen.query, sort = screen.sort, descending = screen.descending,
-        page = screen.pages.browse,
-    }
+    ShelfSpace.resume = self:resumeState(path)
     screen:onClose()
     UIManager:nextTick(function()
         require("apps/reader/readerui"):showReader(path)
     end)
 end
 
+-- Closes the book that was open before ShelfSpace was, so it can be deleted, and brings ShelfSpace back
+-- where it was once the reader has gone: the same hand-over as opening a book, the other way round.
+function ShelfSpace:closeBook()
+    local document = self.ui.document
+    if not document then return end
+    ShelfSpace.resume = self:resumeState(document.file, true)
+    self.screen:onClose()
+    UIManager:nextTick(function() self.ui:onHome() end)
+end
+
 function ShelfSpace:showDetails(entry, dir)
     Details.show(self, entry, dir, Deleter.blockedReason(entry, self:deleteContext()))
+end
+
+-- The card for a folder (long press on its row).
+function ShelfSpace:showFolder(entry, dir)
+    Details.showFolder(self, entry, dir, Deleter.blockedReason(entry, self:deleteContext()))
 end
 
 function ShelfSpace:notify(text)
