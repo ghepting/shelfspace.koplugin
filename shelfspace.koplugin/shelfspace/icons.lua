@@ -152,6 +152,14 @@ function Icons.sortSvg(kind, descending, ink, bg)
         .. 'viewBox="0 0 48 48"><rect width="48" height="48" fill="#' .. bg .. '"/>' .. table.concat(out) .. "</svg>"
 end
 
+-- A magnifying glass, in one solid colour on `bg` (opaque, like the sort icons).
+function Icons.searchSvg(ink, bg)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"', ink)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48"><rect width="48" height="48" fill="#' .. bg .. '"/>'
+        .. string.format('<circle cx="21" cy="21" r="12" %s/><path d="M30 30 L41 41" %s/>', stroke, stroke) .. "</svg>"
+end
+
 local function readFile(path)
     local f = io.open(path, "rb")
     if not f then return nil end
@@ -190,6 +198,14 @@ function Icons.sortWidget(kind, descending, size, ink, bg)
     local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s-%s.svg", DataStorage:getDataDir(), kind,
         descending and "desc" or "asc", ink_hex, bg_hex)
     if not store(path, Icons.sortSvg(kind, descending, ink_hex, bg_hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size }
+end
+
+-- The search icon, `size` pixels square, in the colour `ink` on `bg` (Blitbuffer colours).
+function Icons.searchWidget(size, ink, bg)
+    local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
+    local path = string.format("%s/cache/shelfspace/search-%s-%s.svg", DataStorage:getDataDir(), ink_hex, bg_hex)
+    if not store(path, Icons.searchSvg(ink_hex, bg_hex)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size }
 end
 

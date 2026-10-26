@@ -76,7 +76,15 @@ return function(screen, th, width)
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
     local chips = {}
-    -- The chips are the types of book in the library, not everything on the device.
+    -- A search in force is a chip like the types: filled while it is on, and tapping it clears it.
+    if screen.query then
+        table.insert(chips, {
+            text = T(_("“%1” ✕"), shorten(screen.query, 14)),
+            active = true,
+            on_tap = function() screen:setQuery(nil) end,
+        })
+    end
+    -- The other chips are the types of book in the library, not everything on the device.
     for i, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, dir, Deleter.isBook), 3)) do
         local ext = x.ext
         table.insert(chips, {
@@ -193,50 +201,37 @@ return function(screen, th, width)
         end)
     end
 
-    -- Two rows of controls: search with Show, then Sort with its direction. The labels are never squeezed:
-    -- each button gets room for its own text.
-    local clear_button = screen.query and UI.button(th, {
-        text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
+    -- One row of controls: search (its text shows as a chip above), what is shown, how it is sorted, and which way.
+    -- The labels are never squeezed: each button gets room for its own text.
+    local search_button = UI.button(th, {
+        icon = Icons.searchWidget(sp(24), th.ink, th.white), text = _("Search"),
+        callback = function() screen:askQuery() end,
     })
-    local show_button = UI.button(th, {
-        text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15,
-        callback = function() screen:askStatus() end,
-    })
-    local search_w = width - show_button:getSize().w - gap - (clear_button and (clear_button:getSize().w + gap) or 0)
-    local search_row = HorizontalGroup:new{
-        align = "center",
-        UI.button(th, {
-            text = screen.query and shorten(screen.query, 24) or _("Search by name"), size = 15,
-            width = search_w, callback = function() screen:askQuery() end,
-        }),
-        HorizontalSpan:new{ width = gap },
-    }
-    if clear_button then
-        table.insert(search_row, clear_button)
-        table.insert(search_row, HorizontalSpan:new{ width = gap })
-    end
-    table.insert(search_row, show_button)
-
     -- An arrow down is biggest, newest or most recent first (Z to A for names), an arrow up the other way round.
     local direction_button = UI.button(th, {
         icon = Icons.sortWidget(screen.sort, screen.descending, sp(24), th.ink, th.white), text = screen.descending and "↓" or "↑",
         callback = function() screen:flipSort() end,
     })
-    local sort_row = HorizontalGroup:new{
+    local pair_w = width - search_button:getSize().w - direction_button:getSize().w - 3 * gap
+    local show_w = math.floor(pair_w / 2)
+    local controls = HorizontalGroup:new{
         align = "center",
+        search_button,
+        HorizontalSpan:new{ width = gap },
         UI.button(th, {
-            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15,
-            width = width - direction_button:getSize().w - gap,
+            text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15, width = show_w,
+            callback = function() screen:askStatus() end,
+        }),
+        HorizontalSpan:new{ width = gap },
+        UI.button(th, {
+            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15, width = pair_w - show_w,
             callback = function() screen:askSort() end,
         }),
         HorizontalSpan:new{ width = gap },
         direction_button,
     }
 
-    local header = VerticalGroup:new{
-        align = "left", VerticalSpan:new{ width = sp(4) }, search_row, VerticalSpan:new{ width = sp(6) },
-        sort_row, VerticalSpan:new{ width = sp(6) },
-    }
+    local header = VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, controls, VerticalSpan:new{ width = sp(6) } }
 
     -- What can be ticked, and what is.
     local deletable, ticked = {}, 0
