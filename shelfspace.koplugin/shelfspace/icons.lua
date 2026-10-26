@@ -113,6 +113,24 @@ function Icons.plainLogo(hex)
         .. string.format('<path transform="translate(0 13)" d="%s" fill="%s"/>', WORDMARK, fill) .. "</svg>"
 end
 
+-- The sort direction button's icon: three bars and an arrow. An arrow pointing up means ascending (smallest,
+-- oldest, A to Z), down means descending; the bars grow with the values, like a column sorted that way.
+-- Painted on `bg` so it has no transparency to blend.
+function Icons.sortSvg(descending, ink, bg)
+    local widths = descending and { 24, 18, 12 } or { 12, 18, 24 }
+    local out = {}
+    for i, w in ipairs(widths) do
+        out[#out + 1] = string.format('<rect x="4" y="%d" width="%d" height="5" rx="2" fill="#%s"/>', 8 + (i - 1) * 12, w, ink)
+    end
+    local head = descending and "M31 29 L38 37 L45 29" or "M31 19 L38 11 L45 19"
+    out[#out + 1] = string.format('<path d="M38 11 V37" fill="none" stroke="#%s" stroke-width="4" '
+        .. 'stroke-linecap="round" stroke-linejoin="round"/>', ink)
+    out[#out + 1] = string.format('<path d="%s" fill="none" stroke="#%s" stroke-width="4" stroke-linecap="round" '
+        .. 'stroke-linejoin="round"/>', head, ink)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48"><rect width="48" height="48" fill="#' .. bg .. '"/>' .. table.concat(out) .. "</svg>"
+end
+
 local function readFile(path)
     local f = io.open(path, "rb")
     if not f then return nil end
@@ -143,6 +161,15 @@ end
 local function hexOf(color)
     local c = color:getColorRGB32()
     return string.format("%02x%02x%02x", c.r, c.g, c.b)
+end
+
+-- The sort direction icon, `size` pixels square, in the colour `ink` on `bg` (Blitbuffer colours).
+function Icons.sortWidget(descending, size, ink, bg)
+    local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
+    local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s.svg", DataStorage:getDataDir(),
+        descending and "desc" or "asc", ink_hex, bg_hex)
+    if not store(path, Icons.sortSvg(descending, ink_hex, bg_hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size }
 end
 
 -- An icon drawn `size` pixels square on a tile of colour `tile`; nil if it can't be produced. The SVG is

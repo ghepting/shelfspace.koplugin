@@ -18,7 +18,7 @@ desktop emulator, on a Kobo Libra Colour and on Android.
 | --- | --- | --- |
 | <img src="assets/overview.png" width="260"> | <img src="assets/browse.png" width="260"> | <img src="assets/filter.png" width="260"> |
 
-| Search and sort | Select several | File details |
+| Search and sort | Tick several | File details |
 | --- | --- | --- |
 | <img src="assets/search.png" width="260"> | <img src="assets/select.png" width="260"> | <img src="assets/details.png" width="260"> |
 
@@ -52,9 +52,10 @@ Open **Tools › ShelfSpace**. Three tabs:
   wherever they are in the library, so what you have already read (or never
   will) is easy to clear. Tap a folder to open it, or tap
   a file to see what it is (type, size, where it is, when it changed, your
-  reading progress), with Open and Book info buttons. Every row has its own
-  **Delete** button, or tap **Select** to tick several rows and delete them in
-  one go. You always get a confirmation first, including how many books lose
+  reading progress), with Open and Book info buttons. Every row has a checkbox;
+  tick the ones you want (the checkbox in the header ticks them all) and the
+  **Delete** above the list, which says how many are ticked and how big they are,
+  deletes them in one go. You always get a confirmation first, including how many books lose
   their reading progress. Only books KOReader can open, and folders holding
   nothing else, can be deleted here. Anything else (system folders, other
   files) is shown with the reason it is locked, and so are KOReader itself and

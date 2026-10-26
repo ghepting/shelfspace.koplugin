@@ -50,6 +50,19 @@ T.test("a bare icon has no canvas and no tile, so it can sit over a native tile"
     assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
 end)
 
+T.test("the sort icon has three bars and an arrow, up for ascending and down for descending, on an opaque background", function()
+    local up, down = Icons.sortSvg(false, "2a363b", "ffffff"), Icons.sortSvg(true, "2a363b", "ffffff")
+    for _, svg in ipairs({ up, down }) do
+        local bars = 0
+        for _ in svg:gmatch('<rect x="4"') do bars = bars + 1 end
+        T.eq(bars, 3, "bars")
+        assert(svg:find('<rect width="48" height="48" fill="#ffffff"/>', 1, true), "background missing")
+    end
+    assert(up:find("M31 19 L38 11 L45 19", 1, true), "ascending arrow points up")
+    assert(down:find("M31 29 L38 37 L45 29", 1, true), "descending arrow points down")
+    assert(up ~= down, "the two icons differ")
+end)
+
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
     local svg = Icons.svg("shelfspace", "99b898", nil, { glyph = "2a363b", named = true })
     assert(svg:find('fill="#2a363b"', 1, true), "glyph colour missing")

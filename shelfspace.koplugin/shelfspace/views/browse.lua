@@ -17,6 +17,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Deleter = require("shelfspace/deleter")
+local Icons = require("shelfspace/icons")
 local Progress = require("shelfspace/progress")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
@@ -113,17 +114,18 @@ return function(screen, th, width)
     end
 
     local ctx = plugin:deleteContext()
-    local delete_w = UI.button(th, { text = _("Delete"), size = 14 }):getSize().w
+    local cb_w = sp(44) -- the checkbox column, wide enough to tap
     -- Room for the longest progress label, so every bar ends in the same place.
     local progress_w = 0
     for _, label in ipairs(Progress.samples()) do progress_w = math.max(progress_w, UI.text(label, 13):getSize().w) end
 
-    -- Tapping a folder opens it; deleting is always the explicit Delete button.
-    -- Rows that can't be deleted have no button and say why instead of showing a share bar.
+    -- A row: checkbox, type swatch, name with the book's progress under it, and size. Tapping the row opens a
+    -- folder or says what a file is; ticking is the checkbox. Rows that can't be deleted have a greyed
+    -- checkbox and say why under the name.
     local function build(i)
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
-        local mid_w = width - thumb_w - size_w - delete_w - 4 * gap
+        local mid_w = width - cb_w - thumb_w - size_w - 4 * gap
         -- Under a book's name: how far through it you are. A folder shows nothing, and a search result says
         -- where the file is, then how far through it you are.
         local progress = Deleter.isBook(item) and Progress.describe(BookList.getBookInfo(item.path)) or nil
@@ -144,21 +146,18 @@ return function(screen, th, width)
         else
             under = VerticalSpan:new{ width = 0 }
         end
-        local action = HorizontalSpan:new{ width = delete_w }
-        if not reason and screen.selecting then
-            action = UI.tappable(CenterContainer:new{
-                dimen = Geom:new{ w = delete_w, h = thumb_h },
+        local tick
+        if reason then
+            tick = UI.checkbox(th, false, { disabled = true })
+        else
+            tick = UI.tappable(CenterContainer:new{
+                dimen = Geom:new{ w = cb_w, h = thumb_h },
                 UI.checkbox(th, screen.selected[item.path] ~= nil),
             }, function() screen:toggle(item) end)
-        elseif not reason then
-            action = UI.button(th, {
-                text = _("Delete"),
-                size = 14,
-                callback = function() plugin:confirmDelete(item, item.path:match("^(.*)/[^/]+$") or dir) end,
-            })
         end
         local row = frame(HorizontalGroup:new{
             align = "center",
+            reason and CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = thumb_h }, tick } or tick,
             UI.block(thumb_w, thumb_h, Theme.kind(th, item), sp(5)),
             HorizontalSpan:new{ width = gap },
             LeftContainer:new{
@@ -176,34 +175,25 @@ return function(screen, th, width)
                 dimen = Geom:new{ w = size_w, h = thumb_h },
                 UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }),
             },
-            HorizontalSpan:new{ width = gap },
-            action,
         })
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)
         end
-        -- Tapping a file says what it is, or ticks it in select mode; the Delete button is still
-        -- the only thing on a row that deletes.
         return UI.tappable(row, function()
-            if screen.selecting and not reason then
-                screen:toggle(item)
-            else
-                plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)
-            end
+            plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)
         end)
     end
 
-    -- Two rows of controls, then "Up": pinned above the list on every page. Search and Select on the first;
-    -- what is shown and in which order on the second. The labels are never squeezed: each button gets room
-    -- for its own text.
+    -- Two rows of controls: search with Show, then Sort with its direction. The labels are never squeezed:
+    -- each button gets room for its own text.
     local clear_button = screen.query and UI.button(th, {
         text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
     })
-    local select_button = UI.button(th, {
-        text = screen.selecting and _("Done") or _("Select"), size = 15,
-        callback = function() screen:setSelecting(not screen.selecting) end,
+    local show_button = UI.button(th, {
+        text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15,
+        callback = function() screen:askStatus() end,
     })
-    local search_w = width - select_button:getSize().w - gap - (clear_button and (clear_button:getSize().w + gap) or 0)
+    local search_w = width - show_button:getSize().w - gap - (clear_button and (clear_button:getSize().w + gap) or 0)
     local search_row = HorizontalGroup:new{
         align = "center",
         UI.button(th, {
@@ -216,24 +206,18 @@ return function(screen, th, width)
         table.insert(search_row, clear_button)
         table.insert(search_row, HorizontalSpan:new{ width = gap })
     end
-    table.insert(search_row, select_button)
+    table.insert(search_row, show_button)
 
-    -- ↓ is biggest, newest or most recent first (Z to A for names), ↑ the other way round.
+    -- An arrow down is biggest, newest or most recent first (Z to A for names), an arrow up the other way round.
     local direction_button = UI.button(th, {
-        text = screen.descending and "↓" or "↑", size = 15,
+        icon = Icons.sortWidget(screen.descending, sp(22), th.ink, th.white), text = screen.descending and "↓" or "↑",
         callback = function() screen:flipSort() end,
     })
-    local pair_w = width - direction_button:getSize().w - 2 * gap
-    local show_w = math.floor(pair_w / 2)
-    local view_row = HorizontalGroup:new{
+    local sort_row = HorizontalGroup:new{
         align = "center",
         UI.button(th, {
-            text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15, width = show_w,
-            callback = function() screen:askStatus() end,
-        }),
-        HorizontalSpan:new{ width = gap },
-        UI.button(th, {
-            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15, width = pair_w - show_w,
+            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15,
+            width = width - direction_button:getSize().w - gap,
             callback = function() screen:askSort() end,
         }),
         HorizontalSpan:new{ width = gap },
@@ -242,37 +226,18 @@ return function(screen, th, width)
 
     local header = VerticalGroup:new{
         align = "left", VerticalSpan:new{ width = sp(4) }, search_row, VerticalSpan:new{ width = sp(6) },
-        view_row, VerticalSpan:new{ width = sp(6) },
+        sort_row, VerticalSpan:new{ width = sp(6) },
     }
-    if screen.selecting then
-        local deletable, all_chosen = {}, true
-        for i, e in ipairs(entries) do
-            if not Deleter.blockedReason(e, ctx) then
-                table.insert(deletable, e)
-                if not screen.selected[e.path] then all_chosen = false end
-            end
+
+    -- What can be ticked, and what is.
+    local deletable, ticked = {}, 0
+    for _, e in ipairs(entries) do
+        if not Deleter.blockedReason(e, ctx) then
+            table.insert(deletable, e)
+            if screen.selected[e.path] then ticked = ticked + 1 end
         end
-        local chosen = screen:chosen()
-        local all_button = UI.button(th, {
-            text = (#deletable > 0 and all_chosen) and _("None") or _("All"), size = 15, enabled = #deletable > 0,
-            callback = function() screen:select(deletable, not all_chosen) end,
-        })
-        local delete_button = UI.button(th, {
-            text = _("Delete"), size = 15, enabled = #chosen > 0, background = th.danger, color = th.white,
-            callback = function() plugin:confirmDeleteMany(chosen) end,
-        })
-        local label_w = width - all_button:getSize().w - delete_button:getSize().w - 3 * gap
-        table.insert(header, HorizontalGroup:new{
-            align = "center",
-            LeftContainer:new{
-                dimen = Geom:new{ w = label_w, h = all_button:getSize().h },
-                UI.text(T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), 16,
-                    { bold = true, color = th.ink, max_width = label_w }),
-            },
-            HorizontalSpan:new{ width = gap }, all_button, HorizontalSpan:new{ width = gap }, delete_button,
-        })
-        table.insert(header, VerticalSpan:new{ width = sp(6) })
     end
+    local chosen = screen:chosen()
     if screen.query or screen.filter or include then
         local count = #entries
         -- "3 finished PDF files", "1 finished book", "No EPUB files": what the filters leave, in words.
@@ -288,6 +253,44 @@ return function(screen, th, width)
         table.insert(header, UI.text(text, 15, { color = th.muted, max_width = width }))
         table.insert(header, VerticalSpan:new{ width = sp(6) })
     end
+    -- The ticked items' action: how many and how big, and the one Delete.
+    if #chosen > 0 then
+        local delete_button = UI.button(th, {
+            text = _("Delete"), size = 15, background = th.danger, color = th.white,
+            callback = function() plugin:confirmDeleteMany(chosen) end,
+        })
+        local label_w = width - delete_button:getSize().w - gap
+        table.insert(header, HorizontalGroup:new{
+            align = "center",
+            LeftContainer:new{
+                dimen = Geom:new{ w = label_w, h = delete_button:getSize().h },
+                UI.text(T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), 16,
+                    { bold = true, color = th.ink, max_width = label_w }),
+            },
+            HorizontalSpan:new{ width = gap }, delete_button,
+        })
+        table.insert(header, VerticalSpan:new{ width = sp(6) })
+    end
+    -- The column labels, and a checkbox that ticks everything that can be deleted (a dash when only some are).
+    local head_h = sp(40)
+    local all_ticked = #deletable > 0 and ticked == #deletable
+    local head_tick = UI.checkbox(th, all_ticked, { mixed = ticked > 0 and not all_ticked, disabled = #deletable == 0 })
+    table.insert(header, FrameContainer:new{
+        bordersize = 0, padding = 0, margin = 0, background = th.chip,
+        HorizontalGroup:new{
+            align = "center",
+            #deletable > 0 and UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h }, head_tick },
+                function() screen:select(deletable, not all_ticked) end)
+                or CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h }, head_tick },
+            LeftContainer:new{
+                dimen = Geom:new{ w = width - cb_w - size_w - gap, h = head_h },
+                HorizontalGroup:new{ HorizontalSpan:new{ width = thumb_w + gap }, UI.text(_("Name"), 14, { bold = true, color = th.muted }) },
+            },
+            RightContainer:new{ dimen = Geom:new{ w = size_w, h = head_h }, UI.text(_("Size"), 14, { bold = true, color = th.muted }) },
+            HorizontalSpan:new{ width = gap },
+        },
+    })
+    table.insert(header, LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line })
     if parent then
         table.insert(header, UI.tappable(frame(HorizontalGroup:new{
             align = "center",
