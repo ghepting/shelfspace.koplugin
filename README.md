@@ -42,7 +42,9 @@ Open **Tools › ShelfSpace**. Three tabs:
   KOReader data, everything else). Tap a slice or a row to jump to Books or
   KOReader data; the info icon on Other files explains what that space is and
   why it is left alone.
-- **Browse**: your library, largest first, with a share bar per row. The file
+- **Browse**: your library, largest first. Each book shows how far through it you
+  are (a bar and "18% read", "Finished" or "Not started"), from KOReader's own
+  reading progress. The file
   type chips at the top are quick filters: tap one to show only that type
   (tap it again to clear). Sort by size, name or date, or search by name across
   the folder you are in and everything under it. **Show** narrows the list to the
