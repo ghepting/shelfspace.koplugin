@@ -305,6 +305,8 @@ end
 
 -- Downloads, checks and installs the release in `result` (see Updater.interpret) over this plugin.
 function ShelfSpace:installUpdate(result)
+    -- The confirm box is still up while its callback runs, and showDialog shows nothing over a popup.
+    if self.popup then UIManager:close(self.popup) end
     local busy = InfoMessage:new { text = _("Updating ShelfSpace…") }
     UIManager:show(busy)
     UIManager:forceRePaint()
