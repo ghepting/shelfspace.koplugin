@@ -23,6 +23,7 @@ local T = require("ffi/util").template
 local Screen = Device.screen
 
 local Theme = require("shelfspace/theme")
+local Duplicates = require("shelfspace/duplicates")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
@@ -56,6 +57,7 @@ local views = {
     overview = require("shelfspace/views/overview"),
     browse = require("shelfspace/views/browse"),
     koreader = require("shelfspace/views/koreader"),
+    duplicates = require("shelfspace/views/duplicates"),
 }
 
 -- One screen with a tab per view. A view returns { hero, body } for a plain page,
@@ -70,6 +72,8 @@ local ShelfScreen = InputContainer:extend{
     status = nil, -- a reading status (Search.STATUSES) Browse is narrowed to, e.g. "complete" for finished books
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
     selecting = false, -- Browse is in select mode: rows get checkboxes
+    dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
+    dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
 }
 
 function ShelfScreen:init()
@@ -79,6 +83,7 @@ function ShelfScreen:init()
     self.pages = {}
     self.left_at = {} -- pageKey -> the page of Browse a folder was on when you left it
     self.selected = {} -- path -> entry; survives paging, folders and searches
+    self.dup_keep = {}
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
@@ -103,12 +108,26 @@ end
 -- gives taps to the topmost widget.
 function ShelfScreen:buildActionBar()
     self.action_bar, self.bar_hits, self.bar_zone = nil, nil, nil
-    local chosen = self.tab == "browse" and self:chosen() or {}
-    if #chosen == 0 then return end
-    local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
-        { text = "✕", callback = function() self:clearSelection() end },
-        { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
-    })
+    local label, buttons
+    local set = self.tab == "duplicates" and self:currentSet()
+    if set then
+        local keep = self:keeper(set)
+        local n = #set.copies - 1
+        label = T(_("Keeping 1 of %1 · frees %2"), #set.copies, util.getFriendlySize(Duplicates.savings(set, keep)))
+        buttons = {
+            { text = _("Keep all"), callback = function() self.plugin:keepAll(set) end },
+            { text = T(_("Clear %1"), n), danger = true, callback = function() self.plugin:confirmClearCopies(set, keep) end },
+        }
+    else
+        local chosen = self.tab == "browse" and self:chosen() or {}
+        if #chosen == 0 then return end
+        label = T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen)))
+        buttons = {
+            { text = "✕", callback = function() self:clearSelection() end },
+            { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
+        }
+    end
+    local bar, hits = UI.floatingBar(self.theme, label, buttons)
     local size = bar:getSize()
     local x = math.floor((self.dimen.w - size.w) / 2)
     local y = self.dimen.h - size.h - sp(76) -- over the bottom rows, clear of the pager
@@ -148,6 +167,46 @@ end
 
 function ShelfScreen:clearSelection()
     self.selected = {}
+    self:refresh()
+end
+
+-- The duplicates list opens from a row on Overview, so Overview stays lit while you are in it.
+function ShelfScreen:openDuplicates()
+    self.tab = "duplicates"
+    self.dup_set = nil
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:openSet(id)
+    self.dup_set = id
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:closeSet()
+    self.dup_set = nil
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:currentSet()
+    for _, set in ipairs(self.plugin.duplicates or {}) do
+        if set.id == self.dup_set then return set end
+    end
+end
+
+-- The copy that will be kept: the one the book you are reading, else the one you tapped, else the suggestion.
+function ShelfScreen:keeper(set)
+    for i, copy in ipairs(set.copies) do
+        if self.plugin:copyInfo(copy).locked then return i end
+    end
+    local chosen = self.dup_keep[set.id]
+    return chosen and chosen <= #set.copies and chosen or 1
+end
+
+function ShelfScreen:setKeeper(set, i)
+    self.dup_keep[set.id] = i
     self:refresh()
 end
 
@@ -334,7 +393,7 @@ function ShelfScreen:rebuild()
         align = "left",
         view.hero,
         VerticalSpan:new{ width = gap },
-        UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end),
+        UI.tabbar(th, width, tabs, self.tab == "duplicates" and "overview" or self.tab, function(id) self:switchTab(id) end),
         VerticalSpan:new{ width = gap },
     }
 

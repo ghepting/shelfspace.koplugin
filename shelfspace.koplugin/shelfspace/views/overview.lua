@@ -11,9 +11,11 @@ local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
 local _ = require("gettext")
+local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Donut = require("shelfspace/donut")
+local Duplicates = require("shelfspace/duplicates")
 local Stats = require("shelfspace/stats")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
@@ -89,6 +91,7 @@ return function(screen, th, width)
         books = function() screen:openBrowse(plugin.root) end,
         koreader = function() screen:switchTab("koreader") end,
         other = function() plugin:explainOther(b) end,
+        duplicates = function() screen:openDuplicates() end,
     }
     local rows, slices
     if b then
@@ -98,6 +101,14 @@ return function(screen, th, width)
             { th.other, _("Other files"), util.getFriendlySize(b.other), nil, _("System files, locked"), go.other },
             { th.free_space, _("Free"), util.getFriendlySize(u.available) },
         }
+        -- Only when there is something to clear: a tidy library never sees this row.
+        local sets = plugin.duplicates
+        if sets and #sets > 0 then
+            table.insert(rows, 3, {
+                th.brand, _("Duplicates"), util.getFriendlySize(Duplicates.reclaimable(sets)), go.duplicates,
+                T(N_("%1 book more than once", "%1 books more than once", #sets), #sets),
+            })
+        end
         slices = {
             { fraction = b.books / u.total, color = th.books, on_tap = go.books },
             { fraction = b.koreader / u.total, color = th.koreader, on_tap = go.koreader },
