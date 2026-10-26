@@ -26,7 +26,7 @@ local Theme = require("shelfspace/theme")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
-local ROW_H = sp(60)
+local ROW_H = sp(52)
 
 -- At most `max` characters, cut on a character boundary.
 local function shorten(text, max)
@@ -98,22 +98,23 @@ return function(screen, th, width)
     local largest = 1
     for i, e in ipairs(entries) do largest = math.max(largest, e.size) end
 
-    -- The table: a checkbox column, the name (with the book's progress under it) and the size, with thin
-    -- lines between the columns.
+    -- The table: a checkbox column, the name, how much of the book is read and the size, with thin lines
+    -- between the columns.
     local gap = sp(10)
     local line = Size.line.thin
     local cb_w = sp(44) -- the checkbox column, wide enough to tap
     local tick_size = sp(26)
+    local read_cell_w = sp(70)
     local size_cell_w = sp(88)
-    local name_cell_w = width - cb_w - size_cell_w - 2 * line
+    local name_cell_w = width - cb_w - read_cell_w - size_cell_w - 3 * line
     local dot_w, dot_gap = sp(10), sp(8)
     local text_w = name_cell_w - 2 * gap - dot_w - dot_gap -- the name, and what is under it
     local head_h = sp(40)
 
     local function vline(h) return LineWidget:new{ dimen = Geom:new{ w = line, h = h }, background = th.line } end
 
-    -- One row of the table: `cells` are the three columns' contents, each placed in its own width.
-    local function frame(checkbox, name_cell, size_cell, h, fill)
+    -- One row of the table: what goes in each of the four columns, and how tall the row is.
+    local function frame(checkbox, name_cell, read_cell, size_cell, h, fill)
         return FrameContainer:new{
             bordersize = 0, padding = 0, margin = 0, background = fill or th.white,
             VerticalGroup:new{
@@ -128,6 +129,11 @@ return function(screen, th, width)
                     },
                     vline(h - line),
                     RightContainer:new{
+                        dimen = Geom:new{ w = read_cell_w, h = h - line },
+                        HorizontalGroup:new{ read_cell, HorizontalSpan:new{ width = gap } },
+                    },
+                    vline(h - line),
+                    RightContainer:new{
                         dimen = Geom:new{ w = size_cell_w, h = h - line },
                         HorizontalGroup:new{ size_cell, HorizontalSpan:new{ width = gap } },
                     },
@@ -138,35 +144,23 @@ return function(screen, th, width)
     end
 
     local ctx = plugin:deleteContext()
-    -- Room for the longest progress label, so every bar ends in the same place.
-    local progress_w = 0
-    for _, label in ipairs(Progress.samples()) do progress_w = math.max(progress_w, UI.text(label, 13):getSize().w) end
 
-    -- A row: checkbox, then the name with a dot for its type and the book's progress under it, then the size.
+    -- A row: checkbox, then the name with a dot for its type, then how much of the book is read, then the size.
+    -- Under the name goes only what the row needs to say: why it is locked, or where a search result is.
     -- Tapping the row opens a folder or says what a file is; ticking is the checkbox. Rows that can't be
-    -- deleted have a greyed checkbox and say why under the name.
+    -- deleted have a greyed checkbox.
     local function build(i, row_h)
         row_h = row_h or ROW_H -- the screen may stretch rows a little to fill the page
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
-        -- Under a book's name: how far through it you are. A folder shows nothing, and a search result says
-        -- where the file is, then how far through it you are.
-        local progress = Deleter.isBook(item) and Progress.describe(BookList.getBookInfo(item.path)) or nil
         local under
         if reason then
-            under = UI.text(reason, 13, { color = th.muted, max_width = text_w })
+            under = UI.text(reason, 12, { color = th.muted, max_width = text_w })
         elseif where then
             local rel = where[item]
-            local place = rel == "" and _("here") or T(_("in %1"), rel)
-            under = UI.text(progress and T(_("%1 · %2"), place, progress.label) or place, 14, { color = th.muted, max_width = text_w })
-        elseif progress then
-            under = HorizontalGroup:new{
-                align = "center",
-                UI.bar(th, text_w - progress_w - gap, sp(8), progress.fraction, th.accent),
-                HorizontalSpan:new{ width = gap },
-                UI.text(progress.label, 13, { color = th.muted, max_width = progress_w }),
-            }
+            under = UI.text(rel == "" and _("here") or T(_("in %1"), rel), 12, { color = th.muted, max_width = text_w })
         end
+        local read = Deleter.isBook(item) and Progress.cell(BookList.getBookInfo(item.path)) or ""
         local tick
         if reason then
             tick = UI.checkbox(th, false, { disabled = true, size = tick_size })
@@ -182,15 +176,15 @@ return function(screen, th, width)
                 align = "center",
                 VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, UI.block(dot_w, dot_w, Theme.kind(th, item), sp(3)) },
                 HorizontalSpan:new{ width = dot_gap },
-                UI.text(item.is_dir and (item.name .. "/") or item.name, 19,
+                UI.text(item.is_dir and (item.name .. "/") or item.name, 18,
                     { bold = true, color = reason and th.muted or th.ink, max_width = text_w }),
             },
         }
         if under then
-            table.insert(name, VerticalSpan:new{ width = sp(4) })
             table.insert(name, HorizontalGroup:new{ HorizontalSpan:new{ width = dot_w + dot_gap }, under })
         end
-        local row = frame(tick, name, UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }), row_h)
+        local row = frame(tick, name, UI.text(read, 15, { bold = true, color = th.ink }),
+            UI.text(util.getFriendlySize(item.size), 15, { bold = true, color = th.ink }), row_h)
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)
         end
@@ -293,13 +287,14 @@ return function(screen, th, width)
         #deletable > 0 and UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = cb_w, h = head_h - line }, head_tick },
             function() screen:select(deletable, not all_ticked) end) or head_tick,
         HorizontalGroup:new{ HorizontalSpan:new{ width = dot_w + dot_gap }, UI.text(_("Name"), 14, { bold = true, color = th.muted }) },
+        UI.text(_("% Read"), 14, { bold = true, color = th.muted }),
         UI.text(_("Size"), 14, { bold = true, color = th.muted }), head_h, th.chip)
     local table_head = VerticalGroup:new{ align = "left", head }
     if parent then
         table.insert(table_head, UI.tappable(frame(
             UI.text("⬆", 20, { color = th.ink }),
-            UI.text(_("Up"), 19, { bold = true, color = th.ink }),
-            HorizontalSpan:new{ width = 0 }, ROW_H), function() screen:setDir(parent) end))
+            UI.text(_("Up"), 18, { bold = true, color = th.ink }),
+            HorizontalSpan:new{ width = 0 }, HorizontalSpan:new{ width = 0 }, ROW_H), function() screen:setDir(parent) end))
     end
 
     return { hero = hero, header = header, table_head = table_head, count = #entries, row_h = ROW_H, build = build }
