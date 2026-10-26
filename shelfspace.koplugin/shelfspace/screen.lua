@@ -56,6 +56,7 @@ local views = {
     overview = require("shelfspace/views/overview"),
     browse = require("shelfspace/views/browse"),
     koreader = require("shelfspace/views/koreader"),
+    duplicates = require("shelfspace/views/duplicates"),
 }
 
 -- One screen with a tab per view. A view returns { hero, body } for a plain page,
@@ -70,6 +71,9 @@ local ShelfScreen = InputContainer:extend{
     status = nil, -- a reading status (Search.STATUSES) Browse is narrowed to, e.g. "complete" for finished books
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
     selecting = false, -- Browse is in select mode: rows get checkboxes
+    dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
+    dup_ignored = false, -- the list shows the sets you chose to keep, not the ones still to deal with
+    dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
 }
 
 function ShelfScreen:init()
@@ -79,6 +83,7 @@ function ShelfScreen:init()
     self.pages = {}
     self.left_at = {} -- pageKey -> the page of Browse a folder was on when you left it
     self.selected = {} -- path -> entry; survives paging, folders and searches
+    self.dup_keep = {}
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
@@ -148,6 +153,65 @@ end
 
 function ShelfScreen:clearSelection()
     self.selected = {}
+    self:refresh()
+end
+
+-- The duplicates list opens from a row on Overview, so Overview stays lit while you are in it.
+function ShelfScreen:openDuplicates()
+    self.tab = "duplicates"
+    self.dup_set = nil
+    self.dup_ignored = false
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:openSet(id)
+    self.dup_set = id
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+-- Back to the list, whichever of the two it was opened from.
+function ShelfScreen:closeSet()
+    self.dup_set = nil
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+-- The sets you chose to keep as they are, and the way back to the ones still to deal with.
+function ShelfScreen:showIgnoredDuplicates()
+    self.dup_set = nil
+    self.dup_ignored = true
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:showActiveDuplicates()
+    self.dup_set = nil
+    self.dup_ignored = false
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:currentSet()
+    for _, list in ipairs({ self.plugin.duplicates or {}, self.plugin.ignored_duplicates or {} }) do
+        for _, set in ipairs(list) do
+            if set.id == self.dup_set then return set end
+        end
+    end
+end
+
+-- The copy that will be kept: the one the book you are reading, else the one you tapped, else the suggestion.
+function ShelfScreen:keeper(set)
+    for i, copy in ipairs(set.copies) do
+        if self.plugin:copyInfo(copy).locked then return i end
+    end
+    local chosen = self.dup_keep[set.id]
+    return chosen and chosen <= #set.copies and chosen or 1
+end
+
+function ShelfScreen:setKeeper(set, i)
+    self.dup_keep[set.id] = i
     self:refresh()
 end
 
@@ -334,7 +398,7 @@ function ShelfScreen:rebuild()
         align = "left",
         view.hero,
         VerticalSpan:new{ width = gap },
-        UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end),
+        UI.tabbar(th, width, tabs, self.tab == "duplicates" and "overview" or self.tab, function(id) self:switchTab(id) end),
         VerticalSpan:new{ width = gap },
     }
 
@@ -348,8 +412,9 @@ function ShelfScreen:rebuild()
         local avail = self.dimen.h - used - pager_h
         local per_page = math.max(1, math.floor(avail / view.row_h))
         -- Whatever is left over (less than one row) is shared out among the rows, so the list fills the screen
-        -- at any height instead of ending short; but never by more than a quarter of a row each.
-        local row_h = view.row_h + math.min(math.floor(view.row_h / 4), math.floor((avail - per_page * view.row_h) / per_page))
+        -- at any height instead of ending short; but never by more than a quarter of a row each. (Cards, which must
+        -- stay grouped, say `fixed_rows` and are not stretched.)
+        local row_h = view.row_h + (view.fixed_rows and 0 or math.min(math.floor(view.row_h / 4), math.floor((avail - per_page * view.row_h) / per_page)))
         row_h = math.max(row_h, view.row_h)
         local pages = math.max(1, math.ceil(view.count / per_page))
         local page = math.min(self.pages[self.tab] or 1, pages)

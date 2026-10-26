@@ -2,6 +2,7 @@ local _ = require("gettext")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local BookList = require("ui/widget/booklist")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
@@ -17,6 +18,7 @@ local T = ffiUtil.template
 local Deleter = require("shelfspace/deleter")
 local About = require("shelfspace/about")
 local Details = require("shelfspace/details")
+local Duplicates = require("shelfspace/duplicates")
 local Installer = require("shelfspace/installer")
 local ScanCache = require("shelfspace/scancache")
 local Scanner = require("shelfspace/scanner")
@@ -124,7 +126,138 @@ end
 function ShelfSpace:refresh()
     if not self.screen or self.screen.closed then return end
     self.usage = util.diskUsage(self.root)
+    self:findDuplicates()
     self.screen:refresh()
+end
+
+-- Every book KOReader can open that ShelfSpace may look at: not KOReader's own folder, not hidden folders.
+function ShelfSpace:bookFiles()
+    local files, tree, data = {}, self.tree, self.koreader_dir
+    local function walk(dir)
+        local node = tree[dir]
+        for _, e in ipairs(node and node.entries or {}) do
+            if e.hidden or e.path == data or e.name:sub(1, 1) == "." then
+                -- sidecar folders, KOReader's data and system folders are not part of the library
+            elseif e.is_dir then
+                walk(e.path)
+            elseif Deleter.isBook(e) then
+                table.insert(files, e)
+            end
+        end
+    end
+    walk(self.root)
+    return files
+end
+
+-- How far through a copy you are, and whether it is the book open right now: what decides the copy to keep.
+function ShelfSpace:copyInfo(copy)
+    local info = BookList.getBookInfo(copy.path)
+    local progress = 0
+    if info and info.been_opened then
+        progress = (info.status == "complete") and 1 or (tonumber(info.percent_finished) or 0)
+    end
+    return { progress = progress, locked = self.ui.document ~= nil and self.ui.document.file == copy.path }
+end
+
+-- Looks for books that are in the library more than once and keeps the result in self.duplicates, each set
+-- with its copies best-first (the first is the one to keep) and the reason why. Sets you chose to keep
+-- as they are go in self.ignored_duplicates. Two files are compared byte for byte only when they are the same size, and a comparison is
+-- remembered until either file changes.
+function ShelfSpace:findDuplicates()
+    if not self.tree then return end
+    local started = time.now()
+    self.same_cache = self.same_cache or {}
+    local function same(a, b)
+        local key = table.concat({ a.path, a.size, a.modified or 0, b.path, b.modified or 0 }, "|")
+        local known = self.same_cache[key]
+        if known == nil then
+            known = Duplicates.sameBytes(a.path, b.path)
+            self.same_cache[key] = known
+        end
+        return known
+    end
+    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+    local sets, ignored = {}, {}
+    for _, set in ipairs(Duplicates.find(self:bookFiles(), same)) do
+        table.sort(set.copies, function(a, b) return a.path < b.path end)
+        local best, why = Duplicates.suggest(set, function(c) return self:copyInfo(c) end)
+        local first = table.remove(set.copies, best)
+        table.insert(set.copies, 1, first)
+        set.reason = why
+        set.free = Duplicates.savings(set, 1)
+        if Duplicates.isIgnored(dismissed, set) then
+            set.ignored = true
+            table.insert(ignored, set)
+        else
+            table.insert(sets, set)
+        end
+    end
+    local function biggest(a, b) return a.free > b.free end
+    table.sort(sets, biggest)
+    table.sort(ignored, biggest)
+    self.duplicates, self.ignored_duplicates = sets, ignored
+    logger.info(string.format("ShelfSpace: %d duplicate sets (%d kept on purpose) in %d ms", #sets, #ignored, time.to_ms(time.since(started))))
+end
+
+-- Leaves a set alone from now on: it moves to "kept on purpose".
+function ShelfSpace:keepAll(set)
+    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+    dismissed[set.id] = #set.copies
+    G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
+    self:findDuplicates()
+    if self.screen and not self.screen.closed then self.screen:closeSet() end
+end
+
+-- The way back from keepAll: the set is listed again.
+function ShelfSpace:stopIgnoring(set)
+    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+    dismissed[set.id] = nil
+    G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
+    self:findDuplicates()
+    if self.screen and not self.screen.closed then self.screen:showActiveDuplicates() end
+end
+
+-- Asks, then clears every copy of `set` except the one at `keep`.
+function ShelfSpace:confirmClearCopies(set, keep)
+    local items, names, size, sidecars = {}, {}, 0, 0
+    for i, copy in ipairs(set.copies) do
+        if i ~= keep then
+            table.insert(items, copy)
+            size = size + copy.size
+            if i <= 4 then table.insert(names, copy.path:sub(#self.root + 2)) end
+            if Deleter.countSidecars(self.tree, copy) > 0 then sidecars = sidecars + 1 end
+        end
+    end
+    if #items == 0 then return end
+    if #items > 4 then table.insert(names, T(_("and %1 more"), #items - 4)) end
+    local lines = {
+        T(N_("Clear %1 copy of %2?", "Clear %1 copies of %2?", #items), #items, set.title),
+        table.concat(names, "\n"),
+        T(_("Keeps %1."), set.copies[keep].path:sub(#self.root + 2)),
+        T(_("Frees %1."), util.getFriendlySize(size)),
+    }
+    if sidecars > 0 then
+        table.insert(lines, T(N_("Includes the reading progress and notes of %1 copy.",
+            "Includes the reading progress and notes of %1 copies.", sidecars), sidecars))
+    end
+    table.insert(lines, _("This cannot be undone."))
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = table.concat(lines, "\n\n"),
+            ok_text = _("Clear"),
+            ok_callback = function()
+                self:deleteMany(items, function()
+                    -- Whatever you decided about this set is done with: a later duplicate of the book is a new question.
+                    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+                    if dismissed[set.id] then
+                        dismissed[set.id] = nil
+                        G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
+                    end
+                    if self.screen and not self.screen.closed then self.screen:closeSet() end
+                end)
+            end,
+        }
+    end)
 end
 
 -- `state` (from openBook) brings back the tab, folder, search, sort and page that were showing.
@@ -424,7 +557,7 @@ function ShelfSpace:confirmDeleteMany(entries)
 end
 
 -- Deletes one entry per tick so the screen stays alive, then leaves select mode.
-function ShelfSpace:deleteMany(items)
+function ShelfSpace:deleteMany(items, after)
     local busy = InfoMessage:new { text = T(N_("Deleting %1 item…", "Deleting %1 items…", #items), #items) }
     UIManager:show(busy)
     local failed, at = {}, 0
@@ -436,6 +569,7 @@ function ShelfSpace:deleteMany(items)
             self.block_cache = {}
             if self.screen and not self.screen.closed then self.screen:setSelecting(false) end
             self:refresh()
+            if after then after() end
             if #failed > 0 then
                 self:notify(T(_("Could not delete %1 of %2:\n%3"), #failed, #items, table.concat(failed, "\n")))
             end

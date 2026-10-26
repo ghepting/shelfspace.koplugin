@@ -23,7 +23,7 @@ Theme.OFFICIAL = { koreader = "#00A89C" }
 
 -- Tints of the page for rules, chips, tracks and disabled buttons, and the muted text colour. These are
 -- not in theme.json; they are chosen to sit between the beige and the slate.
-Theme.NEUTRALS = { muted = "#66737A", line = "#DCD8CE", chip = "#E9E5DB", track = "#E3DFD4" }
+Theme.NEUTRALS = { muted = "#66737A", line = "#DCD8CE", chip = "#E9E5DB", track = "#E3DFD4", clear = "#FDECEE" }
 
 function Theme.get()
     if Screen:isColorEnabled() then
@@ -31,6 +31,7 @@ function Theme.get()
         return {
             bg = hex(t.beige), ink = hex(t.slate), muted = hex(n.muted),
             line = hex(n.line), chip = hex(n.chip), free = hex(n.track), -- free: tracks and disabled buttons
+            clear = hex(n.clear), -- what a copy that will be cleared sits on
             accent = hex(t.slate), danger = hex(t.melon), white = Blitbuffer.COLOR_WHITE,
             -- what the chart and the header tiles stand for
             brand = hex(t.slate),                                   -- the ShelfSpace tile
@@ -42,7 +43,7 @@ function Theme.get()
     end
     return {
         bg = Blitbuffer.COLOR_WHITE, ink = Blitbuffer.COLOR_BLACK, muted = Blitbuffer.COLOR_GRAY_5,
-        line = Blitbuffer.COLOR_GRAY_B, chip = Blitbuffer.COLOR_GRAY_E, free = Blitbuffer.COLOR_GRAY_E,
+        line = Blitbuffer.COLOR_GRAY_B, chip = Blitbuffer.COLOR_GRAY_E, free = Blitbuffer.COLOR_GRAY_E, clear = Blitbuffer.COLOR_GRAY_E,
         accent = Blitbuffer.COLOR_BLACK, danger = Blitbuffer.COLOR_BLACK, white = Blitbuffer.COLOR_WHITE,
         brand = Blitbuffer.COLOR_BLACK, koreader_tile = Blitbuffer.COLOR_GRAY_7,
         books = Blitbuffer.COLOR_GRAY_4, koreader = Blitbuffer.COLOR_GRAY_7, other = Blitbuffer.COLOR_GRAY_B,

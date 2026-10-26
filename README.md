@@ -30,6 +30,14 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 | --- | --- |
 | <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> |
 
+| Duplicates row | Sets of copies | Compare and choose |
+| --- | --- | --- |
+| <img src="assets/duplicates-overview.png" width="260"> | <img src="assets/duplicates-list.png" width="260"> | <img src="assets/duplicates-compare.png" width="260"> |
+
+| Confirm | Kept on purpose |
+| --- | --- |
+| <img src="assets/duplicates-confirm.png" width="260"> | <img src="assets/duplicates-kept.png" width="260"> |
+
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
 totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
 other screens get a grayscale version of the same layout.
@@ -61,6 +69,18 @@ Open **Tools › ShelfSpace**. Three tabs:
   nothing else, can be deleted here. Anything else (system folders, other
   files) is shown with the reason it is locked, and so are KOReader itself and
   the book you are reading.
+- **Duplicates**: when a book is in the library more than once, a Duplicates row appears
+  on Overview (a tidy library never sees it). It lists each book that has several copies, with how
+  much clearing the extras would free. Copies with the same bytes are marked **Same file**; the
+  same name in another format or with a "(1)" on the end is **Same book**. Open one to compare the
+  copies, stacked as cards with their file name, size, how far through you are, when they were added and where they are,
+  and tags for what sets one apart (the newest, the smallest, an older format). One copy is
+  marked **Keep**, and it says why: the book you are reading, or the copy you have read most,
+  never goes; after that the format that reads best on an e-ink screen (EPUB, then MOBI, then
+  PDF), then the copy nearest the top of the library, then the newest. Tap another copy to keep that
+  one instead. **Clear** removes the others after a confirmation that names them, and **Keep all**
+  leaves the set alone from then on.
+  It is one book at a time on purpose, so every deletion is something you have looked at.
 - **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
   update downloads, crash logs, screenshots, reading progress of books that are
   gone), each with a Clear button. **Select** ticks several to clear together,
