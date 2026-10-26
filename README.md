@@ -26,6 +26,10 @@ desktop emulator, on a Kobo Libra Colour and on Android.
 | --- | --- | --- |
 | <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear-several.png" width="260"> |
 
+| Show menu | Finished books |
+| --- | --- |
+| <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> |
+
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
 totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
 other screens get a grayscale version of the same layout.
@@ -41,7 +45,9 @@ Open **Tools › ShelfSpace**. Three tabs:
 - **Browse**: your library, largest first, with a share bar per row. The file
   type chips at the top are quick filters: tap one to show only that type
   (tap it again to clear). Sort by size, name or date, or search by name across
-  the folder you are in and everything under it. Tap a folder to open it, or tap
+  the folder you are in and everything under it. **Show** narrows the list to the
+  books KOReader has marked as finished, wherever they are in the library, so what
+  you have already read is easy to clear. Tap a folder to open it, or tap
   a file to see what it is (type, size, where it is, when it changed, your
   reading progress), with Open and Book info buttons. Every row has its own
   **Delete** button, or tap **Select** to tick several rows and delete them in
