@@ -46,7 +46,7 @@ Open **Tools › ShelfSpace**. Three tabs:
   each book you are (0% to 99%, or Read once it is finished), from KOReader's own
   reading progress. The file
   type chips at the top are quick filters: tap one to show only that type
-  (tap it again to clear; a search you have run appears as a tag beside them, and tapping it clears it too). Sort by size, name, date or when you last opened it (the arrow beside the sort flips the direction), or search by name (the magnifier button) across
+  (tap it again to clear). Sort by size, name, date or when you last opened it (the arrow beside the sort flips the direction), or search by name (the magnifier tag beside the types; once you have searched, the tag shows your search and tapping it clears it) across
   the folder you are in and everything under it. **Show** narrows the list to the
   books KOReader has marked as finished, or to the ones you never opened,
   wherever they are in the library, so what you have already read (or never

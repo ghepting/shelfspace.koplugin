@@ -134,14 +134,15 @@ function UI.checkbox(th, checked, opts)
     }
 end
 
--- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable).
+-- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable), icon (a widget that
+-- stands in for the text, drawn on the page colour).
 function UI.chip(th, text, opts)
     opts = opts or {}
     local chip = FrameContainer:new{
         bordersize = Size.border.thin, color = th.ink, radius = sp(16), margin = 0,
         background = opts.active and th.accent or nil,
         padding = sp(4), padding_left = sp(10), padding_right = sp(10),
-        UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
+        opts.icon or UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
     }
     return opts.on_tap and UI.tappable(chip, opts.on_tap) or chip
 end
