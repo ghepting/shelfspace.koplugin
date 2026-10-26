@@ -141,7 +141,7 @@ function UI.chip(th, text, opts)
     local chip = FrameContainer:new{
         bordersize = Size.border.thin, color = th.ink, radius = sp(16), margin = 0,
         background = opts.active and th.accent or nil,
-        padding = sp(4), padding_left = sp(10), padding_right = sp(10),
+        padding = opts.icon and sp(2) or sp(4), padding_left = opts.icon and sp(14) or sp(10), padding_right = opts.icon and sp(14) or sp(10),
         opts.icon or UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
     }
     return opts.on_tap and UI.tappable(chip, opts.on_tap) or chip
@@ -241,7 +241,7 @@ function UI.pager(th, width, page, pages, on_page)
     }
 end
 
--- spec: { icon ("shelfspace", "library" or "koreader"), named (the ShelfSpace mark with its name), color (the tile), title, subtitle, chips = { text | { text, active, on_tap }... } }
+-- spec: { icon ("shelfspace", "library" or "koreader"), named (the ShelfSpace mark with its name), color (the tile), title, subtitle, chips = { text | { text, active, on_tap, pinned }... } }
 function UI.hero(th, width, spec)
     local icon_size = sp(108)
     local gap = sp(4) -- the icon is drawn with a margin of its own
@@ -253,15 +253,26 @@ function UI.hero(th, width, spec)
     table.insert(info, UI.text(spec.subtitle, 18, { color = th.muted, max_width = info_w }))
     if spec.chips and #spec.chips > 0 then
         local chips, used = HorizontalGroup:new{}, 0
-        for i, chip in ipairs(spec.chips) do
+        local function make(chip) return type(chip) == "table" and UI.chip(th, chip.text, chip) or UI.chip(th, chip) end
+        -- A chip marked `pinned` goes last and is never left out: room is kept for it before the others are placed.
+        local pinned, rest = nil, {}
+        for _, chip in ipairs(spec.chips) do
+            if type(chip) == "table" and chip.pinned then pinned = make(chip) else rest[#rest + 1] = chip end
+        end
+        local reserved = pinned and (pinned:getSize().w + sp(6)) or 0
+        for i, chip in ipairs(rest) do
             -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
-            local widget = type(chip) == "table" and UI.chip(th, chip.text, chip) or UI.chip(th, chip)
+            local widget = make(chip)
             local w = widget:getSize().w + (i > 1 and sp(6) or 0)
             -- On a narrow screen, chips that would run off the edge are left out.
-            if used + w > info_w and i > 1 then break end
+            if used + w + reserved > info_w and i > 1 then break end
             if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
             table.insert(chips, widget)
             used = used + w
+        end
+        if pinned then
+            if #chips > 0 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
+            table.insert(chips, pinned)
         end
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)
