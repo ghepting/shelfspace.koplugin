@@ -16,6 +16,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Deleter = require("shelfspace/deleter")
+local Progress = require("shelfspace/progress")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local Stats = require("shelfspace/stats")
@@ -106,6 +107,9 @@ return function(screen, th, width)
 
     local ctx = plugin:deleteContext()
     local delete_w = UI.button(th, { text = _("Delete"), size = 14 }):getSize().w
+    -- Room for the longest progress label, so every bar ends in the same place.
+    local progress_w = 0
+    for _, label in ipairs(Progress.samples()) do progress_w = math.max(progress_w, UI.text(label, 13):getSize().w) end
 
     -- Tapping a folder opens it; deleting is always the explicit Delete button.
     -- Rows that can't be deleted have no button and say why instead of showing a share bar.
@@ -113,14 +117,25 @@ return function(screen, th, width)
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
         local mid_w = width - thumb_w - size_w - delete_w - 4 * gap
+        -- Under a book's name: how far through it you are. A folder shows nothing, and a search result says
+        -- where the file is, then how far through it you are.
+        local progress = Deleter.isBook(item) and Progress.describe(BookList.getBookInfo(item.path)) or nil
         local under
         if reason then
             under = UI.text(reason, 13, { color = th.muted, max_width = mid_w })
         elseif where then
             local rel = where[item]
-            under = UI.text(rel == "" and _("here") or T(_("in %1"), rel), 14, { color = th.muted, max_width = mid_w })
+            local place = rel == "" and _("here") or T(_("in %1"), rel)
+            under = UI.text(progress and T(_("%1 · %2"), place, progress.label) or place, 14, { color = th.muted, max_width = mid_w })
+        elseif progress then
+            under = HorizontalGroup:new{
+                align = "center",
+                UI.bar(th, mid_w - progress_w - gap, sp(8), progress.fraction, th.accent),
+                HorizontalSpan:new{ width = gap },
+                UI.text(progress.label, 13, { color = th.muted, max_width = progress_w }),
+            }
         else
-            under = UI.bar(th, mid_w, sp(8), item.size / largest, th.accent)
+            under = VerticalSpan:new{ width = 0 }
         end
         local action = HorizontalSpan:new{ width = delete_w }
         if not reason and screen.selecting then
