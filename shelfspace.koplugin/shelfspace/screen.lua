@@ -103,11 +103,12 @@ function ShelfScreen:setDir(dir)
     self.dir = dir
     self.query = nil
     self.filter = nil
-    self.status = nil
     self.pages.browse = 1
     self:refresh()
 end
 
+-- Unlike the search and the type chip, the status stays when you change folder, like the sort order:
+-- it is how the library is shown, not something you are looking for.
 function ShelfScreen:setStatus(id)
     self.status = id
     self.pages.browse = 1
