@@ -65,9 +65,9 @@ T.test("equal shares come in name order, and no total means no chips divide by z
     T.eq(Stats.shareChips({ { name = "A", bytes = 5 } }, 0, 3)[1], "A 0%")
 end)
 
-T.test("KOReader's tags: shares while something can be cleared, one ALL CLEAR tag when nothing can", function()
-    local parts = { { name = "CACHE", bytes = 40 }, { name = "KEPT", bytes = 60 } }
-    T.eq(table.concat(Stats.dataChips(parts, 100, 3, 1, "ALL CLEAR"), "|"), "KEPT 60%|CACHE 40%")
+T.test("KOReader's tags: the clearable parts while something can be cleared, one ALL CLEAR tag when nothing can", function()
+    local parts = { { name = "CACHE", bytes = 40 }, { name = "LOGS", bytes = 10 }, { name = "SHOTS", bytes = 0 } }
+    T.eq(table.concat(Stats.dataChips(parts, 100, 3, 1, "ALL CLEAR"), "|"), "CACHE 40%|LOGS 10%")
     T.eq(table.concat(Stats.dataChips(parts, 100, 3, 0, "ALL CLEAR"), "|"), "ALL CLEAR")
 end)
 

@@ -41,22 +41,22 @@ return function(screen, th, width)
         end
     end
 
-    -- What KOReader's data folder is made of: the kinds of thing that can be cleared, and what is kept.
+    -- The tags show how big each kind of clearable thing is, as a share of everything that can be cleared; the rest of
+    -- the folder (KOReader itself, its settings and plugins) is not something to clear, so it gets no tag.
     local data_size = tree[plugin.koreader_dir].size
     local summary = Stats.summarize(tree, plugin.koreader_dir)
-    local parts, listed = {}, 0
+    local parts, clearable_total = {}, 0
     for i, t in ipairs(targets) do
         table.insert(parts, { name = t.short, bytes = t.size })
-        listed = listed + t.size
+        clearable_total = clearable_total + t.size
     end
-    table.insert(parts, { name = _("KEPT"), bytes = math.max(data_size - listed, 0) })
 
     local hero = UI.hero(th, width, {
         color = th.koreader_tile,
         icon = "koreader",
         title = _("KOReader"),
         subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(data_size)),
-        chips = Stats.dataChips(parts, data_size, 3, #clearable, _("ALL CLEAR")),
+        chips = Stats.dataChips(parts, clearable_total, 3, #clearable, _("ALL CLEAR")),
     })
 
     local gap = sp(10)
