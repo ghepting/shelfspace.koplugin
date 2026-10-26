@@ -2,48 +2,47 @@ local Stats = require("shelfspace/stats")
 
 local Search = {}
 
--- Every way Browse can be ordered; `reverse` flips the primary key only.
-Search.OPTIONS = {
-    { mode = "size", reverse = false, label = "Largest first", short = "Largest" },
-    { mode = "size", reverse = true, label = "Smallest first", short = "Smallest" },
-    { mode = "name", reverse = false, label = "Name, A to Z", short = "A–Z" },
-    { mode = "name", reverse = true, label = "Name, Z to A", short = "Z–A" },
-    { mode = "new", reverse = false, label = "Newest first", short = "Newest" },
-    { mode = "new", reverse = true, label = "Oldest first", short = "Oldest" },
-    -- By when you last opened the book. Anything without a time (folders, books never opened) comes
-    -- last in both orders.
-    { mode = "opened", reverse = false, label = "Opened most recently", short = "Last opened" },
-    { mode = "opened", reverse = true, label = "Opened longest ago", short = "Longest ago" },
+-- The ways Browse can be ordered. A category starts in its usual direction: biggest, newest and most
+-- recently opened first, names A to Z. `descending` is that direction; the arrow button flips it.
+Search.SORTS = {
+    { id = "size", label = "Size", short = "Size", descending = true },
+    { id = "name", label = "Name", short = "Name", descending = false },
+    { id = "new", label = "Date modified", short = "Date", descending = true },
+    { id = "opened", label = "Last opened", short = "Last opened", descending = true },
 }
 
--- Orders `entries` in place by an option from Search.OPTIONS. Ties fall back to name, then path.
--- `opened(entry)` gives the time a book was last opened, or nil; only the "opened" orders use it.
-function Search.sort(entries, option, opened)
-    local mode, flip = option.mode, option.reverse and -1 or 1
+-- The category with this id (Size when it is unknown).
+function Search.sortBy(id)
+    for _, option in ipairs(Search.SORTS) do
+        if option.id == id then return option end
+    end
+    return Search.SORTS[1]
+end
+
+-- Orders `entries` in place by category `mode` (an id from Search.SORTS). `descending` means biggest,
+-- newest or most recently opened first, and Z to A for names. Ties fall back to name, then path.
+-- `opened(entry)` gives the time a book was last opened, or nil; only "opened" uses it, and anything
+-- without a time (folders, books never opened) comes last in either direction.
+function Search.sort(entries, mode, descending, opened)
     local function name(e) return e.name:lower() end
+    local function key(e)
+        if mode == "size" then return e.size end
+        if mode == "new" then return e.modified or 0 end
+        if mode == "opened" then return opened and opened(e) or nil end
+    end
     table.sort(entries, function(a, b)
-        local ka, kb
         if mode == "name" then
-            -- Strings can't be negated, so A to Z flips by swapping the sides.
             if name(a) ~= name(b) then
-                if flip == 1 then return name(a) < name(b) else return name(a) > name(b) end
+                if descending then return name(a) > name(b) else return name(a) < name(b) end
             end
             return a.path < b.path
-        elseif mode == "opened" then
-            local ta, tb = opened and opened(a), opened and opened(b)
-            if ta and tb and ta ~= tb then
-                if flip == 1 then return ta > tb else return ta < tb end
-            elseif (ta == nil) ~= (tb == nil) then
-                return ta ~= nil
-            end
-            if name(a) ~= name(b) then return name(a) < name(b) end
-            return a.path < b.path
-        elseif mode == "new" then
-            ka, kb = -(a.modified or 0), -(b.modified or 0)
-        else
-            ka, kb = -a.size, -b.size
         end
-        if ka ~= kb then return flip * ka < flip * kb end
+        local ka, kb = key(a), key(b)
+        if ka and kb and ka ~= kb then
+            if descending then return ka > kb else return ka < kb end
+        elseif (ka == nil) ~= (kb == nil) then
+            return ka ~= nil
+        end
         if name(a) ~= name(b) then return name(a) < name(b) end
         return a.path < b.path
     end)

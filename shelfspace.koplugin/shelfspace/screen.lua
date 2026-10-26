@@ -56,7 +56,8 @@ local ShelfScreen = InputContainer:extend{
     plugin = nil, -- the ShelfSpace plugin: usage, tree, and the delete / clear actions
     tab = "overview",
     dir = nil, -- folder shown on the Browse tab
-    sort = 1, -- how Browse orders rows: an index into Search.OPTIONS
+    sort = "size", -- how Browse orders rows: a category id from Search.SORTS
+    descending = true, -- ...and which way: biggest, newest or most recent first (names: Z to A)
     query = nil, -- name search on Browse, over the shown folder and everything under it
     status = nil, -- a reading status (Search.STATUSES) Browse is narrowed to, e.g. "complete" for finished books
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
@@ -103,7 +104,7 @@ end
 -- Browse remembers the page each folder was on (for the sort and status it was shown with), so going Up
 -- lands where you were instead of on page 1.
 function ShelfScreen:pageKey(dir)
-    return table.concat({ dir or self.plugin.root, tostring(self.status), tostring(self.sort) }, "|")
+    return table.concat({ dir or self.plugin.root, tostring(self.status), self.sort, tostring(self.descending) }, "|")
 end
 
 function ShelfScreen:setDir(dir)
@@ -183,23 +184,31 @@ function ShelfScreen:chosen()
     return Selection.collapse(list)
 end
 
-function ShelfScreen:setSort(index)
-    self.sort = index
+-- Picks a category, in the direction that suits it.
+function ShelfScreen:setSort(id)
+    self.sort = id
+    self.descending = Search.sortBy(id).descending
     self.pages.browse = 1
     self:refresh()
 end
 
--- Every sort order at once, the current one ticked.
+function ShelfScreen:flipSort()
+    self.descending = not self.descending
+    self.pages.browse = 1
+    self:refresh()
+end
+
+-- Every category at once, the current one ticked.
 function ShelfScreen:askSort()
     self.plugin:showDialog(function()
         local dialog
         local buttons = {}
-        for i, option in ipairs(Search.OPTIONS) do
+        for _, option in ipairs(Search.SORTS) do
             table.insert(buttons, { {
-                text = (i == self.sort and "✓  " or "     ") .. option.label,
+                text = (option.id == self.sort and "✓  " or "     ") .. option.label,
                 callback = function()
                     UIManager:close(dialog)
-                    self:setSort(i)
+                    self:setSort(option.id)
                 end,
             } })
         end

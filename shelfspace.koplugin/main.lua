@@ -132,7 +132,7 @@ function ShelfSpace:showOverview(state)
     end
     self.usage = usage
     state = state or {}
-    self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, sort = state.sort }
+    self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, sort = state.sort, descending = state.descending }
     self.screen.pages.browse = state.page
     UIManager:show(self.screen)
     self:scan(function() self:refresh() end)
@@ -158,7 +158,7 @@ function ShelfSpace:openBook(path)
         return
     end
     ShelfSpace.resume = {
-        file = path, tab = screen.tab, dir = screen.dir, query = screen.query, sort = screen.sort,
+        file = path, tab = screen.tab, dir = screen.dir, query = screen.query, sort = screen.sort, descending = screen.descending,
         page = screen.pages.browse,
     }
     screen:onClose()
