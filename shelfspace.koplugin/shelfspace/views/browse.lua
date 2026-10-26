@@ -206,9 +206,9 @@ return function(screen, th, width)
             return UI.tappable(row, function() screen:setDir(item.path) end,
                 function() plugin:showFolder(item, item.path:match("^(.*)/[^/]+$") or dir) end)
         end
-        return UI.tappable(row, function()
-            plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)
-        end)
+        -- A file's card opens on a tap or a long press, so a long press is the card's gesture on every row.
+        local function card() plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir) end
+        return UI.tappable(row, card, card)
     end
 
     -- One row of controls: what is shown, how it is sorted, and which way. (The search is the first chip above.)
