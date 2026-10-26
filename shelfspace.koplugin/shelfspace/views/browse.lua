@@ -17,6 +17,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Deleter = require("shelfspace/deleter")
+local Empty = require("shelfspace/empty")
 local Icons = require("shelfspace/icons")
 local Progress = require("shelfspace/progress")
 local Search = require("shelfspace/search")
@@ -242,7 +243,7 @@ return function(screen, th, width)
             if screen.selected[e.path] then ticked = ticked + 1 end
         end
     end
-    if screen.query or screen.filter or include then
+    if (screen.query or screen.filter or include) and #entries > 0 then
         local count = #entries
         -- "3 finished PDF files", "1 finished book", "No EPUB files": what the filters leave, in words.
         local noun = screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count)
@@ -274,5 +275,36 @@ return function(screen, th, width)
             HorizontalSpan:new{ width = 0 }, HorizontalSpan:new{ width = 0 }, ROW_H), function() screen:setDir(parent) end))
     end
 
-    return { hero = hero, header = header, table_head = table_head, count = #entries, row_h = ROW_H, build = build }
+    -- Nothing to list: say why, and offer the one thing that undoes it. Drawn inside the table, under its header,
+    -- over the `h` pixels the rows would have taken.
+    local function empty_state(h)
+        local d = Empty.describe({
+            query = screen.query and shorten(screen.query, 20), ext = screen.filter, status = status,
+            place = name, has_parent = parent ~= nil,
+        })
+        local actions = {
+            search = function() screen:setQuery(nil) end,
+            filter = function() screen:toggleFilter(screen.filter) end,
+            status = function() screen:setStatus(nil) end,
+            all = function() screen:clearFilters() end,
+            up = function() screen:setDir(parent) end,
+        }
+        local room = width - 4 * gap
+        local group = VerticalGroup:new{
+            align = "center",
+            UI.text(d.headline, 22, { bold = true, color = th.ink, max_width = room }),
+            VerticalSpan:new{ width = sp(8) },
+            UI.text(d.line, 15, { color = th.muted, max_width = room }),
+        }
+        if d.action then
+            table.insert(group, VerticalSpan:new{ width = sp(18) })
+            table.insert(group, UI.button(th, { text = d.label, size = 15, callback = actions[d.action] }))
+        end
+        return FrameContainer:new{
+            bordersize = 0, padding = 0, margin = 0, background = th.white,
+            CenterContainer:new{ dimen = Geom:new{ w = width, h = h }, group },
+        }
+    end
+
+    return { hero = hero, header = header, table_head = table_head, count = #entries, row_h = ROW_H, build = build, empty = empty_state }
 end
