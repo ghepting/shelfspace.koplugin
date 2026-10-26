@@ -76,20 +76,6 @@ return function(screen, th, width)
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
     local chips = {}
-    -- The first chip is the search: just a magnifier until you search, then a filled chip with what you
-    -- searched for. Tapping the icon asks; tapping the filled chip clears it.
-    if screen.query then
-        table.insert(chips, {
-            text = T(_("“%1” ✕"), shorten(screen.query, 14)),
-            active = true,
-            on_tap = function() screen:setQuery(nil) end,
-        })
-    else
-        table.insert(chips, {
-            icon = Icons.searchWidget(sp(17), th.ink, th.bg),
-            on_tap = function() screen:askQuery() end,
-        })
-    end
     -- The other chips are the types of book in the library, not everything on the device.
     for i, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, dir, Deleter.isBook), 3)) do
         local ext = x.ext
@@ -97,6 +83,21 @@ return function(screen, th, width)
             text = T(_("%1 %2%"), ext:upper(), x.percent == 0 and "<1" or x.percent),
             active = screen.filter == ext,
             on_tap = function() screen:toggleFilter(ext) end,
+        })
+    end
+    -- The last chip is the search: just a magnifier until you search, then a filled chip with what you
+    -- searched for. Tapping the icon asks; tapping the filled chip clears it. It is pinned, so it is
+    -- never the one left out on a narrow screen.
+    if screen.query then
+        table.insert(chips, {
+            text = T(_("“%1” ✕"), shorten(screen.query, 14)),
+            active = true, pinned = true,
+            on_tap = function() screen:setQuery(nil) end,
+        })
+    else
+        table.insert(chips, {
+            icon = Icons.searchWidget(UI.text("Ag", 13, { bold = true }):getSize().h + sp(4), th.ink, th.bg), pinned = true,
+            on_tap = function() screen:askQuery() end,
         })
     end
     local dir_size = tree[dir].size
