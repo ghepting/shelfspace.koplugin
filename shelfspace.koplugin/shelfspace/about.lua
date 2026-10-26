@@ -1,7 +1,7 @@
 -- What the About card says: which ShelfSpace this is, where it was built, and what it runs on. The facts
 -- are gathered in About.info and turned into text in About.lines, so the wording can be tested.
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 local Version = require("shelfspace/version")
 

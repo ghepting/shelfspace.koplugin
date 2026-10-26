@@ -1,4 +1,4 @@
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local ffiUtil = require("ffi/util")
 local lfs = require("libs/libkoreader-lfs")
 

@@ -5,7 +5,7 @@ local Folderinfo = require("shelfspace/folderinfo")
 local Stats = require("shelfspace/stats")
 local UIManager = require("ui/uimanager")
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 -- A short card about one file, so a person can tell what it is before keeping or deleting it.

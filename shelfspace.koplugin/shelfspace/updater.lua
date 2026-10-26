@@ -1,7 +1,7 @@
 -- Asking GitHub whether a newer ShelfSpace has been released. Nothing here runs unless the person taps
 -- "Check for updates": no background checks, and nothing is sent but the request itself.
 local Version = require("shelfspace/version")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Updater = {

@@ -1,4 +1,4 @@
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")

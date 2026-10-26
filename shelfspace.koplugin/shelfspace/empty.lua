@@ -2,7 +2,7 @@
 -- why, and the one action that undoes it (if there is one). `state` is what is in force:
 --   query (the search text), ext (a file type like "pdf"), status ("complete" or "new"), place (where
 --   we are: "Library" or a folder's name), has_parent (we can go up).
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Empty = {}

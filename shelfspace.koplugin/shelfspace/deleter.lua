@@ -1,5 +1,5 @@
 local BookList = require("ui/widget/booklist")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
 local ReadCollection = require("readcollection")

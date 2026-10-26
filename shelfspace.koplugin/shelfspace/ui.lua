@@ -14,7 +14,7 @@ local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Icons = require("shelfspace/icons")

@@ -18,7 +18,7 @@ local time = require("ui/time")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 local Screen = Device.screen
 
@@ -193,9 +193,9 @@ function ShelfScreen:askStatus()
     self.plugin:showDialog(function()
         local dialog
         local buttons = {}
-        for _, option in ipairs(Search.STATUSES) do
+        for index, option in ipairs(Search.STATUSES) do
             table.insert(buttons, { {
-                text = (option.id == self.status and "✓  " or "     ") .. option.label,
+                text = (option.id == self.status and "✓  " or "     ") .. _(option.label),
                 callback = function()
                     UIManager:close(dialog)
                     self:setStatus(option.id)
@@ -266,9 +266,9 @@ function ShelfScreen:askSort()
     self.plugin:showDialog(function()
         local dialog
         local buttons = {}
-        for _, option in ipairs(Search.SORTS) do
+        for index, option in ipairs(Search.SORTS) do
             table.insert(buttons, { {
-                text = (option.id == self.sort and "✓  " or "     ") .. option.label,
+                text = (option.id == self.sort and "✓  " or "     ") .. _(option.label),
                 callback = function()
                     UIManager:close(dialog)
                     self:setSort(option.id)

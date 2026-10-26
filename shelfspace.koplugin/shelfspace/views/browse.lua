@@ -12,7 +12,7 @@ local VerticalSpan = require("ui/widget/verticalspan")
 local BookList = require("ui/widget/booklist")
 local ReadHistory = require("readhistory")
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
@@ -223,12 +223,12 @@ return function(screen, th, width)
     local controls = HorizontalGroup:new{
         align = "center",
         UI.button(th, {
-            text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15, width = show_w,
+            text = T(_("Show: %1 ▾"), _(Search.status(status).short)), size = 15, width = show_w,
             callback = function() screen:askStatus() end,
         }),
         HorizontalSpan:new{ width = gap },
         UI.button(th, {
-            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15, width = pair_w - show_w,
+            text = T(_("Sort: %1 ▾"), _(Search.sortBy(screen.sort).short)), size = 15, width = pair_w - show_w,
             callback = function() screen:askSort() end,
         }),
         HorizontalSpan:new{ width = gap },

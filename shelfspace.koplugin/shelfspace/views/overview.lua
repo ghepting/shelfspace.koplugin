@@ -10,7 +10,7 @@ local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Donut = require("shelfspace/donut")

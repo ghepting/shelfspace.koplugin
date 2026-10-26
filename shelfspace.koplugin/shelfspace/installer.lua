@@ -5,7 +5,7 @@
 --   release we meant and that every Lua file at least compiles -> swap it in, keeping the old one beside it as
 --   shelfspace.koplugin.old. KOReader must be restarted afterwards to load it.
 local Version = require("shelfspace/version")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Installer = {}

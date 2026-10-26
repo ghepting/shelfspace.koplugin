@@ -1,6 +1,6 @@
 -- How far through a book you are, from KOReader's book info (BookList.getBookInfo), as the text of the
 -- "% Read" column: 0% to 99%, or "Read" for a finished book.
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local T = require("ffi/util").template
 
 local Progress = {}

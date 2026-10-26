@@ -1,6 +1,6 @@
 -- The lines of text on a folder's dialog (the dialog itself is in details.lua), kept apart so the wording can be tested.
 local util = require("util")
-local _ = require("gettext")
+local _ = require("shelfspace/i18n")
 local N_ = _.ngettext
 local T = require("ffi/util").template
 
