@@ -30,6 +30,9 @@ jobs:
         if: ${{ steps.release.outputs.release_created }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag_name }}
         run: |
+          # The About card reads this: which release it is, the commit it was built from, and when.
+          printf 'return { tag = "%s", commit = "%s", date = "%s" }\n' "$TAG" "$(git rev-parse --short HEAD)" "$(date -u +%F)" > shelfspace.koplugin/build.lua
           zip -r shelfspace.koplugin.zip shelfspace.koplugin
           gh release upload "${{ steps.release.outputs.tag_name }}" shelfspace.koplugin.zip

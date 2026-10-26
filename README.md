@@ -85,6 +85,13 @@ you, keep a copy elsewhere.
 Anything else is untested. If you try it on another device, please
 [tell us how it went](https://github.com/ghepting/shelfspace.koplugin/issues/new?template=device_report.yml).
 
+## About and updates
+
+The **ⓘ** at the top left of the screen shows which ShelfSpace this is (version, release date
+and commit), what it is running on, and QR codes for the repository and for reporting a
+problem, with your device and versions already filled in. **Check for updates** asks GitHub
+for the latest release, only when you tap it, and tells you what changed if there is a newer one.
+
 ## Scan speed
 
 The last scan is kept in KOReader's cache folder (`cache/shelfspace/scan.lua`). The next

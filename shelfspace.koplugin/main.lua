@@ -2,6 +2,7 @@ local _ = require("gettext")
 local ConfirmBox = require("ui/widget/confirmbox")
 local DataStorage = require("datastorage")
 local Device = require("device")
+local ButtonDialog = require("ui/widget/buttondialog")
 local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
 local logger = require("logger")
@@ -14,10 +15,12 @@ local N_ = _.ngettext
 local T = ffiUtil.template
 
 local Deleter = require("shelfspace/deleter")
+local About = require("shelfspace/about")
 local Details = require("shelfspace/details")
 local ScanCache = require("shelfspace/scancache")
 local Scanner = require("shelfspace/scanner")
 local ShelfScreen = require("shelfspace/screen")
+local Updater = require("shelfspace/updater")
 
 local ShelfSpace = WidgetContainer:extend {
     name = "shelfspace",
@@ -192,6 +195,76 @@ end
 -- The card for a folder (long press on its row).
 function ShelfSpace:showFolder(entry, dir)
     Details.showFolder(self, entry, dir, Deleter.blockedReason(entry, self:deleteContext()))
+end
+
+-- The ShelfSpace card: version, build, what it runs on, and ways to get help or check for a newer release.
+function ShelfSpace:aboutInfo()
+    local info = About.info(self.path)
+    info.library = self.root
+    info.usage = self.usage
+    return info
+end
+
+-- A QR code for `url`: nobody can click a link on an e-reader, but a phone can scan one.
+function ShelfSpace:showQR(title, url)
+    UIManager:show(require("ui/widget/qrmessage"):new { title = title, text = url })
+end
+
+function ShelfSpace:showAbout()
+    local info = self:aboutInfo()
+    self:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        dialog = ButtonDialog:new {
+            title = About.lines(info),
+            title_align = "center",
+            buttons = {
+                { { text = _("Check for updates"), callback = act(function() self:checkForUpdates(info.version) end) } },
+                {
+                    { text = _("Repository (QR)"), callback = function() self:showQR(_("ShelfSpace on GitHub"), About.repoUrl()) end },
+                    { text = _("Report a problem (QR)"), callback = function() self:showQR(_("Report a problem"), About.issueUrl(info)) end },
+                },
+                { { text = _("Close"), callback = act(function() end) } },
+            },
+        }
+        return dialog
+    end)
+end
+
+-- Asks GitHub for the latest release, when online, and says what it found. Runs only when asked.
+function ShelfSpace:checkForUpdates(current)
+    require("ui/network/manager"):runWhenOnline(function()
+        local busy = InfoMessage:new { text = _("Checking for updates…") }
+        UIManager:show(busy)
+        UIManager:forceRePaint()
+        local result = Updater.check(current)
+        UIManager:close(busy)
+        self:showUpdateResult(current, result)
+    end)
+end
+
+function ShelfSpace:showUpdateResult(current, result)
+    self:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        local rows = {}
+        if result.state == "available" and result.page then
+            table.insert(rows, { { text = _("Release page (QR)"), callback = function() self:showQR(_("ShelfSpace release"), result.page) end } })
+        end
+        table.insert(rows, { { text = _("Close"), callback = act(function() end) } })
+        dialog = ButtonDialog:new { title = Updater.message(result, current), title_align = "center", buttons = rows }
+        return dialog
+    end)
 end
 
 function ShelfSpace:notify(text)

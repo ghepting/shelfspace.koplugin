@@ -1,0 +1,41 @@
+local T = dofile((debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or ".") .. "/helper.lua")
+local About = require("shelfspace/about")
+
+print("about")
+
+T.test("a release says when it was released and from which commit", function()
+    local text = About.lines({ version = "0.3.0", build = { date = "2026-10-26", commit = "244cdf5" }, koreader = "v2026.07.1", device = "Kobo Libra Colour" })
+    assert(text:find("ShelfSpace 0.3.0", 1, true), text)
+    assert(text:find("Released 2026-10-26 · commit 244cdf5", 1, true), text)
+    assert(text:find("KOReader v2026.07.1 on Kobo Libra Colour", 1, true), text)
+    assert(text:find("MIT license · github.com/ghepting/shelfspace.koplugin", 1, true), text)
+end)
+
+T.test("a build with no stamp says it is a development build", function()
+    local text = About.lines({ version = "0.3.0" })
+    assert(text:find("A development build, not a release", 1, true), text)
+    assert(not text:find("Released", 1, true))
+end)
+
+T.test("the library line gives the path and, when known, the free space", function()
+    local with = About.lines({ version = "1", library = "/mnt/onboard", usage = { total = 2000, available = 500 } })
+    assert(with:find("Library: /mnt/onboard (500 B free of 2000 B)", 1, true), with)
+    local without = About.lines({ version = "1", library = "/mnt/onboard" })
+    assert(without:find("Library: /mnt/onboard\n", 1, true) or without:find("Library: /mnt/onboard$"), without)
+end)
+
+T.test("the problem report link carries the device and versions, safely escaped", function()
+    local url = About.issueUrl({ device = "Kobo Libra Colour", koreader = "v2026.07.1", version = "0.3.0" })
+    assert(url:find("issues/new?template=bug_report.yml", 1, true), url)
+    assert(url:find("device=Kobo%20Libra%20Colour", 1, true), url)
+    assert(url:find("koreader=v2026.07.1", 1, true), url)
+    assert(url:find("version=0.3.0", 1, true), url)
+    assert(not url:find(" ", 1, true))
+end)
+
+T.test("the repository and releases addresses", function()
+    T.eq(About.repoUrl(), "https://github.com/ghepting/shelfspace.koplugin")
+    T.eq(About.releasesUrl(), "https://github.com/ghepting/shelfspace.koplugin/releases")
+end)
+
+T.done()
