@@ -10,10 +10,15 @@ Search.OPTIONS = {
     { mode = "name", reverse = true, label = "Name, Z to A", short = "Z–A" },
     { mode = "new", reverse = false, label = "Newest first", short = "Newest" },
     { mode = "new", reverse = true, label = "Oldest first", short = "Oldest" },
+    -- By when you last opened the book. Anything without a time (folders, books never opened) comes
+    -- last in both orders.
+    { mode = "opened", reverse = false, label = "Opened most recently", short = "Last opened" },
+    { mode = "opened", reverse = true, label = "Opened longest ago", short = "Longest ago" },
 }
 
 -- Orders `entries` in place by an option from Search.OPTIONS. Ties fall back to name, then path.
-function Search.sort(entries, option)
+-- `opened(entry)` gives the time a book was last opened, or nil; only the "opened" orders use it.
+function Search.sort(entries, option, opened)
     local mode, flip = option.mode, option.reverse and -1 or 1
     local function name(e) return e.name:lower() end
     table.sort(entries, function(a, b)
@@ -23,6 +28,15 @@ function Search.sort(entries, option)
             if name(a) ~= name(b) then
                 if flip == 1 then return name(a) < name(b) else return name(a) > name(b) end
             end
+            return a.path < b.path
+        elseif mode == "opened" then
+            local ta, tb = opened and opened(a), opened and opened(b)
+            if ta and tb and ta ~= tb then
+                if flip == 1 then return ta > tb else return ta < tb end
+            elseif (ta == nil) ~= (tb == nil) then
+                return ta ~= nil
+            end
+            if name(a) ~= name(b) then return name(a) < name(b) end
             return a.path < b.path
         elseif mode == "new" then
             ka, kb = -(a.modified or 0), -(b.modified or 0)
@@ -43,7 +57,16 @@ end
 Search.STATUSES = {
     { id = nil, label = "All files", short = "All" },
     { id = "complete", label = "Finished books", short = "Finished", noun = "finished" },
+    { id = "new", label = "Never read", short = "Never read", noun = "unread" },
 }
+
+-- The status option with this id (nil is "All files").
+function Search.status(id)
+    for _, option in ipairs(Search.STATUSES) do
+        if option.id == id then return option end
+    end
+    return Search.STATUSES[1]
+end
 
 function Search.find(tree, dir, query, ext, include)
     local words = {}

@@ -122,6 +122,42 @@ T.test("a test on each file combines with a name and a type", function()
     T.eq(#(Search.find(tree, "/r", nil, nil, function() return false end)), 0)
 end)
 
+local function opened_orders()
+    local recent, ago
+    for _, o in ipairs(Search.OPTIONS) do
+        if o.mode == "opened" then if o.reverse then ago = o else recent = o end end
+    end
+    return recent, ago
+end
+
+T.test("last opened sorts by the time given, newest or oldest first, and leaves the rest for last in both orders", function()
+    local recent, ago = opened_orders()
+    assert(recent and ago, "both opened orders exist")
+    local times = { ["/r/b.epub"] = 300, ["/r/Manga/Vol 1.cbz"] = 100, ["/r/DELETE ME - a.epub"] = 200 }
+    local function times_of(e) return times[e.path] end
+    local list = { manga, e("never.epub", "/r/never.epub", 1, 1), e("b.epub", "/r/b.epub", 80, 7),
+                   e("Vol 1.cbz", "/r/Manga/Vol 1.cbz", 450, 9), e("DELETE ME - a.epub", "/r/DELETE ME - a.epub", 12, 3) }
+    Search.sort(list, recent, times_of)
+    T.eq(T.names(list), "b.epub|DELETE ME - a.epub|Vol 1.cbz|Manga|never.epub")
+    Search.sort(list, ago, times_of)
+    T.eq(T.names(list), "Vol 1.cbz|DELETE ME - a.epub|b.epub|Manga|never.epub")
+end)
+
+T.test("last opened with no times at all falls back to name order", function()
+    local recent = opened_orders()
+    local list = { e("b.epub", "/r/b.epub", 1, 1), e("a.epub", "/r/a.epub", 1, 1) }
+    Search.sort(list, recent, nil)
+    T.eq(T.names(list), "a.epub|b.epub")
+end)
+
+T.test("the status options: all, finished and never read, found by id", function()
+    T.eq(Search.status(nil).short, "All")
+    T.eq(Search.status("complete").short, "Finished")
+    T.eq(Search.status("new").short, "Never read")
+    T.eq(Search.status("new").noun, "unread")
+    T.eq(Search.status("nonsense").short, "All")
+end)
+
 T.test("no query and no filter finds nothing", function()
     T.eq(#Search.find(mixed, "/r", "", nil), 0)
     T.eq(#Search.find(mixed, "/r", nil, nil), 0)
