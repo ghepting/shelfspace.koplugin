@@ -41,7 +41,7 @@ return function(screen, th, width)
         end
     end
 
-    -- What KOReader's data folder is made of: the kinds of thing that can be cleared, and the rest.
+    -- What KOReader's data folder is made of: the kinds of thing that can be cleared, and what is kept.
     local data_size = tree[plugin.koreader_dir].size
     local summary = Stats.summarize(tree, plugin.koreader_dir)
     local parts, listed = {}, 0
@@ -49,14 +49,14 @@ return function(screen, th, width)
         table.insert(parts, { name = t.short, bytes = t.size })
         listed = listed + t.size
     end
-    table.insert(parts, { name = _("OTHER"), bytes = math.max(data_size - listed, 0) })
+    table.insert(parts, { name = _("KEPT"), bytes = math.max(data_size - listed, 0) })
 
     local hero = UI.hero(th, width, {
         color = th.koreader_tile,
         icon = "koreader",
         title = _("KOReader"),
         subtitle = T(_("%1 · %2"), T(N_("%1 file", "%1 files", summary.files), summary.files), util.getFriendlySize(data_size)),
-        chips = Stats.shareChips(parts, data_size, 3),
+        chips = Stats.dataChips(parts, data_size, 3, #clearable, _("ALL CLEAR")),
     })
 
     local gap = sp(10)
