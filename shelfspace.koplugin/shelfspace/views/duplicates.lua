@@ -224,7 +224,7 @@ return function(screen, th, width)
         }
     end
 
-    local card_gap = sp(6)
+    local card_gap = sp(8)
     local row_h = card(1):getSize().h + card_gap
     local function build(i, h)
         local row = card(i)
@@ -255,6 +255,6 @@ return function(screen, th, width)
             actions,
             VerticalSpan:new{ width = sp(8) },
         },
-        count = #set.copies, row_h = row_h, build = build,
+        count = #set.copies, row_h = row_h, build = build, fixed_rows = true,
     }
 end

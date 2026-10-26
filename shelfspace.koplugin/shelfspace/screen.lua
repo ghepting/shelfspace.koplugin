@@ -392,8 +392,9 @@ function ShelfScreen:rebuild()
         local avail = self.dimen.h - used - pager_h
         local per_page = math.max(1, math.floor(avail / view.row_h))
         -- Whatever is left over (less than one row) is shared out among the rows, so the list fills the screen
-        -- at any height instead of ending short; but never by more than a quarter of a row each.
-        local row_h = view.row_h + math.min(math.floor(view.row_h / 4), math.floor((avail - per_page * view.row_h) / per_page))
+        -- at any height instead of ending short; but never by more than a quarter of a row each. (Cards, which must
+        -- stay grouped, say `fixed_rows` and are not stretched.)
+        local row_h = view.row_h + (view.fixed_rows and 0 or math.min(math.floor(view.row_h / 4), math.floor((avail - per_page * view.row_h) / per_page)))
         row_h = math.max(row_h, view.row_h)
         local pages = math.max(1, math.ceil(view.count / per_page))
         local page = math.min(self.pages[self.tab] or 1, pages)
