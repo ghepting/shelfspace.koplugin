@@ -72,7 +72,7 @@ return function(screen, th, width)
 
     -- A set that was picked but is gone (cleared, or kept from now on) sends you back to the list.
     local set
-    for _, s in ipairs(sets) do
+    for _n, s in ipairs(sets) do
         if s.id == screen.dup_set then set = s break end
     end
     if screen.dup_set and not set then screen.dup_set = nil end
@@ -185,7 +185,7 @@ return function(screen, th, width)
             HorizontalSpan:new{ width = sp(8) },
         }
         local used = where_w + sp(8)
-        for _, tag in ipairs(Duplicates.tags(set, i, function(c) return plugin:copyInfo(c) end)) do
+        for _n, tag in ipairs(Duplicates.tags(set, i, function(c) return plugin:copyInfo(c) end)) do
             local text = tag.id == "most_read" and T(_("MOST READ %1%"), tag.percent) or tag_text[tag.id]
             local chip = UI.chip(th, text, { active = tag.id == "suggested" or tag.id == "most_read" })
             local w = chip:getSize().w + sp(4)
