@@ -242,7 +242,6 @@ return function(screen, th, width)
             if screen.selected[e.path] then ticked = ticked + 1 end
         end
     end
-    local chosen = screen:chosen()
     if screen.query or screen.filter or include then
         local count = #entries
         -- "3 finished PDF files", "1 finished book", "No EPUB files": what the filters leave, in words.
@@ -256,24 +255,6 @@ return function(screen, th, width)
             text = count == 0 and T(_("No %1 in %2"), noun, name) or T(_("%1 %2 in %3"), count, noun, name)
         end
         table.insert(header, UI.text(text, 15, { color = th.muted, max_width = width }))
-        table.insert(header, VerticalSpan:new{ width = sp(6) })
-    end
-    -- The ticked items' action: how many and how big, and the one Delete.
-    if #chosen > 0 then
-        local delete_button = UI.button(th, {
-            text = _("Delete"), size = 15, background = th.danger, color = th.white,
-            callback = function() plugin:confirmDeleteMany(chosen) end,
-        })
-        local label_w = width - delete_button:getSize().w - gap
-        table.insert(header, HorizontalGroup:new{
-            align = "center",
-            LeftContainer:new{
-                dimen = Geom:new{ w = label_w, h = delete_button:getSize().h },
-                UI.text(T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), 16,
-                    { bold = true, color = th.ink, max_width = label_w }),
-            },
-            HorizontalSpan:new{ width = gap }, delete_button,
-        })
         table.insert(header, VerticalSpan:new{ width = sp(6) })
     end
     -- The column labels, and a checkbox that ticks everything that can be deleted (a dash when only some are).

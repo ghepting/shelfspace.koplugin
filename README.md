@@ -53,9 +53,9 @@ Open **Tools › ShelfSpace**. Three tabs:
   will) is easy to clear. Tap a folder to open it, or tap
   a file to see what it is (type, size, where it is, when it changed, your
   reading progress), with Open and Book info buttons. Every row has a checkbox;
-  tick the ones you want (the checkbox in the header ticks them all) and the
-  **Delete** above the list, which says how many are ticked and how big they are,
-  deletes them in one go. You always get a confirmation first, including how many books lose
+  tick the ones you want (the checkbox in the header ticks them all) a bar
+  floats over the bottom of the list, so nothing moves under your finger, saying how
+  many are ticked and how big they are, with a **Delete** that deletes them in one go. You always get a confirmation first, including how many books lose
   their reading progress. Only books KOReader can open, and folders holding
   nothing else, can be deleted here. Anything else (system folders, other
   files) is shown with the reason it is locked, and so are KOReader itself and
