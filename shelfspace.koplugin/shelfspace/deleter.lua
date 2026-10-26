@@ -49,8 +49,15 @@ local function isManaged(name, path)
     return COMPANIONS[ext] or DocumentRegistry:hasProvider(path)
 end
 
--- A book KOReader can open (not just a companion file such as a cover image).
+-- A single picture is something KOReader can open, but it is not a book: it has no reading progress, and
+-- it is not what a "never read" or "finished" list is about.
+local PICTURES = { png = true, jpg = true, jpeg = true, gif = true, bmp = true, webp = true, svg = true, tif = true, tiff = true }
+
+-- A book KOReader can open: not a companion file such as a cover image, and not a lone picture. Used for
+-- what Browse shows about books (type tags, % Read, the Show filters), not for what may be deleted.
 function Deleter.isBook(entry)
+    local ext = entry.name:match("%.([^.]+)$")
+    if ext and PICTURES[ext:lower()] then return false end
     return DocumentRegistry:hasProvider(entry.path) and true or false
 end
 

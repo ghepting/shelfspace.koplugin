@@ -1,7 +1,8 @@
 local T = dofile((debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or ".") .. "/helper.lua")
 
 -- The parts of KOReader that deleter.lua loads, as stand-ins: only "which files can KOReader open" matters here.
-local OPENABLE = { epub = true, pdf = true, cbz = true, mobi = true }
+local OPENABLE = { epub = true, pdf = true, cbz = true, mobi = true,
+    svg = true, png = true, jpg = true, gif = true, webp = true, tiff = true } -- KOReader opens single pictures too
 package.preload["ui/widget/booklist"] = function() return {} end
 package.preload["docsettings"] = function() return {} end
 package.preload["readcollection"] = function() return {} end
@@ -90,6 +91,13 @@ T.test("only a book KOReader can open counts as a book, not a cover or an unknow
     T.eq(Deleter.isBook(file("/lib/Dune.epub")), true)
     T.eq(Deleter.isBook(file("/lib/Sci-Fi/cover.JPG")), false)
     T.eq(Deleter.isBook(file("/lib/Mixed/plugin.so")), false)
+end)
+
+T.test("a lone picture KOReader can open is not a book, so it has no reading progress and is never listed as unread", function()
+    for _, name in ipairs({ "icon.svg", "scan.PNG", "photo.jpg", "anim.gif", "wallpaper.webp", "map.tiff" }) do
+        T.eq(Deleter.isBook(file("/lib/" .. name)), false, name)
+    end
+    T.eq(Deleter.isBook(file("/lib/Dune.epub")), true)
 end)
 
 T.test("companion file types match whatever their case", function()
