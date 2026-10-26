@@ -9,6 +9,7 @@ local ButtonDialog = require("ui/widget/buttondialog")
 local InputDialog = require("ui/widget/inputdialog")
 local LineWidget = require("ui/widget/linewidget")
 local OverlapGroup = require("ui/widget/overlapgroup")
+local LeftContainer = require("ui/widget/container/leftcontainer")
 local RightContainer = require("ui/widget/container/rightcontainer")
 local Size = require("ui/size")
 local UIManager = require("ui/uimanager")
@@ -28,10 +29,14 @@ local UI = require("shelfspace/ui")
 local sp = UI.sp
 
 -- Title with a close button; our own so the icon can be transparent on the page colour.
-local function header(th, width, on_close)
+local function header(th, width, on_close, on_about)
     local h = sp(46)
     local icon = IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) }
     local close = UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = sp(56), h = h }, icon }, on_close)
+    local about = UI.tappable(CenterContainer:new{
+        dimen = Geom:new{ w = sp(56), h = h },
+        IconWidget:new{ icon = "info", alpha = true, width = sp(26), height = sp(26) },
+    }, on_about)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
@@ -40,6 +45,7 @@ local function header(th, width, on_close)
                 dimen = Geom:new{ w = width, h = h },
                 UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.ink }),
             },
+            LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, about },
             RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
         },
         LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
@@ -317,7 +323,7 @@ function ShelfScreen:rebuild()
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
 
-    local titlebar = header(th, self.dimen.w, function() self:onClose() end)
+    local titlebar = header(th, self.dimen.w, function() self:onClose() end, function() self.plugin:showAbout() end)
     local tabs = {
         { id = "overview", label = _("OVERVIEW") },
         { id = "browse", label = _("BROWSE") },
