@@ -39,24 +39,38 @@ T.test("a search stays inside the folder it starts from", function()
     T.eq(#Search.find(tree, "/r/Manga", "delete"), 1)
 end)
 
-local O = Search.OPTIONS
-local function order(option)
+local function order(mode, descending)
     local list = { tree["/r"].entries[1], manga, tree["/r"].entries[3] }
-    Search.sort(list, option)
+    Search.sort(list, mode, descending)
     return T.names(list)
 end
 
-T.test("largest first", function() T.eq(order(O[1]), "b.epub|DELETE ME - a.epub|Manga") end)
-T.test("smallest first", function() T.eq(order(O[2]), "Manga|DELETE ME - a.epub|b.epub") end)
-T.test("name A to Z", function() T.eq(order(O[3]), "b.epub|DELETE ME - a.epub|Manga") end)
-T.test("name Z to A", function() T.eq(order(O[4]), "Manga|DELETE ME - a.epub|b.epub") end)
-T.test("newest first", function() T.eq(order(O[5]), "b.epub|Manga|DELETE ME - a.epub") end)
-T.test("oldest first", function() T.eq(order(O[6]), "DELETE ME - a.epub|Manga|b.epub") end)
+T.test("size: biggest first, or smallest first", function()
+    T.eq(order("size", true), "b.epub|DELETE ME - a.epub|Manga")
+    T.eq(order("size", false), "Manga|DELETE ME - a.epub|b.epub")
+end)
+T.test("name: A to Z, or Z to A", function()
+    T.eq(order("name", false), "b.epub|DELETE ME - a.epub|Manga")
+    T.eq(order("name", true), "Manga|DELETE ME - a.epub|b.epub")
+end)
+T.test("date modified: newest first, or oldest first", function()
+    T.eq(order("new", true), "b.epub|Manga|DELETE ME - a.epub")
+    T.eq(order("new", false), "DELETE ME - a.epub|Manga|b.epub")
+end)
 
 T.test("equal keys fall back to name, in both directions", function()
     local ties = { e("b", "/b", 5, 1), e("a", "/a", 5, 1) }
-    Search.sort(ties, O[1]); T.eq(T.names(ties), "a|b")
-    Search.sort(ties, O[2]); T.eq(T.names(ties), "a|b")
+    Search.sort(ties, "size", true); T.eq(T.names(ties), "a|b")
+    Search.sort(ties, "size", false); T.eq(T.names(ties), "a|b")
+end)
+
+T.test("each category starts in its usual direction", function()
+    T.eq(Search.sortBy("size").descending, true)
+    T.eq(Search.sortBy("name").descending, false)
+    T.eq(Search.sortBy("new").descending, true)
+    T.eq(Search.sortBy("opened").descending, true)
+    T.eq(Search.sortBy("nonsense").id, "size")
+    T.eq(#Search.SORTS, 4)
 end)
 
 local mixed = {
@@ -122,31 +136,20 @@ T.test("a test on each file combines with a name and a type", function()
     T.eq(#(Search.find(tree, "/r", nil, nil, function() return false end)), 0)
 end)
 
-local function opened_orders()
-    local recent, ago
-    for _, o in ipairs(Search.OPTIONS) do
-        if o.mode == "opened" then if o.reverse then ago = o else recent = o end end
-    end
-    return recent, ago
-end
-
 T.test("last opened sorts by the time given, newest or oldest first, and leaves the rest for last in both orders", function()
-    local recent, ago = opened_orders()
-    assert(recent and ago, "both opened orders exist")
     local times = { ["/r/b.epub"] = 300, ["/r/Manga/Vol 1.cbz"] = 100, ["/r/DELETE ME - a.epub"] = 200 }
     local function times_of(e) return times[e.path] end
     local list = { manga, e("never.epub", "/r/never.epub", 1, 1), e("b.epub", "/r/b.epub", 80, 7),
                    e("Vol 1.cbz", "/r/Manga/Vol 1.cbz", 450, 9), e("DELETE ME - a.epub", "/r/DELETE ME - a.epub", 12, 3) }
-    Search.sort(list, recent, times_of)
+    Search.sort(list, "opened", true, times_of)
     T.eq(T.names(list), "b.epub|DELETE ME - a.epub|Vol 1.cbz|Manga|never.epub")
-    Search.sort(list, ago, times_of)
+    Search.sort(list, "opened", false, times_of)
     T.eq(T.names(list), "Vol 1.cbz|DELETE ME - a.epub|b.epub|Manga|never.epub")
 end)
 
 T.test("last opened with no times at all falls back to name order", function()
-    local recent = opened_orders()
     local list = { e("b.epub", "/r/b.epub", 1, 1), e("a.epub", "/r/a.epub", 1, 1) }
-    Search.sort(list, recent, nil)
+    Search.sort(list, "opened", true, nil)
     T.eq(T.names(list), "a.epub|b.epub")
 end)
 

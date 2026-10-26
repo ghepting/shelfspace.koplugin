@@ -64,14 +64,13 @@ return function(screen, th, width)
             if not e.hidden then table.insert(entries, e) end
         end
     end
-    local sort = Search.OPTIONS[screen.sort]
     local opened
-    if sort.mode == "opened" then
+    if screen.sort == "opened" then
         local last = {}
         for _, item in ipairs(ReadHistory.hist) do last[item.file] = item.time end
         opened = function(e) return last[e.path] end
     end
-    Search.sort(entries, sort, opened)
+    Search.sort(entries, screen.sort, screen.descending, opened)
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
@@ -194,43 +193,57 @@ return function(screen, th, width)
         end)
     end
 
-    -- Search and sort, then "Up": pinned above the list on every page.
-    local sort_button = UI.button(th, {
-        text = T(_("Sort: %1 ▾"), Search.OPTIONS[screen.sort].short), size = 15,
-        callback = function() screen:askSort() end,
-    })
+    -- Two rows of controls, then "Up": pinned above the list on every page. Search and Select on the first;
+    -- what is shown and in which order on the second. The labels are never squeezed: each button gets room
+    -- for its own text.
     local clear_button = screen.query and UI.button(th, {
         text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
-    })
-    local show_button = UI.button(th, {
-        text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15,
-        callback = function() screen:askStatus() end,
     })
     local select_button = UI.button(th, {
         text = screen.selecting and _("Done") or _("Select"), size = 15,
         callback = function() screen:setSelecting(not screen.selecting) end,
     })
-    local search_w = width - sort_button:getSize().w - show_button:getSize().w - select_button:getSize().w - 3 * gap
-        - (clear_button and (clear_button:getSize().w + gap) or 0)
-    local controls = HorizontalGroup:new{
+    local search_w = width - select_button:getSize().w - gap - (clear_button and (clear_button:getSize().w + gap) or 0)
+    local search_row = HorizontalGroup:new{
         align = "center",
         UI.button(th, {
-            text = screen.query and shorten(screen.query, 20) or _("Search by name"), size = 15,
+            text = screen.query and shorten(screen.query, 24) or _("Search by name"), size = 15,
             width = search_w, callback = function() screen:askQuery() end,
         }),
         HorizontalSpan:new{ width = gap },
     }
     if clear_button then
-        table.insert(controls, clear_button)
-        table.insert(controls, HorizontalSpan:new{ width = gap })
+        table.insert(search_row, clear_button)
+        table.insert(search_row, HorizontalSpan:new{ width = gap })
     end
-    table.insert(controls, show_button)
-    table.insert(controls, HorizontalSpan:new{ width = gap })
-    table.insert(controls, sort_button)
-    table.insert(controls, HorizontalSpan:new{ width = gap })
-    table.insert(controls, select_button)
+    table.insert(search_row, select_button)
 
-    local header = VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, controls, VerticalSpan:new{ width = sp(6) } }
+    -- ↓ is biggest, newest or most recent first (Z to A for names), ↑ the other way round.
+    local direction_button = UI.button(th, {
+        text = screen.descending and "↓" or "↑", size = 15,
+        callback = function() screen:flipSort() end,
+    })
+    local pair_w = width - direction_button:getSize().w - 2 * gap
+    local show_w = math.floor(pair_w / 2)
+    local view_row = HorizontalGroup:new{
+        align = "center",
+        UI.button(th, {
+            text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15, width = show_w,
+            callback = function() screen:askStatus() end,
+        }),
+        HorizontalSpan:new{ width = gap },
+        UI.button(th, {
+            text = T(_("Sort: %1 ▾"), Search.sortBy(screen.sort).short), size = 15, width = pair_w - show_w,
+            callback = function() screen:askSort() end,
+        }),
+        HorizontalSpan:new{ width = gap },
+        direction_button,
+    }
+
+    local header = VerticalGroup:new{
+        align = "left", VerticalSpan:new{ width = sp(4) }, search_row, VerticalSpan:new{ width = sp(6) },
+        view_row, VerticalSpan:new{ width = sp(6) },
+    }
     if screen.selecting then
         local deletable, all_chosen = {}, true
         for i, e in ipairs(entries) do
