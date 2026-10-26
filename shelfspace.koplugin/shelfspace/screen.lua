@@ -72,6 +72,7 @@ local ShelfScreen = InputContainer:extend{
     filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
     selecting = false, -- Browse is in select mode: rows get checkboxes
     dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
+    dup_ignored = false, -- the list shows the sets you chose to keep, not the ones still to deal with
     dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
 }
 
@@ -159,6 +160,7 @@ end
 function ShelfScreen:openDuplicates()
     self.tab = "duplicates"
     self.dup_set = nil
+    self.dup_ignored = false
     self.pages.duplicates = 1
     self:refresh()
 end
@@ -169,15 +171,33 @@ function ShelfScreen:openSet(id)
     self:refresh()
 end
 
+-- Back to the list, whichever of the two it was opened from.
 function ShelfScreen:closeSet()
     self.dup_set = nil
     self.pages.duplicates = 1
     self:refresh()
 end
 
+-- The sets you chose to keep as they are, and the way back to the ones still to deal with.
+function ShelfScreen:showIgnoredDuplicates()
+    self.dup_set = nil
+    self.dup_ignored = true
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
+function ShelfScreen:showActiveDuplicates()
+    self.dup_set = nil
+    self.dup_ignored = false
+    self.pages.duplicates = 1
+    self:refresh()
+end
+
 function ShelfScreen:currentSet()
-    for _, set in ipairs(self.plugin.duplicates or {}) do
-        if set.id == self.dup_set then return set end
+    for _, list in ipairs({ self.plugin.duplicates or {}, self.plugin.ignored_duplicates or {} }) do
+        for _, set in ipairs(list) do
+            if set.id == self.dup_set then return set end
+        end
     end
 end
 

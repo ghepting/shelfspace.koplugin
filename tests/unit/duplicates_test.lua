@@ -150,6 +150,15 @@ T.test("the furthest-read, newest and smallest copy are tagged when exactly one 
     T.eq(tagIds(set, 3, info), "older_format")
 end)
 
+T.test("a set you kept comes back when a new copy appears", function()
+    local set = { id = "dune", copies = { {}, {} } }
+    T.eq(Duplicates.isIgnored({}, set), false)
+    T.eq(Duplicates.isIgnored({ dune = 2 }, set), true)
+    T.eq(Duplicates.isIgnored({ dune = 1 }, set), false, "a third copy is a new question")
+    T.eq(Duplicates.isIgnored({ dune = true }, set), true, "older versions saved a plain yes")
+    T.eq(Duplicates.isIgnored({ other = 2 }, set), false)
+end)
+
 T.test("sameBytes compares files byte for byte", function()
     local dir = os.tmpname()
     os.remove(dir)

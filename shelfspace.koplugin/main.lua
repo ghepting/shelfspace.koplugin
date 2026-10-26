@@ -161,7 +161,7 @@ end
 
 -- Looks for books that are in the library more than once and keeps the result in self.duplicates, each set
 -- with its copies best-first (the first is the one to keep) and the reason why. Sets you chose to keep
--- are left out. Two files are compared byte for byte only when they are the same size, and a comparison is
+-- as they are go in self.ignored_duplicates. Two files are compared byte for byte only when they are the same size, and a comparison is
 -- remembered until either file changes.
 function ShelfSpace:findDuplicates()
     if not self.tree then return end
@@ -177,30 +177,44 @@ function ShelfSpace:findDuplicates()
         return known
     end
     local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
-    local sets = {}
+    local sets, ignored = {}, {}
     for _, set in ipairs(Duplicates.find(self:bookFiles(), same)) do
-        if not dismissed[set.id] then
-            table.sort(set.copies, function(a, b) return a.path < b.path end)
-            local best, why = Duplicates.suggest(set, function(c) return self:copyInfo(c) end)
-            local first = table.remove(set.copies, best)
-            table.insert(set.copies, 1, first)
-            set.reason = why
-            set.free = Duplicates.savings(set, 1)
+        table.sort(set.copies, function(a, b) return a.path < b.path end)
+        local best, why = Duplicates.suggest(set, function(c) return self:copyInfo(c) end)
+        local first = table.remove(set.copies, best)
+        table.insert(set.copies, 1, first)
+        set.reason = why
+        set.free = Duplicates.savings(set, 1)
+        if Duplicates.isIgnored(dismissed, set) then
+            set.ignored = true
+            table.insert(ignored, set)
+        else
             table.insert(sets, set)
         end
     end
-    table.sort(sets, function(a, b) return a.free > b.free end)
-    self.duplicates = sets
-    logger.info(string.format("ShelfSpace: %d duplicate sets in %d ms", #sets, time.to_ms(time.since(started))))
+    local function biggest(a, b) return a.free > b.free end
+    table.sort(sets, biggest)
+    table.sort(ignored, biggest)
+    self.duplicates, self.ignored_duplicates = sets, ignored
+    logger.info(string.format("ShelfSpace: %d duplicate sets (%d kept on purpose) in %d ms", #sets, #ignored, time.to_ms(time.since(started))))
 end
 
--- Leaves a set alone from now on: it is no longer listed.
+-- Leaves a set alone from now on: it moves to "kept on purpose".
 function ShelfSpace:keepAll(set)
     local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
-    dismissed[set.id] = true
+    dismissed[set.id] = #set.copies
     G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
     self:findDuplicates()
     if self.screen and not self.screen.closed then self.screen:closeSet() end
+end
+
+-- The way back from keepAll: the set is listed again.
+function ShelfSpace:stopIgnoring(set)
+    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+    dismissed[set.id] = nil
+    G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
+    self:findDuplicates()
+    if self.screen and not self.screen.closed then self.screen:showActiveDuplicates() end
 end
 
 -- Asks, then clears every copy of `set` except the one at `keep`.
@@ -233,6 +247,12 @@ function ShelfSpace:confirmClearCopies(set, keep)
             ok_text = _("Clear"),
             ok_callback = function()
                 self:deleteMany(items, function()
+                    -- Whatever you decided about this set is done with: a later duplicate of the book is a new question.
+                    local dismissed = G_reader_settings:readSetting("shelfspace_dismissed_duplicates") or {}
+                    if dismissed[set.id] then
+                        dismissed[set.id] = nil
+                        G_reader_settings:saveSetting("shelfspace_dismissed_duplicates", dismissed)
+                    end
                     if self.screen and not self.screen.closed then self.screen:closeSet() end
                 end)
             end,

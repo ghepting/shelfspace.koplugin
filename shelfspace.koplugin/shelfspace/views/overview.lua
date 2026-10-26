@@ -101,13 +101,15 @@ return function(screen, th, width)
             { th.other, _("Other files"), util.getFriendlySize(b.other), nil, _("System files, locked"), go.other },
             { th.free_space, _("Free"), util.getFriendlySize(u.available) },
         }
-        -- Only when there is something to clear: a tidy library never sees this row.
-        local sets = plugin.duplicates
-        if sets and #sets > 0 then
-            table.insert(rows, 3, {
-                th.brand, _("Duplicates"), util.getFriendlySize(Duplicates.reclaimable(sets)), go.duplicates,
-                T(N_("%1 book more than once", "%1 books more than once", #sets), #sets),
-            })
+        -- Only when there is something to decide about: a tidy library never sees this row. Sets you chose to
+        -- keep stay reachable from here, so the way back to them is never lost.
+        local sets, kept = plugin.duplicates or {}, #(plugin.ignored_duplicates or {})
+        if #sets > 0 then
+            local note = T(N_("%1 book more than once", "%1 books more than once", #sets), #sets)
+            if kept > 0 then note = note .. T(_(" · %1 kept"), kept) end
+            table.insert(rows, 3, { th.brand, _("Duplicates"), util.getFriendlySize(Duplicates.reclaimable(sets)), go.duplicates, note })
+        elseif kept > 0 then
+            table.insert(rows, 3, { th.brand, _("Duplicates"), "", go.duplicates, T(_("Nothing to clear · %1 kept on purpose"), kept) })
         end
         slices = {
             { fraction = b.books / u.total, color = th.books, on_tap = go.books },

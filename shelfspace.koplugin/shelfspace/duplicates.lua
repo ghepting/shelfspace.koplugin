@@ -214,6 +214,14 @@ function Duplicates.tags(set, i, info)
     return tags
 end
 
+-- Whether `set` is one you chose to keep as it is. `dismissed` maps a set's id to how many copies it had when
+-- you chose (or `true`, from an older version, for any number): a new copy of the book brings the set back.
+function Duplicates.isIgnored(dismissed, set)
+    local n = dismissed[set.id]
+    if n == true then return true end
+    return type(n) == "number" and #set.copies <= n
+end
+
 -- What clearing every copy but `keep` frees.
 function Duplicates.savings(set, keep)
     local sum = 0

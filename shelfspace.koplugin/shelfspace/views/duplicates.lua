@@ -54,14 +54,14 @@ return function(screen, th, width)
     local gap = sp(10)
     local line = Size.line.thin
 
-    local function upRow(label, on_tap)
+    local function topRow(glyph, label, on_tap)
         local row = FrameContainer:new{
             bordersize = 0, padding = 0, margin = 0, background = th.white,
             VerticalGroup:new{
                 align = "left",
                 HorizontalGroup:new{
                     align = "center",
-                    CenterContainer:new{ dimen = Geom:new{ w = ROW_H, h = ROW_H - line }, UI.text("⬆", 20, { color = th.ink }) },
+                    CenterContainer:new{ dimen = Geom:new{ w = ROW_H, h = ROW_H - line }, UI.text(glyph, 20, { color = th.ink }) },
                     UI.text(label, 18, { bold = true, color = th.ink }),
                 },
                 LineWidget:new{ dimen = Geom:new{ w = width, h = line }, background = th.line },
@@ -70,19 +70,18 @@ return function(screen, th, width)
         return UI.tappable(row, on_tap)
     end
 
-    -- A set that was picked but is gone (cleared, or kept from now on) sends you back to the list.
-    local set
-    for _n, s in ipairs(sets) do
-        if s.id == screen.dup_set then set = s break end
-    end
+    -- A set that was picked but is gone (cleared, or moved between the lists) sends you back to the list.
+    local set = screen:currentSet()
     if screen.dup_set and not set then screen.dup_set = nil end
-
+    local ignored_mode = screen.dup_ignored
+    local sets = ignored_mode and (plugin.ignored_duplicates or {}) or sets
     local reclaim = Duplicates.reclaimable(sets)
 
     if not set then
         local hero = UI.hero(th, width, {
             color = th.brand, icon = "library", title = _("Duplicates"),
-            subtitle = #sets == 0 and _("Nothing is on the shelf twice")
+            subtitle = ignored_mode and T(N_("%1 book kept as it is", "%1 books kept as they are", #sets), #sets)
+                or #sets == 0 and _("Nothing is on the shelf twice")
                 or T(N_("%1 book · up to %2 to free", "%1 books · up to %2 to free", #sets), #sets, util.getFriendlySize(reclaim)),
         })
         local size_w = sp(110)
@@ -122,7 +121,16 @@ return function(screen, th, width)
             return UI.tappable(row, function() screen:openSet(item.id) end)
         end
         return {
-            hero = hero, table_head = VerticalGroup:new{ align = "left", upRow(_("Up"), up) },
+            hero = hero, table_head = (function()
+                local head = VerticalGroup:new{ align = "left", topRow("⬆", _("Up"), up) }
+                local kept = #(plugin.ignored_duplicates or {})
+                if ignored_mode then
+                    table.insert(head, topRow("‹", _("Back to the duplicates"), function() screen:showActiveDuplicates() end))
+                elseif kept > 0 then
+                    table.insert(head, topRow("›", T(_("Kept on purpose · %1"), kept), function() screen:showIgnoredDuplicates() end))
+                end
+                return head
+            end)(),
             count = #sets, row_h = ROW_H, build = build,
             empty = function(h)
                 return FrameContainer:new{
@@ -147,7 +155,8 @@ return function(screen, th, width)
     local locked = plugin:copyInfo(set.copies[keep]).locked
     local hero = UI.hero(th, width, {
         color = th.books, icon = "library", title = set.title,
-        subtitle = T(_("%1 · %2"), kindText(set), T(N_("%1 copy", "%1 copies", #set.copies), #set.copies)),
+        subtitle = T(_("%1 · %2"), kindText(set), T(N_("%1 copy", "%1 copies", #set.copies), #set.copies))
+            .. (set.ignored and _(" · kept on purpose") or ""),
     })
     local reason = keep == 1 and why(set) or _("You chose this copy.")
     local function pick(i)
@@ -239,7 +248,9 @@ return function(screen, th, width)
         align = "center",
         UI.button(th, { text = "⬆", size = 15, callback = function() screen:closeSet() end }),
         HorizontalSpan:new{ width = gap },
-        UI.button(th, { text = _("Keep all"), size = 15, callback = function() plugin:keepAll(set) end }),
+        set.ignored
+            and UI.button(th, { text = _("Stop ignoring"), size = 15, callback = function() plugin:stopIgnoring(set) end })
+            or UI.button(th, { text = _("Keep all"), size = 15, callback = function() plugin:keepAll(set) end }),
         HorizontalSpan:new{ width = gap },
         UI.button(th, {
             text = T(_("Clear %1 · frees %2"), #set.copies - 1, util.getFriendlySize(free)), size = 15,
