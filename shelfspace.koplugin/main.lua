@@ -17,6 +17,7 @@ local T = ffiUtil.template
 local Deleter = require("shelfspace/deleter")
 local About = require("shelfspace/about")
 local Details = require("shelfspace/details")
+local Installer = require("shelfspace/installer")
 local ScanCache = require("shelfspace/scancache")
 local Scanner = require("shelfspace/scanner")
 local ShelfScreen = require("shelfspace/screen")
@@ -248,7 +249,21 @@ function ShelfSpace:checkForUpdates(current)
     end)
 end
 
+-- A device set up by something else (an Ansible playbook, say) that pins ShelfSpace's version is marked with
+-- shelfspace_updates_managed, and an update installed here would be undone, or worse, downgraded by it.
+-- Why an update cannot be installed here, or nil when it can: the device's setup manages the version, or this
+-- copy is a link to a source checkout, which an update would swap out from under the developer.
+function ShelfSpace:updateBlockedReason()
+    if G_reader_settings:isTrue("shelfspace_updates_managed") then
+        return _("This device's setup manages ShelfSpace's version, so updates are not installed from here.")
+    end
+    if lfs.symlinkattributes(self.path, "mode") == "link" then
+        return _("This copy of ShelfSpace is a link to a source checkout, so it is updated with git, not from here.")
+    end
+end
+
 function ShelfSpace:showUpdateResult(current, result)
+    local blocked = self:updateBlockedReason()
     self:showDialog(function()
         local dialog
         local function act(fn)
@@ -258,12 +273,63 @@ function ShelfSpace:showUpdateResult(current, result)
             end
         end
         local rows = {}
-        if result.state == "available" and result.page then
-            table.insert(rows, { { text = _("Release page (QR)"), callback = function() self:showQR(_("ShelfSpace release"), result.page) end } })
+        local text = Updater.message(result, current)
+        if result.state == "available" then
+            if blocked then
+                text = text .. "\n\n" .. blocked
+            elseif result.asset then
+                table.insert(rows, { { text = _("Update now"), callback = act(function() self:confirmInstall(current, result) end) } })
+            end
+            if result.page then
+                table.insert(rows, { { text = _("Release page (QR)"), callback = function() self:showQR(_("ShelfSpace release"), result.page) end } })
+            end
         end
         table.insert(rows, { { text = _("Close"), callback = act(function() end) } })
-        dialog = ButtonDialog:new { title = Updater.message(result, current), title_align = "center", buttons = rows }
+        dialog = ButtonDialog:new { title = text, title_align = "center", buttons = rows }
         return dialog
+    end)
+end
+
+function ShelfSpace:confirmInstall(current, result)
+    local blocked = self:updateBlockedReason()
+    if blocked then self:notify(blocked) return end
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = T(_("Update ShelfSpace from %1 to %2?\n\nThis downloads %3, checks it against GitHub's checksum, installs it and offers to restart KOReader. If anything goes wrong nothing is changed, and the current version is kept as shelfspace.koplugin.old."),
+                current, result.latest, util.getFriendlySize(result.asset.size or 0)),
+            ok_text = _("Update"),
+            ok_callback = function() self:installUpdate(result) end,
+        }
+    end)
+end
+
+-- Downloads, checks and installs the release in `result` (see Updater.interpret) over this plugin.
+function ShelfSpace:installUpdate(result)
+    -- The confirm box is still up while its callback runs, and showDialog shows nothing over a popup.
+    if self.popup then UIManager:close(self.popup) end
+    local busy = InfoMessage:new { text = _("Updating ShelfSpace…") }
+    UIManager:show(busy)
+    UIManager:forceRePaint()
+    local cache = DataStorage:getDataDir() .. "/cache"
+    lfs.mkdir(cache)
+    lfs.mkdir(cache .. "/shelfspace")
+    local ok, err = Installer.install(result.asset, result.latest, self.path, cache .. "/shelfspace/update.zip")
+    UIManager:close(busy)
+    if not ok then
+        self:notify(T(_("The update was not installed, and nothing was changed.\n\n%1"), tostring(err)))
+        return
+    end
+    local can_restart = Device:canRestart()
+    self:showDialog(function()
+        return ConfirmBox:new {
+            text = can_restart and T(_("ShelfSpace %1 is installed.\n\nRestart KOReader to start using it."), result.latest)
+                or T(_("ShelfSpace %1 is installed.\n\nQuit KOReader and open it again to start using it."), result.latest),
+            ok_text = can_restart and _("Restart now") or _("Quit now"),
+            cancel_text = _("Later"),
+            ok_callback = function()
+                if can_restart then UIManager:restartKOReader() else UIManager:quit() end
+            end,
+        }
     end)
 end
 

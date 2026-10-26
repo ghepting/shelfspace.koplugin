@@ -92,6 +92,14 @@ and commit), what it is running on, and QR codes for the repository and for repo
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
 for the latest release, only when you tap it, and tells you what changed if there is a newer one.
 
+When there is a newer release, **Update now** downloads it, checks it against the checksum GitHub
+publishes, makes sure the Lua loads and the version matches, and only then swaps it in. If any
+step fails nothing is changed. The previous copy is kept as `shelfspace.koplugin.old` in the
+plugins folder, so you can roll back by swapping the folders. Restart KOReader to run the new
+version. The button is hidden when the copy is a symlink, or when the setting
+`shelfspace_updates_managed` is true in KOReader's settings (for a device that something else
+keeps up to date).
+
 ## Scan speed
 
 The last scan is kept in KOReader's cache folder (`cache/shelfspace/scan.lua`). The next
