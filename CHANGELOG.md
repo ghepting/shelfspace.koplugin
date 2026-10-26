@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.4.0...v0.5.0) (2026-10-26)
+
+
+### Features
+
+* install updates from the About card ([#55](https://github.com/ghepting/shelfspace.koplugin/issues/55)) ([85c1c00](https://github.com/ghepting/shelfspace.koplugin/commit/85c1c000a4890e062b6f16b64884888abc925ab5))
+
 ## [0.4.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.3.0...v0.4.0) (2026-10-26)
 
 ### Features
