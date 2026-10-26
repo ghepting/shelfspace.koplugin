@@ -50,17 +50,34 @@ T.test("a bare icon has no canvas and no tile, so it can sit over a native tile"
     assert(svg:find("stroke-dasharray", 1, true), "no empty slot")
 end)
 
-T.test("the sort icon has three bars and an arrow, up for ascending and down for descending, on an opaque background", function()
-    local up, down = Icons.sortSvg(false, "2a363b", "ffffff"), Icons.sortSvg(true, "2a363b", "ffffff")
-    for _, svg in ipairs({ up, down }) do
-        local bars = 0
-        for _ in svg:gmatch('<rect x="4"') do bars = bars + 1 end
-        T.eq(bars, 3, "bars")
-        assert(svg:find('<rect width="48" height="48" fill="#ffffff"/>', 1, true), "background missing")
+T.test("every sort category has an icon in both directions, on an opaque background, and the directions differ", function()
+    for _, kind in ipairs({ "size", "name", "new", "opened" }) do
+        local up, down = Icons.sortSvg(kind, false, "2a363b", "ffffff"), Icons.sortSvg(kind, true, "2a363b", "ffffff")
+        for _, svg in ipairs({ up, down }) do
+            assert(svg:find('<rect width="48" height="48" fill="#ffffff"/>', 1, true), kind .. ": background missing")
+            assert(svg:find("#2a363b", 1, true), kind .. ": no ink")
+        end
+        assert(up ~= down, kind .. ": the two directions differ")
     end
-    assert(up:find("M31 19 L38 11 L45 19", 1, true), "ascending arrow points up")
-    assert(down:find("M31 29 L38 37 L45 29", 1, true), "descending arrow points down")
-    assert(up ~= down, "the two icons differ")
+end)
+
+T.test("the arrow icons point up for ascending and down for descending; the name icon has no arrow", function()
+    for _, kind in ipairs({ "size", "new", "opened" }) do
+        assert(Icons.sortSvg(kind, false, "000000", "ffffff"):find("M33 18 L39 11 L45 18", 1, true), kind .. ": ascending points up")
+        assert(Icons.sortSvg(kind, true, "000000", "ffffff"):find("M33 30 L39 37 L45 30", 1, true), kind .. ": descending points down")
+    end
+    for _, descending in ipairs({ false, true }) do
+        local svg = Icons.sortSvg("name", descending, "000000", "ffffff")
+        assert(not svg:find("L39 11", 1, true) and not svg:find("L39 37", 1, true), "name has an arrow")
+    end
+end)
+
+T.test("the name icon puts A on top for A to Z and Z on top for Z to A", function()
+    local function first_y(svg, pattern) return tonumber(svg:match(pattern)) end
+    local az, za = Icons.sortSvg("name", false, "000000", "ffffff"), Icons.sortSvg("name", true, "000000", "ffffff")
+    -- the A is the path that starts with an M12; the Z the one that starts with an M13
+    assert(first_y(az, 'M12 (%d+)') < first_y(za, 'M12 (%d+)'), "A is higher in A to Z")
+    assert(first_y(az, 'M13 (%d+)') > first_y(za, 'M13 (%d+)'), "Z is lower in A to Z")
 end)
 
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
