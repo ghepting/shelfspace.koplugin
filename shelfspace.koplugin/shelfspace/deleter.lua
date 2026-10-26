@@ -87,7 +87,8 @@ end
 function Deleter.blockedReason(entry, ctx)
     local path = entry.path
     if ctx.open_file and within(ctx.open_file, path) then
-        return _("You are reading this book")
+        -- The book itself, or a folder with it somewhere inside: both are locked, for different reasons.
+        return path == ctx.open_file and _("You are reading this book") or _("Holds the book you are reading")
     elseif within(ctx.koreader_dir, path) then
         return _("KOReader is installed here")
     elseif within(path, ctx.koreader_dir) then
