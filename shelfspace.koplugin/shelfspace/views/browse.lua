@@ -118,14 +118,14 @@ return function(screen, th, width)
     -- between the columns.
     local gap = sp(10)
     local line = Size.line.thin
-    local cb_w = sp(44) -- the checkbox column, wide enough to tap
-    local tick_size = sp(26)
+    local cb_w = ROW_H -- the checkbox column: a square cell, as wide as a row is tall
+    local tick_size = sp(20)
     local read_cell_w = sp(70)
     local size_cell_w = sp(88)
     local name_cell_w = width - cb_w - read_cell_w - size_cell_w - 3 * line
     local dot_w, dot_gap = sp(10), sp(8)
     local text_w = name_cell_w - 2 * gap - dot_w - dot_gap -- the name, and what is under it
-    local head_h = sp(40)
+    local head_h = sp(44)
 
     local function vline(h) return LineWidget:new{ dimen = Geom:new{ w = line, h = h }, background = th.line } end
 

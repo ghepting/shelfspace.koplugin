@@ -128,7 +128,7 @@ function UI.checkbox(th, checked, opts)
         UI.text(opts.mixed and "–" or "✓", math.floor(size * 0.62), { bold = true, color = th.white }),
     } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
     return FrameContainer:new{
-        bordersize = Size.border.button, color = opts.disabled and th.muted or th.ink, radius = sp(8), margin = 0, padding = 0,
+        bordersize = Size.border.button, color = opts.disabled and th.muted or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
         background = filled and th.accent or (opts.disabled and th.free or th.white),
         inner,
     }
