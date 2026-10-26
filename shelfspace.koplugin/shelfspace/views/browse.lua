@@ -76,12 +76,18 @@ return function(screen, th, width)
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
     local chips = {}
-    -- A search in force is a chip like the types: filled while it is on, and tapping it clears it.
+    -- The first chip is the search: just a magnifier until you search, then a filled chip with what you
+    -- searched for. Tapping the icon asks; tapping the filled chip clears it.
     if screen.query then
         table.insert(chips, {
             text = T(_("“%1” ✕"), shorten(screen.query, 14)),
             active = true,
             on_tap = function() screen:setQuery(nil) end,
+        })
+    else
+        table.insert(chips, {
+            icon = Icons.searchWidget(sp(17), th.ink, th.bg),
+            on_tap = function() screen:askQuery() end,
         })
     end
     -- The other chips are the types of book in the library, not everything on the device.
@@ -201,23 +207,17 @@ return function(screen, th, width)
         end)
     end
 
-    -- One row of controls: search (its text shows as a chip above), what is shown, how it is sorted, and which way.
+    -- One row of controls: what is shown, how it is sorted, and which way. (The search is the first chip above.)
     -- The labels are never squeezed: each button gets room for its own text.
-    local search_button = UI.button(th, {
-        icon = Icons.searchWidget(sp(24), th.ink, th.white), text = _("Search"),
-        callback = function() screen:askQuery() end,
-    })
     -- An arrow down is biggest, newest or most recent first (Z to A for names), an arrow up the other way round.
     local direction_button = UI.button(th, {
         icon = Icons.sortWidget(screen.sort, screen.descending, sp(24), th.ink, th.white), text = screen.descending and "↓" or "↑",
         callback = function() screen:flipSort() end,
     })
-    local pair_w = width - search_button:getSize().w - direction_button:getSize().w - 3 * gap
+    local pair_w = width - direction_button:getSize().w - 2 * gap
     local show_w = math.floor(pair_w / 2)
     local controls = HorizontalGroup:new{
         align = "center",
-        search_button,
-        HorizontalSpan:new{ width = gap },
         UI.button(th, {
             text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15, width = show_w,
             callback = function() screen:askStatus() end,
