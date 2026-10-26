@@ -277,7 +277,10 @@ function ShelfScreen:rebuild()
 
     if view.build then
         if view.header then table.insert(body, view.header) end
+        -- A view with a `table_head` draws its rows as a table: a rounded, outlined box holding the head and the rows.
+        local frame_w = Size.border.default * 2
         local used = titlebar:getSize().h + 2 * pad + body:getSize().h
+            + (view.table_head and view.table_head:getSize().h + frame_w or 0)
         local pager_h = sp(44)
         local per_page = math.max(1, math.floor((self.dimen.h - used - pager_h) / view.row_h))
         local pages = math.max(1, math.ceil(view.count / per_page))
@@ -286,7 +289,10 @@ function ShelfScreen:rebuild()
         self.page_count = pages
         local first = (page - 1) * per_page + 1
         local last = math.min(view.count, first + per_page - 1)
-        for i = first, last do table.insert(body, view.build(i)) end
+        local rows = body
+        if view.table_head then rows = VerticalGroup:new{ align = "left", view.table_head } end
+        for i = first, last do table.insert(rows, view.build(i)) end
+        if view.table_head then table.insert(body, UI.rounded(th, rows, sp(10), Size.border.default)) end
         table.insert(body, VerticalSpan:new{ width = (per_page - (last - first + 1)) * view.row_h })
         table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end))
     else
