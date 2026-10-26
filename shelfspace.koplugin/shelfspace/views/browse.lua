@@ -202,7 +202,9 @@ return function(screen, th, width)
         local row = frame(tick, name, UI.text(read, 15, { bold = true, color = th.ink }),
             UI.text(util.getFriendlySize(item.size), 15, { bold = true, color = th.ink }), row_h)
         if item.is_dir then
-            return UI.tappable(row, function() screen:setDir(item.path) end)
+            -- A tap opens the folder; pressing and holding shows what is in it and what can be done with it.
+            return UI.tappable(row, function() screen:setDir(item.path) end,
+                function() plugin:showFolder(item, item.path:match("^(.*)/[^/]+$") or dir) end)
         end
         return UI.tappable(row, function()
             plugin:showDetails(item, item.path:match("^(.*)/[^/]+$") or dir)

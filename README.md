@@ -51,9 +51,9 @@ Open **Tools › ShelfSpace**. Three tabs:
   books KOReader has marked as finished, or to the ones you never opened,
   wherever they are in the library, so what you have already read (or never
   will) is easy to clear. When a search or filter leaves nothing, you get a message
-  saying why and a button that undoes it. Tap a folder to open it, or tap
+  saying why and a button that undoes it. Tap a folder to open it (press and hold it for what is in it and what you can do with it), or tap
   a file to see what it is (type, size, where it is, when it changed, your
-  reading progress), with Open and Book info buttons. Every row has a checkbox;
+  reading progress), with Open and Book info buttons, and, for the book you have open, Close book so you can delete it. Every row has a checkbox;
   tick the ones you want (the checkbox in the header ticks them all) a bar
   floats over the bottom of the list, so nothing moves under your finger, saying how
   many are ticked and how big they are, with a **Delete** that deletes them in one go. You always get a confirmation first, including how many books lose

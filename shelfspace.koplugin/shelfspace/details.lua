@@ -1,6 +1,8 @@
 local ButtonDialog = require("ui/widget/buttondialog")
 local DocSettings = require("docsettings")
 local DocumentRegistry = require("document/documentregistry")
+local Folderinfo = require("shelfspace/folderinfo")
+local Stats = require("shelfspace/stats")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
@@ -81,6 +83,10 @@ function Details.show(plugin, entry, dir, reason)
                 },
             })
         end
+        -- A book that was already open when ShelfSpace was can't be deleted; closing it here unlocks it.
+        if current then
+            table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
+        end
         local last = { { text = _("Close"), callback = act(function() end) } }
         if not reason then
             table.insert(last, 1, {
@@ -91,6 +97,37 @@ function Details.show(plugin, entry, dir, reason)
         table.insert(rows, last)
         dialog = ButtonDialog:new{
             title = Details.text(plugin.root, entry, dir, reason, book),
+            title_align = "center",
+            buttons = rows,
+        }
+        return dialog
+    end)
+end
+
+-- The card for a folder: what is in it, and what can be done with it. `reason` is why it can't be deleted.
+function Details.showFolder(plugin, entry, dir, reason)
+    local files = Stats.summarize(plugin.tree, entry.path).files -- the same count as the folder's own header
+    local open_file = plugin.ui.document and plugin.ui.document.file
+    local holds_open_book = open_file and open_file:sub(1, #entry.path + 1) == entry.path .. "/"
+    plugin:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        local rows = { { { text = _("Open"), callback = act(function() plugin.screen:setDir(entry.path) end) } } }
+        if holds_open_book then
+            table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
+        end
+        local last = { { text = _("Close"), callback = act(function() end) } }
+        if not reason then
+            table.insert(last, 1, { text = _("Delete"), callback = act(function() plugin:confirmDelete(entry, dir) end) })
+        end
+        table.insert(rows, last)
+        dialog = ButtonDialog:new{
+            title = Folderinfo.text(entry, whereIs(plugin.root, dir), files, reason),
             title_align = "center",
             buttons = rows,
         }
