@@ -281,8 +281,13 @@ function ShelfScreen:rebuild()
         local frame_w = Size.border.default * 2
         local used = titlebar:getSize().h + 2 * pad + body:getSize().h
             + (view.table_head and view.table_head:getSize().h + frame_w or 0)
-        local pager_h = sp(44)
-        local per_page = math.max(1, math.floor((self.dimen.h - used - pager_h) / view.row_h))
+        local pager_h = UI.pager(th, width, 1, 1, function() end):getSize().h
+        local avail = self.dimen.h - used - pager_h
+        local per_page = math.max(1, math.floor(avail / view.row_h))
+        -- Whatever is left over (less than one row) is shared out among the rows, so the list fills the screen
+        -- at any height instead of ending short; but never by more than a quarter of a row each.
+        local row_h = view.row_h + math.min(math.floor(view.row_h / 4), math.floor((avail - per_page * view.row_h) / per_page))
+        row_h = math.max(row_h, view.row_h)
         local pages = math.max(1, math.ceil(view.count / per_page))
         local page = math.min(self.pages[self.tab] or 1, pages)
         self.pages[self.tab] = page
@@ -291,9 +296,9 @@ function ShelfScreen:rebuild()
         local last = math.min(view.count, first + per_page - 1)
         local rows = body
         if view.table_head then rows = VerticalGroup:new{ align = "left", view.table_head } end
-        for i = first, last do table.insert(rows, view.build(i)) end
+        for i = first, last do table.insert(rows, view.build(i, row_h)) end
         if view.table_head then table.insert(body, UI.rounded(th, rows, sp(10), Size.border.default)) end
-        table.insert(body, VerticalSpan:new{ width = (per_page - (last - first + 1)) * view.row_h })
+        table.insert(body, VerticalSpan:new{ width = (per_page - (last - first + 1)) * row_h })
         table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end))
     else
         self.page_count = 1
