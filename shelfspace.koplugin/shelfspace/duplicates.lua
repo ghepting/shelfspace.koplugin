@@ -174,6 +174,46 @@ function Duplicates.suggest(set, info)
     return best, reason or "newest"
 end
 
+-- What sets copy `i` apart from the others in `set`: a list of { id, text? } facts worth a tag. Only real
+-- differences are listed (a tag every copy would carry says nothing): "suggested" for the copy to keep,
+-- "most_read" when one copy is furthest through, a worse format ("fixed_layout" for a PDF, else "older_format"),
+-- "newest" and "smallest" when exactly one copy is. `info(copy)` is as for suggest.
+function Duplicates.tags(set, i, info)
+    local copy = set.copies[i]
+    local tags = {}
+    if i == 1 then table.insert(tags, { id = "suggested" }) end
+    local function unique(value_of, want)
+        local n = 0
+        for _, c in ipairs(set.copies) do
+            if value_of(c) == want then n = n + 1 end
+        end
+        return n == 1
+    end
+    local most = 0
+    for _, c in ipairs(set.copies) do most = math.max(most, info(c).progress or 0) end
+    local mine = info(copy).progress or 0
+    if most > 0 and mine == most and unique(function(c) return info(c).progress or 0 end, most) then
+        table.insert(tags, { id = "most_read", percent = math.floor(mine * 100) })
+    end
+    local best, rank = OTHER_FORMAT + 1, Duplicates.formatRank(copy.name)
+    for _, c in ipairs(set.copies) do best = math.min(best, Duplicates.formatRank(c.name)) end
+    if rank > best then
+        table.insert(tags, { id = Duplicates.extension(copy.name) == "pdf" and "fixed_layout" or "older_format" })
+    end
+    local newest, smallest = 0, math.huge
+    for _, c in ipairs(set.copies) do
+        newest = math.max(newest, c.modified or 0)
+        smallest = math.min(smallest, c.size)
+    end
+    if unique(function(c) return c.modified or 0 end, newest) and (copy.modified or 0) == newest then
+        table.insert(tags, { id = "newest" })
+    end
+    if unique(function(c) return c.size end, smallest) and copy.size == smallest then
+        table.insert(tags, { id = "smallest" })
+    end
+    return tags
+end
+
 -- What clearing every copy but `keep` frees.
 function Duplicates.savings(set, keep)
     local sum = 0

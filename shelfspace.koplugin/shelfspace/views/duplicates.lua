@@ -22,7 +22,6 @@ local UI = require("shelfspace/ui")
 local sp = UI.sp
 
 local ROW_H = sp(60)
-local CARDS_AT_MOST = 3 -- more copies than this are listed as rows: three cards is what a 3:4 screen has room for
 
 -- Why the copy marked to keep was chosen, in a sentence.
 local function why(set)
@@ -142,7 +141,8 @@ return function(screen, th, width)
         }
     end
 
-    -- One set: which copy is kept is the first, unless you tapped another. The book you are reading is always kept.
+    -- One set, its copies stacked as cards, best first. The copy that will be kept is the first, unless you tapped
+    -- another; the book you are reading is always kept.
     local keep = screen:keeper(set)
     local locked = plugin:copyInfo(set.copies[keep]).locked
     local hero = UI.hero(th, width, {
@@ -154,101 +154,107 @@ return function(screen, th, width)
         if not locked then screen:setKeeper(set, i) end
     end
     local function readText(copy) return Progress.cell(BookList.getBookInfo(copy.path)) end
+    local function day(time) return time and os.date("%b %d", time) or "" end
 
-    if #set.copies <= CARDS_AT_MOST then
-        local n = #set.copies
-        local card_w = math.floor((width - gap * (n - 1)) / n)
-        local inner = card_w - 2 * sp(10)
-        local cards = HorizontalGroup:new{ align = "top" }
-        for i, copy in ipairs(set.copies) do
-            local kept = i == keep
-            local ext = Duplicates.extension(copy.name)
-            local card = FrameContainer:new{
-                bordersize = kept and Size.border.thick or Size.border.thin, color = kept and th.ink or th.muted,
-                radius = sp(10), margin = 0, padding = sp(10), width = card_w,
-                background = kept and th.white or th.chip,
-                VerticalGroup:new{
-                    align = "left",
-                    UI.chip(th, kept and _("KEEP") or _("CLEAR"), { active = kept }),
-                    VerticalSpan:new{ width = sp(8) },
-                    UI.block(inner, sp(46), Theme.kind(th, copy), sp(6)),
-                    VerticalSpan:new{ width = sp(2) },
-                    UI.text(ext:upper(), 16, { bold = true, color = th.ink, max_width = inner }),
-                    VerticalSpan:new{ width = sp(6) },
-                    UI.text(_("Size"), 12, { color = th.muted, max_width = inner }),
-                    UI.text(util.getFriendlySize(copy.size), 15, { bold = true, color = th.ink, max_width = inner }),
-                    VerticalSpan:new{ width = sp(4) },
-                    UI.text(_("Read"), 12, { color = th.muted, max_width = inner }),
-                    UI.text(readText(copy), 15, { bold = true, color = th.ink, max_width = inner }),
-                    VerticalSpan:new{ width = sp(4) },
-                    UI.text(_("In"), 12, { color = th.muted, max_width = inner }),
-                    UI.text(whereIs(plugin, copy), 14, { bold = true, color = th.ink, max_width = inner }),
-                },
-            }
-            if i > 1 then table.insert(cards, HorizontalSpan:new{ width = gap }) end
-            table.insert(cards, UI.tappable(card, function() pick(i) end))
-        end
-        local body = VerticalGroup:new{
-            align = "left",
-            upRow(_("Back to the list"), function() screen:closeSet() end),
-            VerticalSpan:new{ width = sp(12) },
-            cards,
-            VerticalSpan:new{ width = sp(10) },
-            UI.text(T(_("%1 Tap a copy to keep that one instead."), reason), 14, { color = th.muted, max_width = width }),
+    local tag_text = {
+        suggested = _("SUGGESTED"), fixed_layout = _("PDF · FIXED LAYOUT"), older_format = _("OLDER FORMAT"),
+        newest = _("NEWEST"), smallest = _("SMALLEST"),
+    }
+    local border, pad = Size.border.thick, sp(10)
+    local lead_w = sp(84)
+    local rest_w = width - 2 * (border + pad) - lead_w - gap
+    local chip_h = UI.chip(th, "Ag"):getSize().h
+
+    -- One field: a muted label and its value.
+    local function field(label, value, w)
+        local l = UI.text(label, 12, { color = th.muted })
+        return HorizontalGroup:new{
+            align = "center", l, HorizontalSpan:new{ width = sp(6) },
+            UI.text(value, 14, { bold = true, color = th.ink, max_width = w - l:getSize().w - sp(6) }),
         }
-        return { hero = hero, body = body }
     end
 
-    -- Four or more copies: a row each, the one to keep ticked.
-    local tick = sp(20)
-    local size_w = sp(90)
-    local name_w = width - ROW_H - size_w - 2 * line - gap
-    local function build(i, row_h)
+    local function card(i)
         local copy = set.copies[i]
-        row_h = row_h or ROW_H
-        local row = FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0, background = th.white,
-            VerticalGroup:new{
-                align = "left",
-                HorizontalGroup:new{
-                    align = "center",
-                    CenterContainer:new{
-                        dimen = Geom:new{ w = ROW_H, h = row_h - line },
-                        UI.checkbox(th, i == keep, { size = tick }),
-                    },
-                    LineWidget:new{ dimen = Geom:new{ w = line, h = row_h - line }, background = th.line },
-                    LeftContainer:new{
-                        dimen = Geom:new{ w = name_w, h = row_h - line },
-                        HorizontalGroup:new{
-                            HorizontalSpan:new{ width = gap },
-                            VerticalGroup:new{
-                                align = "left",
-                                UI.text(T(_("%1 · %2"), Duplicates.extension(copy.name):upper(), readText(copy)), 17,
-                                    { bold = true, color = th.ink, max_width = name_w - gap }),
-                                UI.text(whereIs(plugin, copy), 12, { color = th.muted, max_width = name_w - gap }),
-                            },
-                        },
-                    },
-                    LineWidget:new{ dimen = Geom:new{ w = line, h = row_h - line }, background = th.line },
-                    RightContainer:new{
-                        dimen = Geom:new{ w = size_w, h = row_h - line },
-                        HorizontalGroup:new{ UI.text(util.getFriendlySize(copy.size), 15, { bold = true, color = th.ink }), HorizontalSpan:new{ width = gap } },
-                    },
+        local kept = i == keep
+        local third = math.floor((rest_w - 2 * gap) / 3)
+        local where_w = math.min(sp(150), math.floor(rest_w / 3))
+        local tags = HorizontalGroup:new{
+            align = "center", VerticalSpan:new{ width = chip_h },
+            UI.text(T(_("in %1"), whereIs(plugin, copy)), 12, { color = th.muted, max_width = where_w }),
+            HorizontalSpan:new{ width = sp(8) },
+        }
+        local used = where_w + sp(8)
+        for _, tag in ipairs(Duplicates.tags(set, i, function(c) return plugin:copyInfo(c) end)) do
+            local text = tag.id == "most_read" and T(_("MOST READ %1%"), tag.percent) or tag_text[tag.id]
+            local chip = UI.chip(th, text, { active = tag.id == "suggested" or tag.id == "most_read" })
+            local w = chip:getSize().w + sp(4)
+            if used + w > rest_w then break end
+            table.insert(tags, chip)
+            table.insert(tags, HorizontalSpan:new{ width = sp(4) })
+            used = used + w
+        end
+        local lead = VerticalGroup:new{
+            align = "left",
+            UI.chip(th, kept and _("KEEP") or _("CLEAR"), { active = kept }),
+            VerticalSpan:new{ width = sp(6) },
+            FrameContainer:new{
+                bordersize = 0, padding = 0, margin = 0, radius = sp(6), background = Theme.kind(th, copy),
+                CenterContainer:new{
+                    dimen = Geom:new{ w = lead_w, h = sp(46) },
+                    UI.text(Duplicates.extension(copy.name):upper(), 15, { bold = true, color = th.white, max_width = lead_w }),
                 },
-                LineWidget:new{ dimen = Geom:new{ w = width, h = line }, background = th.line },
             },
         }
-        return UI.tappable(row, function() pick(i) end)
+        local rest = VerticalGroup:new{
+            align = "left",
+            UI.text(copy.name, 16, { bold = true, color = th.ink, max_width = rest_w }),
+            HorizontalGroup:new{
+                field(_("Size"), util.getFriendlySize(copy.size), third), HorizontalSpan:new{ width = gap },
+                field(_("Read"), readText(copy), third), HorizontalSpan:new{ width = gap },
+                field(_("Added"), day(copy.modified), third),
+            },
+            tags,
+        }
+        return FrameContainer:new{
+            bordersize = kept and border or Size.border.thin, color = kept and th.ink or th.danger,
+            radius = sp(10), margin = 0, padding = kept and pad or pad + border - Size.border.thin,
+            width = width, background = kept and th.white or th.clear,
+            HorizontalGroup:new{ align = "top", lead, HorizontalSpan:new{ width = gap }, rest },
+        }
     end
+
+    local card_gap = sp(6)
+    local row_h = card(1):getSize().h + card_gap
+    local function build(i, h)
+        local row = card(i)
+        return VerticalGroup:new{
+            align = "left",
+            UI.tappable(row, function() pick(i) end),
+            VerticalSpan:new{ width = (h or row_h) - row:getSize().h },
+        }
+    end
+    local free = Duplicates.savings(set, keep)
+    local actions = HorizontalGroup:new{
+        align = "center",
+        UI.button(th, { text = "⬆", size = 15, callback = function() screen:closeSet() end }),
+        HorizontalSpan:new{ width = gap },
+        UI.button(th, { text = _("Keep all"), size = 15, callback = function() plugin:keepAll(set) end }),
+        HorizontalSpan:new{ width = gap },
+        UI.button(th, {
+            text = T(_("Clear %1 · frees %2"), #set.copies - 1, util.getFriendlySize(free)), size = 15,
+            background = th.danger, color = th.white, callback = function() plugin:confirmClearCopies(set, keep) end,
+        }),
+    }
     return {
         hero = hero,
         header = VerticalGroup:new{
             align = "left",
-            VerticalSpan:new{ width = sp(2) },
             UI.text(T(_("%1 Tap a copy to keep that one instead."), reason), 14, { color = th.muted, max_width = width }),
             VerticalSpan:new{ width = sp(6) },
+            actions,
+            VerticalSpan:new{ width = sp(8) },
         },
-        table_head = VerticalGroup:new{ align = "left", upRow(_("Back to the list"), function() screen:closeSet() end) },
-        count = #set.copies, row_h = ROW_H, build = build,
+        count = #set.copies, row_h = row_h, build = build,
     }
 end

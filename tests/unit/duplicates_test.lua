@@ -130,6 +130,26 @@ T.test("savings and the most that could be freed", function()
     T.eq(Duplicates.reclaimable({ set, { copies = { file("/x/a.epub", 7), file("/x/b.epub", 7) } } }), 57)
 end)
 
+local function tagIds(set, i, info)
+    local ids = {}
+    for _, tag in ipairs(Duplicates.tags(set, i, function(c) return info[c.path] or {} end)) do ids[#ids + 1] = tag.id end
+    return table.concat(ids, ",")
+end
+
+T.test("tags name only what sets a copy apart", function()
+    local set = { copies = { file("/lib/B.epub", 100, 5), file("/lib/B (1).epub", 100, 5), file("/lib/B.pdf", 400, 5) } }
+    T.eq(tagIds(set, 1, {}), "suggested")
+    T.eq(tagIds(set, 2, {}), "")
+    T.eq(tagIds(set, 3, {}), "fixed_layout")
+end)
+
+T.test("the furthest-read, newest and smallest copy are tagged when exactly one is", function()
+    local set = { copies = { file("/lib/B.epub", 100, 9), file("/lib/B (1).epub", 120, 5), file("/lib/B.mobi", 130, 5) } }
+    local info = { ["/lib/B.epub"] = { progress = 0.35 } }
+    T.eq(tagIds(set, 1, info), "suggested,most_read,newest,smallest")
+    T.eq(tagIds(set, 3, info), "older_format")
+end)
+
 T.test("sameBytes compares files byte for byte", function()
     local dir = os.tmpname()
     os.remove(dir)

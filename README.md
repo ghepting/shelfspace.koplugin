@@ -65,12 +65,13 @@ Open **Tools › ShelfSpace**. Three tabs:
   on Overview (a tidy library never sees it). It lists each book that has several copies, with how
   much clearing the extras would free. Copies with the same bytes are marked **Same file**; the
   same name in another format or with a "(1)" on the end is **Same book**. Open one to compare the
-  copies side by side, with their size, how far through you are, and where they are. One copy is
+  copies, stacked as cards with their file name, size, how far through you are, when they were added and where they are,
+  and tags for what sets one apart (the newest, the smallest, an older format). One copy is
   marked **Keep**, and it says why: the book you are reading, or the copy you have read most,
   never goes; after that the format that reads best on an e-ink screen (EPUB, then MOBI, then
   PDF), then the copy nearest the top of the library, then the newest. Tap another copy to keep that
   one instead. **Clear** removes the others after a confirmation that names them, and **Keep all**
-  leaves the set alone from then on. With more than three copies they are listed as rows.
+  leaves the set alone from then on.
   It is one book at a time on purpose, so every deletion is something you have looked at.
 - **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
   update downloads, crash logs, screenshots, reading progress of books that are

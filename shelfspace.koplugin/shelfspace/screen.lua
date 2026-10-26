@@ -23,7 +23,6 @@ local T = require("ffi/util").template
 local Screen = Device.screen
 
 local Theme = require("shelfspace/theme")
-local Duplicates = require("shelfspace/duplicates")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
@@ -108,26 +107,12 @@ end
 -- gives taps to the topmost widget.
 function ShelfScreen:buildActionBar()
     self.action_bar, self.bar_hits, self.bar_zone = nil, nil, nil
-    local label, buttons
-    local set = self.tab == "duplicates" and self:currentSet()
-    if set then
-        local keep = self:keeper(set)
-        local n = #set.copies - 1
-        label = T(_("Keeping 1 of %1 · frees %2"), #set.copies, util.getFriendlySize(Duplicates.savings(set, keep)))
-        buttons = {
-            { text = _("Keep all"), callback = function() self.plugin:keepAll(set) end },
-            { text = T(_("Clear %1"), n), danger = true, callback = function() self.plugin:confirmClearCopies(set, keep) end },
-        }
-    else
-        local chosen = self.tab == "browse" and self:chosen() or {}
-        if #chosen == 0 then return end
-        label = T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen)))
-        buttons = {
-            { text = "✕", callback = function() self:clearSelection() end },
-            { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
-        }
-    end
-    local bar, hits = UI.floatingBar(self.theme, label, buttons)
+    local chosen = self.tab == "browse" and self:chosen() or {}
+    if #chosen == 0 then return end
+    local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
+        { text = "✕", callback = function() self:clearSelection() end },
+        { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
+    })
     local size = bar:getSize()
     local x = math.floor((self.dimen.w - size.w) / 2)
     local y = self.dimen.h - size.h - sp(76) -- over the bottom rows, clear of the pager
