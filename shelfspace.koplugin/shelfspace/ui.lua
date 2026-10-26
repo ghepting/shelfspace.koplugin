@@ -148,21 +148,26 @@ function UI.chip(th, text, opts)
 end
 
 -- A floating bar of actions, a dark pill: a label, then buttons. `buttons` is a list of
--- { text, callback, danger }. It is drawn over the page, so showing it never moves what is beneath.
+-- { text, callback, danger }. Returns the bar and its buttons' widgets (their `dimen` is where they were
+-- last drawn), so that whoever draws the bar can pass taps on to them.
 function UI.floatingBar(th, label, buttons)
     local row = HorizontalGroup:new{ align = "center", UI.text(label, 16, { bold = true, color = th.white }) }
+    local hits = {}
     for _, b in ipairs(buttons) do
         table.insert(row, HorizontalSpan:new{ width = sp(12) })
-        table.insert(row, UI.button(th, {
+        local button = UI.button(th, {
             text = b.text, size = 15, callback = b.callback,
             background = b.danger and th.danger or nil, color = b.danger and th.white or nil,
-        }))
+        })
+        table.insert(row, button)
+        table.insert(hits, { widget = button, callback = b.callback })
     end
-    return FrameContainer:new{
+    local bar = FrameContainer:new{
         bordersize = 0, margin = 0, radius = sp(26), background = th.ink,
         padding = sp(10), padding_left = sp(20), padding_right = sp(12),
         row,
     }
+    return bar, hits
 end
 
 -- A rounded track with a filled share of it.

@@ -87,31 +87,50 @@ end
 function ShelfScreen:refresh()
     if self.closed then return end
     self:rebuild()
+    self:buildActionBar()
     UIManager:setDirty(self, "ui")
-    self:syncActionBar()
 end
 
 -- What is ticked on Browse floats over the page as a bar (how many, how big, and Delete), so ticking
--- never moves the table under your finger. It is a widget of its own on top of the screen: shown when
--- something is ticked, taken down when nothing is, and rebuilt on every change.
-function ShelfScreen:syncActionBar()
-    if self.action_bar then
-        UIManager:close(self.action_bar)
-        self.action_bar = nil
-    end
-    local chosen = (self.tab == "browse" and not self.closed) and self:chosen() or {}
+-- never moves the table under your finger. The screen draws it itself, last, and claims taps inside it:
+-- a widget of its own on top would take every other tap on the page with it, since KOReader only
+-- gives taps to the topmost widget.
+function ShelfScreen:buildActionBar()
+    self.action_bar, self.bar_hits, self.bar_zone = nil, nil, nil
+    local chosen = self.tab == "browse" and self:chosen() or {}
     if #chosen == 0 then return end
-    local th = self.theme
-    local bar = UI.floatingBar(th, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
+    local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
         { text = "✕", callback = function() self:clearSelection() end },
         { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
     })
     local size = bar:getSize()
     local x = math.floor((self.dimen.w - size.w) / 2)
     local y = self.dimen.h - size.h - sp(76) -- over the bottom rows, clear of the pager
-    local holder = InputContainer:new{ dimen = Geom:new{ x = x, y = y, w = size.w, h = size.h }, bar }
-    self.action_bar = holder
-    UIManager:show(holder, "ui", holder.dimen, x, y)
+    self.action_bar, self.bar_hits = bar, hits
+    self.bar_x, self.bar_y = x, y
+    self.bar_zone = Geom:new{ x = x, y = y, w = size.w, h = size.h }
+end
+
+function ShelfScreen:paintTo(bb, x, y)
+    InputContainer.paintTo(self, bb, x, y)
+    if self.action_bar then self.action_bar:paintTo(bb, x + self.bar_x, y + self.bar_y) end
+end
+
+-- KOReader hands an event to a container's children before the container itself, so the table under the
+-- bar would see a tap on the bar first. The screen looks at taps itself, ahead of its children: a tap
+-- inside the bar is the bar's (a button's, or nobody's between the buttons) and never reaches the table.
+function ShelfScreen:propagateEvent(event)
+    local ges = event.handler == "onGesture" and event.args and event.args[1]
+    if ges and ges.ges == "tap" and self.bar_zone and ges.pos and self.bar_zone:contains(ges.pos) then
+        for _, hit in ipairs(self.bar_hits or {}) do
+            if hit.widget.dimen and hit.widget.dimen:contains(ges.pos) then
+                hit.callback()
+                break
+            end
+        end
+        return true
+    end
+    return InputContainer.propagateEvent(self, event)
 end
 
 function ShelfScreen:clearSelection()
@@ -386,10 +405,6 @@ end
 
 function ShelfScreen:onCloseWidget()
     self.closed = true
-    if self.action_bar then
-        UIManager:close(self.action_bar)
-        self.action_bar = nil
-    end
     UIManager:setDirty(nil, "ui")
 end
 
