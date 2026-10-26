@@ -68,6 +68,7 @@ function ShelfScreen:init()
     self.covers_fullscreen = true
     self.theme = Theme.get()
     self.pages = {}
+    self.left_at = {} -- pageKey -> the page of Browse a folder was on when you left it
     self.selected = {} -- path -> entry; survives paging, folders and searches
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
@@ -99,11 +100,19 @@ function ShelfScreen:openBrowse(dir)
     self:setDir(dir)
 end
 
+-- Browse remembers the page each folder was on (for the sort and status it was shown with), so going Up
+-- lands where you were instead of on page 1.
+function ShelfScreen:pageKey(dir)
+    return table.concat({ dir or self.plugin.root, tostring(self.status), tostring(self.sort) }, "|")
+end
+
 function ShelfScreen:setDir(dir)
+    -- A page of search results or of one file type says nothing about the folder's own pages.
+    if not self.query and not self.filter then self.left_at[self:pageKey(self.dir)] = self.pages.browse end
     self.dir = dir
     self.query = nil
     self.filter = nil
-    self.pages.browse = 1
+    self.pages.browse = self.left_at[self:pageKey(dir)] or 1
     self:refresh()
 end
 
