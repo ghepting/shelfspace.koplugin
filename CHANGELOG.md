@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.5.0...v0.6.0) (2026-10-26)
+
+
+### Features
+
+* find duplicate books and choose which copy to keep ([#60](https://github.com/ghepting/shelfspace.koplugin/issues/60)) ([2de207c](https://github.com/ghepting/shelfspace.koplugin/commit/2de207cb712db833365b5baad537cd1d00b70945))
+
 ## [0.5.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.4.0...v0.5.0) (2026-10-26)
 
 
