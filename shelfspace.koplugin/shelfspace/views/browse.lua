@@ -145,7 +145,8 @@ return function(screen, th, width)
     -- A row: checkbox, then the name with a dot for its type and the book's progress under it, then the size.
     -- Tapping the row opens a folder or says what a file is; ticking is the checkbox. Rows that can't be
     -- deleted have a greyed checkbox and say why under the name.
-    local function build(i)
+    local function build(i, row_h)
+        row_h = row_h or ROW_H -- the screen may stretch rows a little to fill the page
         local item = entries[i]
         local reason = Deleter.blockedReason(item, ctx)
         -- Under a book's name: how far through it you are. A folder shows nothing, and a search result says
@@ -171,7 +172,7 @@ return function(screen, th, width)
             tick = UI.checkbox(th, false, { disabled = true, size = tick_size })
         else
             tick = UI.tappable(CenterContainer:new{
-                dimen = Geom:new{ w = cb_w, h = ROW_H - line },
+                dimen = Geom:new{ w = cb_w, h = row_h - line },
                 UI.checkbox(th, screen.selected[item.path] ~= nil, { size = tick_size }),
             }, function() screen:toggle(item) end)
         end
@@ -189,7 +190,7 @@ return function(screen, th, width)
             table.insert(name, VerticalSpan:new{ width = sp(4) })
             table.insert(name, HorizontalGroup:new{ HorizontalSpan:new{ width = dot_w + dot_gap }, under })
         end
-        local row = frame(tick, name, UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }), ROW_H)
+        local row = frame(tick, name, UI.text(util.getFriendlySize(item.size), 16, { bold = true, color = th.ink }), row_h)
         if item.is_dir then
             return UI.tappable(row, function() screen:setDir(item.path) end)
         end
