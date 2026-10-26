@@ -2,10 +2,14 @@
 
 ## [0.3.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.2.0...v0.3.0) (2026-10-26)
 
-
 ### Features
 
-* close the open book from ShelfSpace, and a card for each row on a long press ([#51](https://github.com/ghepting/shelfspace.koplugin/issues/51)) ([244cdf5](https://github.com/ghepting/shelfspace.koplugin/commit/244cdf5e7a7f9e69f09cab765b3cc44753d44c2a))
+* Close book: a book that was open before you came to ShelfSpace can be closed from its card, which brings you back where you were with the book unlocked, so you can delete it
+* Press and hold any row for its card. A folder's card shows how many files it holds and how big it is, and offers Open, Delete and, for the folder holding the open book, Close book
+
+### Bug Fixes
+
+* A folder holding the book you are reading says "Holds the book you are reading" instead of "You are reading this book"
 
 ## [0.2.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.1.1...v0.2.0) (2026-10-26)
 
