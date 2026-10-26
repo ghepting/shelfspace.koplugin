@@ -319,16 +319,16 @@ function ShelfSpace:installUpdate(result)
         self:notify(T(_("The update was not installed, and nothing was changed.\n\n%1"), tostring(err)))
         return
     end
-    if not Device:canRestart() then
-        self:notify(T(_("ShelfSpace %1 is installed.\n\nQuit KOReader and open it again to start using it."), result.latest))
-        return
-    end
+    local can_restart = Device:canRestart()
     self:showDialog(function()
         return ConfirmBox:new {
-            text = T(_("ShelfSpace %1 is installed.\n\nRestart KOReader to start using it."), result.latest),
-            ok_text = _("Restart now"),
+            text = can_restart and T(_("ShelfSpace %1 is installed.\n\nRestart KOReader to start using it."), result.latest)
+                or T(_("ShelfSpace %1 is installed.\n\nQuit KOReader and open it again to start using it."), result.latest),
+            ok_text = can_restart and _("Restart now") or _("Quit now"),
             cancel_text = _("Later"),
-            ok_callback = function() UIManager:restartKOReader() end,
+            ok_callback = function()
+                if can_restart then UIManager:restartKOReader() else UIManager:quit() end
+            end,
         }
     end)
 end
