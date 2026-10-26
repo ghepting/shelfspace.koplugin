@@ -10,6 +10,7 @@ local Size = require("ui/size")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local BookList = require("ui/widget/booklist")
+local ReadHistory = require("readhistory")
 local util = require("util")
 local _ = require("gettext")
 local N_ = _.ngettext
@@ -63,7 +64,14 @@ return function(screen, th, width)
             if not e.hidden then table.insert(entries, e) end
         end
     end
-    Search.sort(entries, Search.OPTIONS[screen.sort])
+    local sort = Search.OPTIONS[screen.sort]
+    local opened
+    if sort.mode == "opened" then
+        local last = {}
+        for _, item in ipairs(ReadHistory.hist) do last[item.file] = item.time end
+        opened = function(e) return last[e.path] end
+    end
+    Search.sort(entries, sort, opened)
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local summary = Stats.summarize(tree, dir)
@@ -195,7 +203,7 @@ return function(screen, th, width)
         text = "✕", size = 15, callback = function() screen:setQuery(nil) end,
     })
     local show_button = UI.button(th, {
-        text = T(_("Show: %1 ▾"), status and Search.STATUSES[2].short or Search.STATUSES[1].short), size = 15,
+        text = T(_("Show: %1 ▾"), Search.status(status).short), size = 15,
         callback = function() screen:askStatus() end,
     })
     local select_button = UI.button(th, {
@@ -256,7 +264,7 @@ return function(screen, th, width)
         local count = #entries
         -- "3 finished PDF files", "1 finished book", "No EPUB files": what the filters leave, in words.
         local noun = screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count)
-        if include then noun = Search.STATUSES[2].noun .. " " .. noun end
+        if include then noun = Search.status(status).noun .. " " .. noun end
         local text
         if screen.query then
             text = count == 0 and T(_("No %1 match “%2” in %3"), noun, shorten(screen.query, 20), name)

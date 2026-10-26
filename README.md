@@ -46,10 +46,11 @@ Open **Tools › ShelfSpace**. Three tabs:
   are (a bar and "18% read", "Finished" or "Not started"), from KOReader's own
   reading progress. The file
   type chips at the top are quick filters: tap one to show only that type
-  (tap it again to clear). Sort by size, name or date, or search by name across
+  (tap it again to clear). Sort by size, name, date or when you last opened it, or search by name across
   the folder you are in and everything under it. **Show** narrows the list to the
-  books KOReader has marked as finished, wherever they are in the library, so what
-  you have already read is easy to clear. Tap a folder to open it, or tap
+  books KOReader has marked as finished, or to the ones you never opened,
+  wherever they are in the library, so what you have already read (or never
+  will) is easy to clear. Tap a folder to open it, or tap
   a file to see what it is (type, size, where it is, when it changed, your
   reading progress), with Open and Book info buttons. Every row has its own
   **Delete** button, or tap **Select** to tick several rows and delete them in
