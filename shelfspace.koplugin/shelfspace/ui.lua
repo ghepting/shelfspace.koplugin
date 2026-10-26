@@ -86,7 +86,8 @@ function UI.button(th, opts)
     local enabled = opts.enabled ~= false
     local border = Size.border.button
     local pad_h, pad_v = sp(12), sp(6)
-    local label = UI.text(opts.text, opts.size or 15,
+    -- `icon` (a widget) stands in for the text.
+    local label = opts.icon or UI.text(opts.text, opts.size or 15,
         { bold = true, color = enabled and (opts.color or th.ink) or th.muted })
     local content = label
     if opts.width then
@@ -117,15 +118,18 @@ function UI.button(th, opts)
 end
 
 -- A rounded square, filled with a tick when `checked`.
-function UI.checkbox(th, checked)
+-- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked).
+function UI.checkbox(th, checked, opts)
+    opts = opts or {}
     local size = sp(32)
-    local inner = checked and CenterContainer:new{
+    local filled = (checked or opts.mixed) and not opts.disabled
+    local inner = filled and CenterContainer:new{
         dimen = Geom:new{ w = size, h = size },
-        UI.text("✓", 20, { bold = true, color = th.white }),
+        UI.text(opts.mixed and "–" or "✓", 20, { bold = true, color = th.white }),
     } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
     return FrameContainer:new{
-        bordersize = Size.border.button, color = th.ink, radius = sp(8), margin = 0, padding = 0,
-        background = checked and th.accent or th.white,
+        bordersize = Size.border.button, color = opts.disabled and th.muted or th.ink, radius = sp(8), margin = 0, padding = 0,
+        background = filled and th.accent or (opts.disabled and th.free or th.white),
         inner,
     }
 end
