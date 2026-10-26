@@ -80,6 +80,13 @@ T.test("the name icon puts A on top for A to Z and Z on top for Z to A", functio
     assert(first_y(az, 'M13 (%d+)') > first_y(za, 'M13 (%d+)'), "Z is lower in A to Z")
 end)
 
+T.test("the search icon is a magnifying glass in one ink on an opaque background", function()
+    local svg = Icons.searchSvg("2a363b", "ffffff")
+    assert(svg:find("<circle", 1, true) and svg:find("M30 30 L41 41", 1, true), "lens and handle")
+    assert(svg:find('<rect width="48" height="48" fill="#ffffff"/>', 1, true), "background missing")
+    assert(svg:find('stroke="#2a363b"', 1, true), "ink missing")
+end)
+
 T.test("the glyph colour is used for the mark and the name, and cut-outs show the tile", function()
     local svg = Icons.svg("shelfspace", "99b898", nil, { glyph = "2a363b", named = true })
     assert(svg:find('fill="#2a363b"', 1, true), "glyph colour missing")
