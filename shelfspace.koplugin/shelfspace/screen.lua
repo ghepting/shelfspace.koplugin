@@ -133,6 +133,13 @@ function ShelfScreen:propagateEvent(event)
     return InputContainer.propagateEvent(self, event)
 end
 
+-- Puts Browse back to everything: no search, no file type, no status.
+function ShelfScreen:clearFilters()
+    self.query, self.filter, self.status = nil, nil, nil
+    self.pages.browse = 1
+    self:refresh()
+end
+
 function ShelfScreen:clearSelection()
     self.selected = {}
     self:refresh()
@@ -346,9 +353,14 @@ function ShelfScreen:rebuild()
         local last = math.min(view.count, first + per_page - 1)
         local rows = body
         if view.table_head then rows = VerticalGroup:new{ align = "left", view.table_head } end
-        for i = first, last do table.insert(rows, view.build(i, row_h)) end
+        if view.count == 0 and view.empty then
+            table.insert(rows, view.empty(per_page * row_h))
+        else
+            for i = first, last do table.insert(rows, view.build(i, row_h)) end
+        end
         if view.table_head then table.insert(body, UI.rounded(th, rows, sp(10), Size.border.default)) end
-        table.insert(body, VerticalSpan:new{ width = (per_page - (last - first + 1)) * row_h })
+        local shown = (view.count == 0 and view.empty) and per_page or (last - first + 1) -- the empty state takes the whole page
+        table.insert(body, VerticalSpan:new{ width = (per_page - shown) * row_h })
         table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end))
     else
         self.page_count = 1
