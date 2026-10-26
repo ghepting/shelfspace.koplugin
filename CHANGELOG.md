@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.2.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.1.1...v0.2.0) (2026-10-26)
+
+Browse is now a table, with new ways to find what to delete.
+
+### Features
+
+* Browse is a table: a checkbox on every row (the one in the header ticks them all) and columns for name, % read and size. What you tick shows in a bar that floats over the bottom of the list, so the table never moves under your finger, with one Delete
+* A % Read column: 0% to 99%, or Read for a finished book
+* Show only the books KOReader has marked as finished, or only the ones you never opened
+* Sort by size, name, date modified or when you last opened a book, with one button that flips the direction; its icon shows what is being sorted
+* Search is a tag beside the file-type tags: tap the magnifier to search, tap the tag to clear it
+* When a search or filter finds nothing, a message says why and a button undoes it
+* The KOReader tab says ALL CLEAR when nothing is left to clear, and its tags show only what you can clear
+
+### Bug Fixes
+
+* Going Up returns to the page you were on, and the Show filter stays on when you change folder
+* The list fills the page at any screen height
+* A single picture (SVG, PNG and so on) is no longer listed as a book, with a reading progress or as unread
+
 ## [0.1.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.1.0...v0.1.1) (2026-10-25)
 
 
