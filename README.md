@@ -30,6 +30,14 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 | --- | --- |
 | <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> |
 
+| Duplicates row | Sets of copies | Compare and choose |
+| --- | --- | --- |
+| <img src="assets/duplicates-overview.png" width="260"> | <img src="assets/duplicates-list.png" width="260"> | <img src="assets/duplicates-compare.png" width="260"> |
+
+| Confirm | Kept on purpose |
+| --- | --- |
+| <img src="assets/duplicates-confirm.png" width="260"> | <img src="assets/duplicates-kept.png" width="260"> |
+
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
 totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
 other screens get a grayscale version of the same layout.
