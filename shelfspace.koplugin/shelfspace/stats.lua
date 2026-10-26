@@ -61,6 +61,14 @@ function Stats.topExtensions(exts, n)
     return top
 end
 
+-- The tags for KOReader's folder: how much of it each part is (see shareChips), or, when none of the parts
+-- can be cleared, one tag saying so instead of a share of things that all stay. `clearable` counts the
+-- parts that can be cleared.
+function Stats.dataChips(parts, total, n, clearable, all_clear)
+    if clearable == 0 then return { all_clear } end
+    return Stats.shareChips(parts, total, n)
+end
+
 -- The `n` biggest of `parts` ({ { name, bytes }, ... }) as chip texts like "CACHE 73%", each as a
 -- share of `total`; a share too small to round to 1% reads "<1%". Empty parts are left out.
 function Stats.shareChips(parts, total, n)
