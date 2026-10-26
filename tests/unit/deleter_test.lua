@@ -93,6 +93,24 @@ T.test("only a book KOReader can open counts as a book, not a cover or an unknow
     T.eq(Deleter.isBook(file("/lib/Mixed/plugin.so")), false)
 end)
 
+T.test("another plugin's files are locked, even ones KOReader could open as books or pictures", function()
+    local base = "/lib/.adds/koreader/plugins/bookshelf.koplugin"
+    local own = { dir(base), file(base .. "/main.lua"), file(base .. "/_meta.lua"), dir(base .. "/lib"), dir(base .. "/data"),
+                  dir(base .. "/docs"), file(base .. "/docs/manual.pdf"), file(base .. "/docs/sample.epub"),
+                  dir(base .. "/assets"), file(base .. "/assets/logo.png"), file(base .. "/assets/icon.svg"),
+                  file(base .. "/lib/helper.lua"), file(base .. "/data/state.sqlite") }
+    tree["/lib/.adds/koreader/plugins"] = { entries = { own[1] } }
+    tree[base] = { entries = { own[2], own[3], own[4], own[5], own[6], own[9] } }
+    tree[base .. "/lib"] = { entries = { own[12] } }
+    tree[base .. "/data"] = { entries = { own[13] } }
+    tree[base .. "/docs"] = { entries = { own[7], own[8] } }
+    tree[base .. "/assets"] = { entries = { own[10], own[11] } }
+    for _, e in ipairs(own) do
+        T.eq(reason(e), "KOReader's data: see the KOReader tab", e.path)
+    end
+    tree["/lib/.adds/koreader/plugins"] = { entries = {} } -- as it was for the other tests
+end)
+
 T.test("a lone picture KOReader can open is not a book, so it has no reading progress and is never listed as unread", function()
     for _, name in ipairs({ "icon.svg", "scan.PNG", "photo.jpg", "anim.gif", "wallpaper.webp", "map.tiff" }) do
         T.eq(Deleter.isBook(file("/lib/" .. name)), false, name)
