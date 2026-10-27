@@ -98,7 +98,7 @@ you, keep a copy elsewhere.
 
 | Device | KOReader | Status |
 | --- | --- | --- |
-| Kobo Libra Colour | v2026.07.1 | Works (the colour screen) |
+| Kobo Libra Colour | v2026.07.1 and v2026.07.2 | Works (the colour screen), including updating itself from the About card |
 | KOReader desktop emulator (macOS) | nightly 2026.07.2 | Works |
 | Kindle Paperwhite 6 (12th gen) | v2026.07.2 | Works, [reported by a user](https://github.com/ghepting/shelfspace.koplugin/issues/56) |
 | Android | not stated | Works, [reported on Reddit](https://www.reddit.com/r/koreader/comments/1xfe6r4/i_made_my_first_koreader_plugin/) by a user |
