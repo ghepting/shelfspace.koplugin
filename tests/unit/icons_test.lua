@@ -134,4 +134,12 @@ T.test("the bare mark is the glyph in the ink colour with no tile behind it", fu
     assert(not svg:find('fill="#ffffff"', 1, true), "nothing should be drawn in white")
 end)
 
+T.test("every menu action has a line icon in the ink colour, and an unknown one has none", function()
+    for _, name in ipairs({ "about", "update", "changelog", "exit", "kept" }) do
+        local svg = Icons.actionSvg(name, "2a363b", "ffffff")
+        assert(svg and svg:find('stroke="#2a363b"', 1, true), name .. " should be drawn in the ink colour")
+    end
+    T.eq(Icons.actionSvg("nothing", "2a363b", "ffffff"), nil)
+end)
+
 T.done()
