@@ -4,6 +4,8 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputDialog = require("ui/widget/inputdialog")
@@ -22,21 +24,23 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
 
+local About = require("shelfspace/about")
+local Icons = require("shelfspace/icons")
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
--- Title with a close button; our own so the icon can be transparent on the page colour.
-local function header(th, width, on_close, on_about)
+-- The title with the ShelfSpace mark on the left and the menu on the right; our own so the icons can be
+-- transparent on the page colour. Everything else (updates, the changelog, About, closing) is in the menu.
+local function header(th, width, on_menu)
     local h = sp(46)
-    local icon = IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) }
-    local close = UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = sp(56), h = h }, icon }, on_close)
-    local about = UI.tappable(CenterContainer:new{
+    local menu = UI.tappable(CenterContainer:new{
         dimen = Geom:new{ w = sp(56), h = h },
-        IconWidget:new{ icon = "info", alpha = true, width = sp(26), height = sp(26) },
-    }, on_about)
+        IconWidget:new{ icon = "appbar.menu", alpha = true, width = sp(26), height = sp(26) },
+    }, on_menu)
+    local mark = Icons.widget("shelfspace", sp(30), th.brand, th.bg, false)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
@@ -45,8 +49,11 @@ local function header(th, width, on_close, on_about)
                 dimen = Geom:new{ w = width, h = h },
                 UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.ink }),
             },
-            LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, about },
-            RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
+            LeftContainer:new{
+                dimen = Geom:new{ w = width, h = h },
+                HorizontalGroup:new{ HorizontalSpan:new{ width = sp(16) }, mark or HorizontalSpan:new{ width = 0 } },
+            },
+            RightContainer:new{ dimen = Geom:new{ w = width, h = h }, menu },
         },
         LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
     }
@@ -213,6 +220,36 @@ end
 function ShelfScreen:setKeeper(set, i)
     self.dup_keep[set.id] = i
     self:refresh()
+end
+
+-- The menu behind the icon at the top right: what is not a page of its own.
+function ShelfScreen:showMenu()
+    local plugin = self.plugin
+    local version = About.info(plugin.path).version
+    plugin:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        local buttons = {
+            { { text = T(_("Check for updates (v%1)"), version), callback = act(function() plugin:checkForUpdates(version) end) } },
+            { { text = _("View changelog"), callback = act(function() plugin:showChangelog() end) } },
+            { { text = _("About ShelfSpace"), callback = act(function() plugin:showAbout() end) } },
+        }
+        local kept = #(plugin.ignored_duplicates or {})
+        if kept > 0 then
+            table.insert(buttons, { {
+                text = T(_("Kept on purpose · %1"), kept),
+                callback = act(function() self:openDuplicates() self:showIgnoredDuplicates() end),
+            } })
+        end
+        table.insert(buttons, { { text = _("Close ShelfSpace"), callback = act(function() self:onClose() end) } })
+        dialog = ButtonDialog:new { title = _("ShelfSpace"), title_align = "center", buttons = buttons }
+        return dialog
+    end)
 end
 
 function ShelfScreen:switchTab(id)
@@ -387,7 +424,7 @@ function ShelfScreen:rebuild()
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
 
-    local titlebar = header(th, self.dimen.w, function() self:onClose() end, function() self.plugin:showAbout() end)
+    local titlebar = header(th, self.dimen.w, function() self:showMenu() end)
     local tabs = {
         { id = "overview", label = _("OVERVIEW") },
         { id = "browse", label = _("BROWSE") },
