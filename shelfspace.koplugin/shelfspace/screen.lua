@@ -237,9 +237,9 @@ function ShelfScreen:showMenu()
         -- A grid, like the About card: two to a row, and Exit across the bottom.
         local function button(text, fn) return { text = text, callback = act(fn) } end
         local cells = {
+            button(_("About"), function() plugin:showAbout() end),
             button(_("Check for updates"), function() plugin:checkForUpdates(version) end),
             button(_("Changelog"), function() plugin:showChangelog() end),
-            button(_("About"), function() plugin:showAbout() end),
         }
         local kept = #(plugin.ignored_duplicates or {})
         if kept > 0 then

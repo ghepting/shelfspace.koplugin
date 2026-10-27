@@ -108,7 +108,7 @@ Anything else is untested. If you try it on another device, please
 
 ## About and updates
 
-The menu at the top right of the screen (☰) holds **Check for updates**, **Changelog**, **About**, **Kept on purpose** (when you have set some aside) and **Exit ShelfSpace**. **About** shows which ShelfSpace this is (version, release date
+The menu at the top right of the screen (☰) holds **About**, **Check for updates**, **Changelog**, **Kept on purpose** (when you have set some aside) and **Exit ShelfSpace**. **About** shows which ShelfSpace this is (version, release date
 and commit), what it is running on, and QR codes for the repository and for reporting a
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
 for the latest release, only when you tap it, and tells you what changed if there is a newer one.
