@@ -20,6 +20,7 @@ local About = require("shelfspace/about")
 local Changelog = require("shelfspace/changelog")
 local Details = require("shelfspace/details")
 local Duplicates = require("shelfspace/duplicates")
+local Icons = require("shelfspace/icons")
 local Installer = require("shelfspace/installer")
 local ScanCache = require("shelfspace/scancache")
 local Scanner = require("shelfspace/scanner")
@@ -32,6 +33,7 @@ local ShelfSpace = WidgetContainer:extend {
 }
 
 function ShelfSpace:init()
+    self:extendMenuOrder()
     self.ui.menu:registerToMainMenu(self)
 
     -- Opening a book from ShelfSpace hands the screen over to the reader. ShelfSpace.resume
@@ -49,23 +51,52 @@ function ShelfSpace:init()
     end
 end
 
+-- ShelfSpace has a tab of its own in KOReader's top menu, like Bookshelf, so it is one tap from anywhere.
+-- KOReader has no call for adding a tab: the tab is an id in the menu-order tables, with its items listed under
+-- it, which has to be in place before the menu is built.
+ShelfSpace.MENU_ORDER = { "shelfspace", "shelfspace_about", "shelfspace_update", "shelfspace_changelog" }
+
+function ShelfSpace:extendMenuOrder()
+    for _, module in ipairs({ "ui/elements/filemanager_menu_order", "ui/elements/reader_menu_order" }) do
+        local ok, order = pcall(require, module)
+        local tabs = ok and type(order) == "table" and order["KOMenu:menu_buttons"]
+        if type(tabs) == "table" then
+            local present, after = false, nil
+            for i, id in ipairs(tabs) do
+                if id == "shelfspace_tab" then present = true end
+                if id == "bookshelf_tab" then after = i end
+            end
+            if not present then
+                -- Next to Bookshelf's tab when it has one. Otherwise second in the file manager (the first tab
+                -- is where the menu sorter drops anything it cannot place) and before the last two in the reader.
+                local at = after and after + 1 or (module:find("filemanager") and 2 or #tabs - 1)
+                table.insert(tabs, at, "shelfspace_tab")
+            end
+            order.shelfspace_tab = ShelfSpace.MENU_ORDER
+        end
+    end
+end
+
+function ShelfSpace:isShowing()
+    return self.screen ~= nil and not self.screen.closed and UIManager:isWidgetShown(self.screen)
+end
+
 function ShelfSpace:addToMainMenu(menu_items)
+    menu_items.shelfspace_tab = { icon = Icons.tabIconName(), text = _("ShelfSpace") }
+    -- Its id is also what Bookshelf's start menu looks for to launch ShelfSpace, so this stays the first item.
     menu_items.shelfspace = {
-        sorting_hint = "tools",
-        text = _("ShelfSpace"),
-        -- KOReader's own menu opens the submenu below and ignores this. It is here for Bookshelf's start
-        -- menu, which launches a plugin through the entry's callback, straight into ShelfSpace.
-        callback = function() self:showOverview() end,
-        sub_item_table = {
-            { text = _("Open ShelfSpace"), callback = function() self:showOverview() end },
-            {
-                text_func = function() return T(_("Check for updates (v%1)"), About.info(self.path).version) end,
-                callback = function() self:checkForUpdates(About.info(self.path).version) end,
-            },
-            { text = _("View changelog"), callback = function() self:showChangelog() end },
-            { text = _("About ShelfSpace"), callback = function() self:showAbout() end },
-        },
+        text_func = function() return self:isShowing() and _("Close ShelfSpace") or _("Open ShelfSpace") end,
+        callback = function()
+            if self:isShowing() then self.screen:onClose() else self:showOverview() end
+        end,
+        separator = true,
     }
+    menu_items.shelfspace_about = { text = _("About"), callback = function() self:showAbout() end }
+    menu_items.shelfspace_update = {
+        text = _("Check for updates"),
+        callback = function() self:checkForUpdates(About.info(self.path).version) end,
+    }
+    menu_items.shelfspace_changelog = { text = _("Changelog"), callback = function() self:showChangelog() end }
 end
 
 local function libraryPath()
