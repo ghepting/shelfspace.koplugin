@@ -40,7 +40,7 @@ local function header(th, width, on_menu)
         dimen = Geom:new{ w = sp(56), h = h },
         IconWidget:new{ icon = "appbar.menu", alpha = true, width = sp(26), height = sp(26) },
     }, on_menu)
-    local mark = Icons.widget("shelfspace", sp(30), th.brand, th.bg, false)
+    local mark = Icons.markWidget(sp(44), th.ink, th.bg)
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{

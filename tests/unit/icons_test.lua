@@ -127,4 +127,11 @@ T.test("without KOReader's logo there is no koreader icon, and an unknown name h
     T.eq(Icons.svg("nonsense", "000000"), nil)
 end)
 
+T.test("the bare mark is the glyph in the ink colour with no tile behind it", function()
+    local svg = Icons.svg("shelfspace", "f4f2ed", nil, { bare = true, glyph = "2a363b" })
+    assert(svg:find("#2a363b", 1, true), "the glyph should be drawn in the ink colour")
+    assert(not svg:find("154.6", 1, true), "there should be no tile")
+    assert(not svg:find('fill="#ffffff"', 1, true), "nothing should be drawn in white")
+end)
+
 T.done()
