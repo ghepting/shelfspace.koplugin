@@ -208,27 +208,6 @@ function Icons.markWidget(width, ink, bg)
     return IconWidget:new{ file = path, width = width, height = math.floor(width * MARK_H / MARK_W), alpha = true }
 end
 
--- The name KOReader's top menu uses for ShelfSpace's tab icon. KOReader finds a tab icon by name, as
--- <icon folder>/<name>.svg, and has no way to be handed a file; so the name climbs out of whichever icon
--- folder it is tried in to the root ("../" more times than any path is deep) and down to our own file by its
--- absolute path. The file is the mark alone in black (menu icons are black on white), drawn on a square canvas.
--- Falls back to KOReader's own book icon when the file cannot be written.
-function Icons.tabIconName()
-    local path = DataStorage:getDataDir() .. "/cache/shelfspace/tab-icon.svg"
-    local svg = Icons.svg("shelfspace", "ffffff", nil, { bare = true, glyph = "000000" })
-    if not svg then return "book.opened" end
-    svg = svg:gsub('width="195" height="195" viewBox="0 0 195 195"', 'width="112" height="112" viewBox="44 44 112 112"', 1)
-    if not store(path, svg) then return "book.opened" end
-    local absolute = path
-    if absolute:sub(1, 1) ~= "/" then
-        local cwd = lfs.currentdir()
-        if not cwd then return "book.opened" end
-        absolute = cwd .. "/" .. absolute:gsub("^%./", "")
-    end
-    -- KOReader adds the ".svg" itself.
-    return ("../"):rep(40) .. absolute:gsub("^/+", ""):gsub("%.svg$", "")
-end
-
 function Icons.sortWidget(kind, descending, size, ink, bg)
     local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
     local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s-%s.svg", DataStorage:getDataDir(), kind,
