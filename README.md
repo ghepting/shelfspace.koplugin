@@ -113,6 +113,10 @@ and commit), what it is running on, and QR codes for the repository and for repo
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
 for the latest release, only when you tap it, and tells you what changed if there is a newer one.
 
+You can do both without opening ShelfSpace: in KOReader's Tools menu, ShelfSpace is a submenu with
+**Open ShelfSpace**, **Check for updates** and **About ShelfSpace**. (Bookshelf's start menu can
+launch ShelfSpace too: Add to menu, Plugin, ShelfSpace.)
+
 When there is a newer release, **Update now** downloads it, checks it against the checksum GitHub
 publishes, makes sure the Lua loads and the version matches, and only then swaps it in. If any
 step fails nothing is changed. The previous copy is kept as `shelfspace.koplugin.old` in the

@@ -52,7 +52,14 @@ function ShelfSpace:addToMainMenu(menu_items)
     menu_items.shelfspace = {
         sorting_hint = "tools",
         text = _("ShelfSpace"),
+        -- KOReader's own menu opens the submenu below and ignores this. It is here for Bookshelf's start
+        -- menu, which launches a plugin through the entry's callback, straight into ShelfSpace.
         callback = function() self:showOverview() end,
+        sub_item_table = {
+            { text = _("Open ShelfSpace"), callback = function() self:showOverview() end },
+            { text = _("Check for updates"), callback = function() self:checkForUpdates(About.info(self.path).version) end },
+            { text = _("About ShelfSpace"), callback = function() self:showAbout() end },
+        },
     }
 end
 
