@@ -26,21 +26,22 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 | --- | --- | --- |
 | <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear-several.png" width="260"> |
 
-| Show menu | Finished books |
-| --- | --- |
-| <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> |
-
-| Duplicates row | Sets of copies | Compare and choose |
+| Show menu | Finished books | ShelfSpace menu |
 | --- | --- | --- |
-| <img src="assets/duplicates-overview.png" width="260"> | <img src="assets/duplicates-list.png" width="260"> | <img src="assets/duplicates-compare.png" width="260"> |
+| <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> | <img src="assets/menu.png" width="260"> |
 
-| Confirm | Kept on purpose |
-| --- | --- |
-| <img src="assets/duplicates-confirm.png" width="260"> | <img src="assets/duplicates-kept.png" width="260"> |
+| Sets of copies | Compare and choose | Confirm |
+| --- | --- | --- |
+| <img src="assets/duplicates-list.png" width="260"> | <img src="assets/duplicates-compare.png" width="260"> | <img src="assets/duplicates-confirm.png" width="260"> |
+
+| Kept on purpose | Changelog | About |
+| --- | --- | --- |
+| <img src="assets/duplicates-kept.png" width="260"> | <img src="assets/changelog.png" width="260"> | <img src="assets/about.png" width="260"> |
 
 Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
-totals are a Mac's. Colour shows on Kaleido screens such as the Libra Colour;
-other screens get a grayscale version of the same layout.
+totals are a Mac's. ShelfSpace is plain black and white with grays, like KOReader
+itself; the one colour is a green for free space, which shows on colour screens
+such as the Libra Colour.
 
 ## What it does
 
