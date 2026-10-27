@@ -22,6 +22,10 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v5
         id: release
+        with:
+          # The release PR is opened with this token, not the workflow's own, so its checks run without
+          # someone approving them: GitHub holds back a bot's pull requests like a stranger's.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - uses: actions/checkout@v7
         if: ${{ steps.release.outputs.release_created }}
