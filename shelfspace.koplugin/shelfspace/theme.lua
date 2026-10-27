@@ -3,12 +3,12 @@ local Screen = require("device").screen
 
 -- ShelfSpace is black on white, like KOReader itself, with grays where something has to be told apart (the chart's
 -- slices, a file's type, a rule, a disabled button). No colours of its own, with one exception: free space is green on
--- a colour screen, the one thing you open the chart to see, and a bright green that stands out from the grays and
+-- a colour screen, the one thing you open the chart to see, and a mid green that stands out from the grays and
 -- survives a colour e-ink screen's washed-out rendering (the chart's black outline gives it its shape). On a gray
 -- screen that green would come out a very light gray, so there free space is the empty white ring inside the outline.
 local Theme = {}
 
-Theme.FREE_GREEN = "#80FF70"
+Theme.FREE_GREEN = "#72B569"
 
 function Theme.get()
     return {
