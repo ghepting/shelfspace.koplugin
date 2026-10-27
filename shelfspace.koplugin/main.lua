@@ -33,7 +33,7 @@ local ShelfSpace = WidgetContainer:extend {
 }
 
 function ShelfSpace:init()
-    self:extendMenuOrder()
+    self.tab_in_menu = self:wantsTab() and self:extendMenuOrder()
     self.ui.menu:registerToMainMenu(self)
 
     -- Opening a book from ShelfSpace hands the screen over to the reader. ShelfSpace.resume
@@ -51,30 +51,39 @@ function ShelfSpace:init()
     end
 end
 
--- ShelfSpace has a tab of its own in KOReader's top menu, like Bookshelf, so it is one tap from anywhere.
--- KOReader has no call for adding a tab: the tab is an id in the menu-order tables, with its items listed under
--- it, which has to be in place before the menu is built.
-ShelfSpace.MENU_ORDER = { "shelfspace", "shelfspace_about", "shelfspace_update", "shelfspace_changelog" }
+-- Where ShelfSpace is in KOReader's menus. By default it is a submenu under Tools, where plugins are expected.
+-- It can have a tab of its own in the top menu instead, like Bookshelf (a setting, "Show in the top menu", off
+-- until chosen: a tool opened now and then does not need a permanent tab, and tab space is shared). KOReader has
+-- no call for adding a tab: the tab is an id in the menu-order tables, with its items listed under it, which has
+-- to be in place before the menu is built, so choosing it takes a restart.
+local TAB_SETTING = "shelfspace_top_menu_tab"
+ShelfSpace.MENU_ORDER = { "shelfspace", "shelfspace_about", "shelfspace_update", "shelfspace_changelog", "shelfspace_tab_setting" }
 
+function ShelfSpace:wantsTab()
+    return G_reader_settings:isTrue(TAB_SETTING)
+end
+
+-- Adds the tab to the menu-order table of the menu this instance lives in (the reader's when a book is open,
+-- the file manager's otherwise); returns whether it is there. When it is not (a KOReader whose menu is shaped
+-- differently), the items go under Tools instead, so they are never left unplaced.
 function ShelfSpace:extendMenuOrder()
-    for _, module in ipairs({ "ui/elements/filemanager_menu_order", "ui/elements/reader_menu_order" }) do
-        local ok, order = pcall(require, module)
-        local tabs = ok and type(order) == "table" and order["KOMenu:menu_buttons"]
-        if type(tabs) == "table" then
-            local present, after = false, nil
-            for i, id in ipairs(tabs) do
-                if id == "shelfspace_tab" then present = true end
-                if id == "bookshelf_tab" then after = i end
-            end
-            if not present then
-                -- Next to Bookshelf's tab when it has one. Otherwise second in the file manager (the first tab
-                -- is where the menu sorter drops anything it cannot place) and before the last two in the reader.
-                local at = after and after + 1 or (module:find("filemanager") and 2 or #tabs - 1)
-                table.insert(tabs, at, "shelfspace_tab")
-            end
-            order.shelfspace_tab = ShelfSpace.MENU_ORDER
-        end
+    local module = self.ui and self.ui.document and "ui/elements/reader_menu_order" or "ui/elements/filemanager_menu_order"
+    local ok, order = pcall(require, module)
+    local tabs = ok and type(order) == "table" and order["KOMenu:menu_buttons"]
+    if type(tabs) ~= "table" then return false end
+    local present, after = false, nil
+    for i, id in ipairs(tabs) do
+        if id == "shelfspace_tab" then present = true end
+        if id == "bookshelf_tab" then after = i end
     end
+    if not present then
+        -- Next to Bookshelf's tab when it has one. Otherwise second in the file manager (the first tab is where
+        -- the menu sorter drops anything it cannot place) and before the last two in the reader.
+        local at = after and after + 1 or (module:find("filemanager") and 2 or #tabs - 1)
+        table.insert(tabs, at, "shelfspace_tab")
+    end
+    order.shelfspace_tab = ShelfSpace.MENU_ORDER
+    return true
 end
 
 function ShelfSpace:isShowing()
@@ -82,21 +91,47 @@ function ShelfSpace:isShowing()
 end
 
 function ShelfSpace:addToMainMenu(menu_items)
-    menu_items.shelfspace_tab = { icon = Icons.tabIconName(), text = _("ShelfSpace") }
-    -- Its id is also what Bookshelf's start menu looks for to launch ShelfSpace, so this stays the first item.
-    menu_items.shelfspace = {
+    local open = {
+        -- Its id (when it is a menu item of its own) is what Bookshelf's start menu looks for to launch ShelfSpace.
         text_func = function() return self:isShowing() and _("Close ShelfSpace") or _("Open ShelfSpace") end,
         callback = function()
             if self:isShowing() then self.screen:onClose() else self:showOverview() end
         end,
         separator = true,
     }
-    menu_items.shelfspace_about = { text = _("About"), callback = function() self:showAbout() end }
-    menu_items.shelfspace_update = {
+    local about = { text = _("About"), callback = function() self:showAbout() end }
+    local update = {
         text = _("Check for updates"),
         callback = function() self:checkForUpdates(About.info(self.path).version) end,
     }
-    menu_items.shelfspace_changelog = { text = _("Changelog"), callback = function() self:showChangelog() end }
+    local changelog = { text = _("Changelog"), callback = function() self:showChangelog() end, separator = true }
+    local setting = {
+        text = _("Show in the top menu"),
+        checked_func = function() return self:wantsTab() end,
+        keep_menu_open = true,
+        callback = function()
+            G_reader_settings:saveSetting(TAB_SETTING, not self:wantsTab())
+            G_reader_settings:flush()
+            UIManager:show(InfoMessage:new { text = _("Restart KOReader for the change to take effect.") })
+        end,
+    }
+    if self.tab_in_menu then
+        menu_items.shelfspace_tab = { icon = Icons.tabIconName(), text = _("ShelfSpace") }
+        menu_items.shelfspace = open
+        menu_items.shelfspace_about = about
+        menu_items.shelfspace_update = update
+        menu_items.shelfspace_changelog = changelog
+        menu_items.shelfspace_tab_setting = setting
+    else
+        menu_items.shelfspace = {
+            sorting_hint = "tools",
+            text = _("ShelfSpace"),
+            -- KOReader's own menu opens the submenu and ignores this; Bookshelf's start menu launches a plugin
+            -- through the entry's callback, straight into ShelfSpace.
+            callback = function() self:showOverview() end,
+            sub_item_table = { open, about, update, changelog, setting },
+        }
+    end
 end
 
 local function libraryPath()

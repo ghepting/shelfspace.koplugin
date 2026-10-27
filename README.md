@@ -113,12 +113,16 @@ and commit), what it is running on, and QR codes for the repository and for repo
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
 for the latest release, only when you tap it, and tells you what changed if there is a newer one.
 
-You can do all of that without opening ShelfSpace: it has a tab of its own in KOReader's top menu (the shelf
-icon), with **Open ShelfSpace** (or **Close**), **About**, **Check for updates** and **Changelog**. The changelog
-shows the notes of every release, one per page, newest first, with Older and Newer to move between them. It is
-fetched from GitHub the first time you open it and kept on the device, so after that it reads offline;
-**Refresh** pulls newer releases. (Bookshelf's start menu can launch ShelfSpace too: Add to menu, Plugin,
-ShelfSpace.)
+You can do all of that without opening ShelfSpace: in KOReader's Tools menu, ShelfSpace is a submenu with
+**Open ShelfSpace** (or **Close**), **About**, **Check for updates** and **Changelog**. The changelog shows the
+notes of every release, one per page, newest first, with Older and Newer to move between them. It is fetched from
+GitHub the first time you open it and kept on the device, so after that it reads offline; **Refresh** pulls newer
+releases.
+
+If you would rather have ShelfSpace one tap away, tick **Show in the top menu** in that submenu and restart
+KOReader: it then has a tab of its own in KOReader's top menu (the shelf icon, next to Bookshelf's), with the same
+items. It is off by default, since a tool opened now and then does not need a permanent tab. (Bookshelf's start
+menu can launch ShelfSpace too: Add to menu, Plugin, ShelfSpace.)
 
 ## Scan speed
 
