@@ -111,7 +111,7 @@ function ShelfScreen:buildActionBar()
     local chosen = self.tab == "browse" and self:chosen() or {}
     if #chosen == 0 then return end
     local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
-        { text = "✕", callback = function() self:clearSelection() end },
+        { text = _("Cancel"), callback = function() self:clearSelection() end },
         { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
     })
     local size = bar:getSize()

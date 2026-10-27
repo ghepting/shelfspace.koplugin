@@ -102,7 +102,7 @@ function UI.button(th, opts)
         line = fill
     elseif opts.background then
         fill = opts.background
-        line = fill
+        line = opts.border_color or fill
     else
         fill, line = th.white, th.ink
     end
@@ -148,16 +148,18 @@ function UI.chip(th, text, opts)
 end
 
 -- A floating bar of actions, a dark pill: a label, then buttons. `buttons` is a list of
--- { text, callback, danger }. Returns the bar and its buttons' widgets (their `dimen` is where they were
+-- { text, callback, danger }; the `danger` one is the light, filled button and the rest are outlined. Returns the bar and its buttons' widgets (their `dimen` is where they were
 -- last drawn), so that whoever draws the bar can pass taps on to them.
 function UI.floatingBar(th, label, buttons)
     local row = HorizontalGroup:new{ align = "center", UI.text(label, 16, { bold = true, color = th.white }) }
     local hits = {}
     for _, b in ipairs(buttons) do
         table.insert(row, HorizontalSpan:new{ width = sp(12) })
+        -- On the bar's dark ground the main action is the light button, and the other is outlined in light.
         local button = UI.button(th, {
             text = b.text, size = 15, callback = b.callback,
-            background = b.danger and th.danger or nil, color = b.danger and th.white or nil,
+            background = b.danger and th.white or th.ink, color = b.danger and th.ink or th.white,
+            border_color = th.white,
         })
         table.insert(row, button)
         table.insert(hits, { widget = button, callback = b.callback })
