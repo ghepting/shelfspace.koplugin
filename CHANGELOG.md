@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.7.0...v0.7.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* the update card scrolls its release notes and keeps Update now on screen ([#66](https://github.com/ghepting/shelfspace.koplugin/issues/66)) ([25fda60](https://github.com/ghepting/shelfspace.koplugin/commit/25fda60b7f038c28930d17b40418c71b694ffd45))
+
 ## [0.7.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.6.0...v0.7.0) (2026-10-27)
 
 
