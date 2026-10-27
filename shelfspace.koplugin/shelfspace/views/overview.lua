@@ -137,7 +137,7 @@ return function(screen, th, width)
     local diameter = math.max(sp(110), math.min(math.floor(width * 0.62), sp(260), room))
     local used_share = u.total > 0 and u.used / u.total or 0
     local donut = Donut:new{
-        diameter = diameter, bg = th.bg, slices = slices,
+        diameter = diameter, bg = th.bg, ink = th.ink, slices = slices,
         on_tap = function(slice) if slice.on_tap then slice.on_tap() end end,
     }
     local chart = CenterContainer:new{

@@ -8,14 +8,16 @@ local Theme = {}
 function Theme.get()
     return {
         bg = Blitbuffer.COLOR_WHITE, ink = Blitbuffer.COLOR_BLACK, muted = Blitbuffer.COLOR_GRAY_5,
-        line = Blitbuffer.COLOR_GRAY_B, chip = Blitbuffer.COLOR_GRAY_E, free = Blitbuffer.COLOR_GRAY_E, clear = Blitbuffer.COLOR_GRAY_E,
+        -- rules and dividers are dark enough to see; fills (a disabled button, a chip's track) stay light, under black text
+        line = Blitbuffer.COLOR_GRAY_9, chip = Blitbuffer.COLOR_GRAY_E, free = Blitbuffer.COLOR_GRAY_E, clear = Blitbuffer.COLOR_GRAY_E,
         accent = Blitbuffer.COLOR_BLACK, danger = Blitbuffer.COLOR_BLACK, white = Blitbuffer.COLOR_WHITE,
-        -- what the chart and the header tiles stand for
+        -- what the chart and the header tiles stand for. The chart's slices run from black to a mid gray, and free space is
+        -- the empty part of the ring: white, inside the chart's black outline.
         brand = Blitbuffer.COLOR_BLACK, koreader_tile = Blitbuffer.COLOR_GRAY_7,
-        books = Blitbuffer.COLOR_GRAY_4, koreader = Blitbuffer.COLOR_GRAY_7, other = Blitbuffer.COLOR_GRAY_B,
-        free_space = Blitbuffer.COLOR_GRAY_D,
-        -- the tiles beside files in Browse
-        folder = Blitbuffer.COLOR_GRAY_9, epub = Blitbuffer.COLOR_GRAY_5, pdf = Blitbuffer.COLOR_GRAY_7,
+        books = Blitbuffer.COLOR_BLACK, koreader = Blitbuffer.COLOR_GRAY_5, other = Blitbuffer.COLOR_GRAY_9,
+        free_space = Blitbuffer.COLOR_WHITE,
+        -- the tiles beside files in Browse: the file's type is also in its name, so shade only needs to help
+        folder = Blitbuffer.COLOR_GRAY_9, epub = Blitbuffer.COLOR_BLACK, pdf = Blitbuffer.COLOR_GRAY_5,
         comic = Blitbuffer.COLOR_GRAY_B,
     }
 end
