@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.6.0...v0.7.0) (2026-10-27)
+
+
+### Features
+
+* a ShelfSpace menu under Tools and in the app, a changelog viewer, and KOReader's gestures while it is open ([#63](https://github.com/ghepting/shelfspace.koplugin/issues/63)) ([06648c9](https://github.com/ghepting/shelfspace.koplugin/commit/06648c959550e9c9c6f61438fe90a045bd4bfa47))
+
 ## [0.6.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.5.0...v0.6.0) (2026-10-26)
 
 
