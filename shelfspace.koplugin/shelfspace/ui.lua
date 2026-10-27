@@ -89,10 +89,6 @@ function UI.button(th, opts)
     -- `icon` (a widget) stands in for the text.
     local label = opts.icon or UI.text(opts.text, opts.size or 15,
         { bold = true, color = enabled and (opts.color or th.ink) or th.muted })
-    -- `label_icon` (a widget) goes in front of the text instead of replacing it.
-    if opts.label_icon and not opts.icon then
-        label = HorizontalGroup:new{ align = "center", opts.label_icon, HorizontalSpan:new{ width = sp(8) }, label }
-    end
     local content = label
     if opts.width then
         content = CenterContainer:new{

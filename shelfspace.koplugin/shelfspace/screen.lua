@@ -25,7 +25,6 @@ local T = require("ffi/util").template
 local Screen = Device.screen
 
 local About = require("shelfspace/about")
-local MenuDialog = require("shelfspace/menudialog")
 local Icons = require("shelfspace/icons")
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
@@ -227,33 +226,41 @@ function ShelfScreen:setKeeper(set, i)
     self:refresh()
 end
 
--- The menu behind the ShelfSpace mark at the top left: what is not a page of its own. A grid, two to a row, each
--- button with an icon. Four buttons make a 2 x 2 with Exit in the last cell; with sets set aside there is a
--- fifth, and Exit takes the bottom row alone.
+-- The menu behind the ShelfSpace mark at the top left: what is not a page of its own.
 function ShelfScreen:showMenu()
     local plugin = self.plugin
     local version = About.info(plugin.path).version
     plugin:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        -- A grid, like the About card, two to a row. Four buttons make a 2 x 2 with Exit in the last cell;
+        -- with sets set aside there is a fifth, and Exit takes the bottom row alone.
+        local function button(text, fn) return { text = text, callback = act(fn) } end
         local cells = {
-            { text = _("About"), icon = "about", callback = function() plugin:showAbout() end },
-            { text = _("Check for updates"), icon = "update", callback = function() plugin:checkForUpdates(version) end },
-            { text = _("Changelog"), icon = "changelog", callback = function() plugin:showChangelog() end },
+            button(_("About"), function() plugin:showAbout() end),
+            button(_("Check for updates"), function() plugin:checkForUpdates(version) end),
+            button(_("Changelog"), function() plugin:showChangelog() end),
         }
-        local exit = { text = _("Exit ShelfSpace"), icon = "exit", callback = function() self:onClose() end }
+        local exit = button(_("Exit ShelfSpace"), function() self:onClose() end)
         local kept = #(plugin.ignored_duplicates or {})
-        local rows = {}
         if kept > 0 then
-            table.insert(cells, {
-                text = T(_("Kept on purpose · %1"), kept), icon = "kept",
-                callback = function() self:openDuplicates() self:showIgnoredDuplicates() end,
-            })
-            for i = 1, #cells, 2 do table.insert(rows, { cells[i], cells[i + 1] }) end
-            table.insert(rows, { exit })
+            table.insert(cells, button(T(_("Kept on purpose · %1"), kept), function() self:openDuplicates() self:showIgnoredDuplicates() end))
+        end
+        local buttons = {}
+        if kept > 0 then
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
+            table.insert(buttons, { exit })
         else
             table.insert(cells, exit)
-            for i = 1, #cells, 2 do table.insert(rows, { cells[i], cells[i + 1] }) end
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
         end
-        return MenuDialog:new{ title = _("ShelfSpace"), rows = rows, theme = self.theme }
+        dialog = ButtonDialog:new { title = _("ShelfSpace"), title_align = "center", buttons = buttons }
+        return dialog
     end)
 end
 

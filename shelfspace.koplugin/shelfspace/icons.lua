@@ -153,24 +153,6 @@ function Icons.sortSvg(kind, descending, ink, bg)
 end
 
 -- A magnifying glass, in one solid colour on `bg` (opaque, like the sort icons).
--- Line icons for the menu, drawn on a 24 x 24 grid in one stroke so they read as a set.
-local ACTIONS = {
-    about = '<circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r="0.9" fill="#%s"/>',
-    update = '<path d="M19.5 12A7.5 7.5 0 1 1 17.3 6.7"/><path d="M18 3.5v4h-4"/>',
-    changelog = '<path d="M7 3h7l5 5v12.2a.8.8 0 0 1-.8.8H7a.8.8 0 0 1-.8-.8V3.8A.8.8 0 0 1 7 3z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/>',
-    exit = '<path d="M10 4H6.2a1.2 1.2 0 0 0-1.2 1.2v13.6A1.2 1.2 0 0 0 6.2 20H10"/><path d="M14 8l4 4-4 4M18 12H9"/>',
-    kept = '<path d="M7 3.5h10v17l-5-3.7-5 3.7z"/>',
-}
-
-function Icons.actionSvg(name, ink, bg)
-    local body = ACTIONS[name]
-    if not body then return nil end
-    local stroke = string.format('fill="none" stroke="#%s" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"', ink)
-    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" '
-        .. 'viewBox="0 0 24 24"><rect width="24" height="24" fill="#' .. bg .. '"/><g ' .. stroke .. '>'
-        .. body:gsub("%%s", ink) .. "</g></svg>"
-end
-
 function Icons.searchSvg(ink, bg)
     local stroke = string.format('fill="none" stroke="#%s" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"', ink)
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
@@ -239,15 +221,6 @@ function Icons.searchWidget(size, ink, bg)
     local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
     local path = string.format("%s/cache/shelfspace/search-%s-%s.svg", DataStorage:getDataDir(), ink_hex, bg_hex)
     if not store(path, Icons.searchSvg(ink_hex, bg_hex)) then return nil end
-    return IconWidget:new{ file = path, width = size, height = size }
-end
-
-function Icons.actionWidget(name, size, ink, bg)
-    local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
-    local svg = Icons.actionSvg(name, ink_hex, bg_hex)
-    if not svg then return nil end
-    local path = string.format("%s/cache/shelfspace/action-%s-%s-%s.svg", DataStorage:getDataDir(), name, ink_hex, bg_hex)
-    if not store(path, svg) then return nil end
     return IconWidget:new{ file = path, width = size, height = size }
 end
 
