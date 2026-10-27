@@ -526,6 +526,10 @@ function ShelfSpace:showUpdateResult(current, result)
             if result.page then
                 table.insert(rows, { { text = _("Release page (QR)"), callback = function() self:showQR(_("ShelfSpace release"), result.page) end } })
             end
+            table.insert(rows, { { text = _("Close"), callback = act(function() end) } })
+            -- A viewer scrolls long release notes and keeps its buttons on screen, which a dialog's title does not.
+            dialog = require("ui/widget/textviewer"):new { title = _("Update available"), text = text, buttons_table = rows }
+            return dialog
         end
         table.insert(rows, { { text = _("Close"), callback = act(function() end) } })
         dialog = ButtonDialog:new { title = text, title_align = "center", buttons = rows }

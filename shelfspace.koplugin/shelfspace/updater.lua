@@ -56,7 +56,7 @@ end
 function Updater.message(result, current)
     if result.state == "available" then
         local lines = { T(_("ShelfSpace %1 is available"), result.latest), T(_("Released %1 · you have %2"), result.date, current) }
-        local notes = trimNotes(result.notes, 12)
+        local notes = trimNotes(result.notes, math.huge)
         if notes ~= "" then table.insert(lines, ""); table.insert(lines, notes) end
         return table.concat(lines, "\n")
     elseif result.state == "current" then

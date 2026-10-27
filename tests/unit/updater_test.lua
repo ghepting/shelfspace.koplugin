@@ -37,15 +37,14 @@ T.test("it asks GitHub's latest-release address for this repository", function()
     T.eq(Updater.API, "https://api.github.com/repos/ghepting/shelfspace.koplugin/releases/latest")
 end)
 
-T.test("the card says what is available, since when, and the notes, cut to twelve lines", function()
+T.test("the card says what is available, since when, and all the notes", function()
     local notes = {}
     for n = 1, 20 do notes[#notes + 1] = "* change " .. n end
     local r = Updater.interpret({ tag_name = "v0.4.0", published_at = "2026-11-02T10:00:00Z", body = table.concat(notes, "\r\n\r\n"), assets = {} }, "0.3.0")
     local text = Updater.message(r, "0.3.0")
     assert(text:find("ShelfSpace 0.4.0 is available", 1, true), text)
     assert(text:find("Released 2026-11-02 · you have 0.3.0", 1, true), text)
-    assert(text:find("* change 12", 1, true) and not text:find("* change 13", 1, true), text)
-    assert(text:find("…", 1, true), text)
+    assert(text:find("* change 20", 1, true), text)
 end)
 
 T.test("the card for no update says you are up to date, or why it could not tell", function()
