@@ -30,6 +30,7 @@ local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
+local Zones = require("shelfspace/zones")
 local sp = UI.sp
 
 -- The title, with the ShelfSpace mark on the left (it opens the menu) and a close button on the right; our own so
@@ -506,6 +507,19 @@ function ShelfScreen:rebuild()
         },
     }
     logger.info(string.format("ShelfSpace: built %s tab in %d ms", self.tab, time.to_ms(time.since(started))))
+end
+
+-- Touches ShelfSpace does not use go on to KOReader underneath it (see zones.lua): the gesture that opens its top
+-- menu, and the ones you have set. The edge swipes and corner holds you gave an action run ahead of ShelfSpace's own
+-- use of them; a touch is not forwarded while the screensaver is waiting for its wake gesture.
+function ShelfScreen:handleEvent(event)
+    if event.handler == "onGesture" and not Device.screen_saver_lock then
+        local ev, host = event.args and event.args[1], self.plugin.ui
+        if Zones.forwardUserFirst(ev, host) then return true end
+        if InputContainer.handleEvent(self, event) then return true end
+        return Zones.forward(ev, host)
+    end
+    return InputContainer.handleEvent(self, event)
 end
 
 function ShelfScreen:onSwipePage(arg, ges)
