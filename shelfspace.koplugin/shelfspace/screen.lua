@@ -234,20 +234,23 @@ function ShelfScreen:showMenu()
                 fn()
             end
         end
-        local buttons = {
-            { { text = T(_("Check for updates (v%1)"), version), callback = act(function() plugin:checkForUpdates(version) end) } },
-            { { text = _("View changelog"), callback = act(function() plugin:showChangelog() end) } },
-            { { text = _("About ShelfSpace"), callback = act(function() plugin:showAbout() end) } },
+        -- A grid, like the About card: two to a row, and Exit across the bottom.
+        local function button(text, fn) return { text = text, callback = act(fn) } end
+        local cells = {
+            button(_("Check for updates"), function() plugin:checkForUpdates(version) end),
+            button(_("Changelog"), function() plugin:showChangelog() end),
+            button(_("About"), function() plugin:showAbout() end),
         }
         local kept = #(plugin.ignored_duplicates or {})
         if kept > 0 then
-            table.insert(buttons, { {
-                text = T(_("Kept on purpose · %1"), kept),
-                callback = act(function() self:openDuplicates() self:showIgnoredDuplicates() end),
-            } })
+            table.insert(cells, button(T(_("Kept on purpose · %1"), kept), function() self:openDuplicates() self:showIgnoredDuplicates() end))
         end
-        table.insert(buttons, { { text = _("Close ShelfSpace"), callback = act(function() self:onClose() end) } })
-        dialog = ButtonDialog:new { title = _("ShelfSpace"), title_align = "center", buttons = buttons }
+        local buttons = {}
+        for i = 1, #cells, 2 do
+            table.insert(buttons, { cells[i], cells[i + 1] })
+        end
+        table.insert(buttons, { button(_("Exit ShelfSpace"), function() self:onClose() end) })
+        dialog = ButtonDialog:new { title = T(_("ShelfSpace %1"), version), title_align = "center", buttons = buttons }
         return dialog
     end)
 end
