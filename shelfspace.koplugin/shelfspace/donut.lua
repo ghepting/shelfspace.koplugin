@@ -10,13 +10,14 @@ local TWO_PI = 2 * math.pi
 
 -- A donut chart drawn once into its own buffer, with smooth edges and thin gaps between
 -- slices. Tapping a slice calls on_tap(slice).
--- Fields: diameter, bg (the page colour), hole (inner radius as a share of the outer one),
+-- Fields: diameter, bg (the page colour), ink (the outline's colour), hole (inner radius as a share of the outer one),
 -- slices = { { fraction, color, ... }, ... } clockwise from 12 o'clock, on_tap.
 local Donut = InputContainer:extend{
     diameter = 200,
     hole = 0.62,
     slices = nil,
     bg = nil,
+    ink = nil,
     on_tap = nil,
 }
 
@@ -51,6 +52,9 @@ function Donut:render()
     local outer = d / 2 - 1
     local inner = outer * self.hole
     local gap = #arcs > 1 and 1 or 0 -- pixels of page colour between neighbouring slices
+    -- A line round the ring, inside and out, so a slice as light as the page (free space) still reads as part of it.
+    local ink = self.ink and self.ink:getColorRGB32()
+    local line = math.max(1.5, d / 110)
 
     for py = 0, d - 1 do
         local dy = py + 0.5 - center
@@ -72,10 +76,17 @@ function Donut:render()
                         end
                         cover = cover * clamp01(nearest - gap * 0.6)
                     end
-                    if cover >= 0.999 then
+                    -- How much of this pixel the outline covers: along the outer and the inner edge.
+                    local edge = ink and math.max(clamp01(dist - (outer - line) + 0.5), clamp01((inner + line) - dist + 0.5)) or 0
+                    if cover >= 0.999 and edge <= 0.004 then
                         buf:setPixel(px, py, arc.slice.color)
                     elseif cover > 0.004 then
                         local c = arc.rgb
+                        if edge > 0.004 then
+                            c = {
+                                r = c.r + (ink.r - c.r) * edge, g = c.g + (ink.g - c.g) * edge, b = c.b + (ink.b - c.b) * edge,
+                            }
+                        end
                         buf:setPixel(px, py, Blitbuffer.ColorRGB32(
                             math.floor(bg.r + (c.r - bg.r) * cover + 0.5),
                             math.floor(bg.g + (c.g - bg.g) * cover + 0.5),
