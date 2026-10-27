@@ -4,6 +4,8 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local Geom = require("ui/geometry")
 local GestureRange = require("ui/gesturerange")
 local IconWidget = require("ui/widget/iconwidget")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local ButtonDialog = require("ui/widget/buttondialog")
 local InputDialog = require("ui/widget/inputdialog")
@@ -22,21 +24,28 @@ local _ = require("gettext")
 local T = require("ffi/util").template
 local Screen = Device.screen
 
+local About = require("shelfspace/about")
+local Icons = require("shelfspace/icons")
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
+local Zones = require("shelfspace/zones")
 local sp = UI.sp
 
--- Title with a close button; our own so the icon can be transparent on the page colour.
-local function header(th, width, on_close, on_about)
+-- The title, with the ShelfSpace mark on the left (it opens the menu) and a close button on the right; our own so
+-- the icons can be transparent on the page colour.
+local function header(th, width, on_menu, on_close)
     local h = sp(46)
-    local icon = IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) }
-    local close = UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = sp(56), h = h }, icon }, on_close)
-    local about = UI.tappable(CenterContainer:new{
+    local close = UI.tappable(CenterContainer:new{
         dimen = Geom:new{ w = sp(56), h = h },
-        IconWidget:new{ icon = "info", alpha = true, width = sp(26), height = sp(26) },
-    }, on_about)
+        IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) },
+    }, on_close)
+    local mark = Icons.markWidget(sp(44), th.ink, th.bg)
+    local menu = mark and UI.tappable(CenterContainer:new{
+        dimen = Geom:new{ w = sp(76), h = h },
+        mark,
+    }, on_menu) or HorizontalSpan:new{ width = 0 }
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
@@ -45,7 +54,10 @@ local function header(th, width, on_close, on_about)
                 dimen = Geom:new{ w = width, h = h },
                 UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.ink }),
             },
-            LeftContainer:new{ dimen = Geom:new{ w = width, h = h }, about },
+            LeftContainer:new{
+                dimen = Geom:new{ w = width, h = h },
+                HorizontalGroup:new{ HorizontalSpan:new{ width = sp(6) }, menu },
+            },
             RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
         },
         LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
@@ -213,6 +225,44 @@ end
 function ShelfScreen:setKeeper(set, i)
     self.dup_keep[set.id] = i
     self:refresh()
+end
+
+-- The menu behind the ShelfSpace mark at the top left: what is not a page of its own.
+function ShelfScreen:showMenu()
+    local plugin = self.plugin
+    local version = About.info(plugin.path).version
+    plugin:showDialog(function()
+        local dialog
+        local function act(fn)
+            return function()
+                UIManager:close(dialog)
+                fn()
+            end
+        end
+        -- A grid, like the About card, two to a row. Four buttons make a 2 x 2 with Exit in the last cell;
+        -- with sets set aside there is a fifth, and Exit takes the bottom row alone.
+        local function button(text, fn) return { text = text, callback = act(fn) } end
+        local cells = {
+            button(_("About"), function() plugin:showAbout() end),
+            button(_("Check for updates"), function() plugin:checkForUpdates(version) end),
+            button(_("Changelog"), function() plugin:showChangelog() end),
+        }
+        local exit = button(_("Exit ShelfSpace"), function() self:onClose() end)
+        local kept = #(plugin.ignored_duplicates or {})
+        if kept > 0 then
+            table.insert(cells, button(T(_("Kept on purpose · %1"), kept), function() self:openDuplicates() self:showIgnoredDuplicates() end))
+        end
+        local buttons = {}
+        if kept > 0 then
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
+            table.insert(buttons, { exit })
+        else
+            table.insert(cells, exit)
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
+        end
+        dialog = ButtonDialog:new { title = _("ShelfSpace"), title_align = "center", buttons = buttons }
+        return dialog
+    end)
 end
 
 function ShelfScreen:switchTab(id)
@@ -387,7 +437,7 @@ function ShelfScreen:rebuild()
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
 
-    local titlebar = header(th, self.dimen.w, function() self:onClose() end, function() self.plugin:showAbout() end)
+    local titlebar = header(th, self.dimen.w, function() self:showMenu() end, function() self:onClose() end)
     local tabs = {
         { id = "overview", label = _("OVERVIEW") },
         { id = "browse", label = _("BROWSE") },
@@ -457,6 +507,19 @@ function ShelfScreen:rebuild()
         },
     }
     logger.info(string.format("ShelfSpace: built %s tab in %d ms", self.tab, time.to_ms(time.since(started))))
+end
+
+-- Touches ShelfSpace does not use go on to KOReader underneath it (see zones.lua): the gesture that opens its top
+-- menu, and the ones you have set. The edge swipes and corner holds you gave an action run ahead of ShelfSpace's own
+-- use of them; a touch is not forwarded while the screensaver is waiting for its wake gesture.
+function ShelfScreen:handleEvent(event)
+    if event.handler == "onGesture" and not Device.screen_saver_lock then
+        local ev, host = event.args and event.args[1], self.plugin.ui
+        if Zones.forwardUserFirst(ev, host) then return true end
+        if InputContainer.handleEvent(self, event) then return true end
+        return Zones.forward(ev, host)
+    end
+    return InputContainer.handleEvent(self, event)
 end
 
 function ShelfScreen:onSwipePage(arg, ges)

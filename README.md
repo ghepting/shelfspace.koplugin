@@ -108,18 +108,16 @@ Anything else is untested. If you try it on another device, please
 
 ## About and updates
 
-The **ⓘ** at the top left of the screen shows which ShelfSpace this is (version, release date
+The ShelfSpace mark at the top left of the screen opens a menu (the ✕ at the top right closes ShelfSpace). It holds **About**, **Check for updates**, **Changelog**, **Kept on purpose** (when you have set some aside) and **Exit ShelfSpace**. **About** shows which ShelfSpace this is (version, release date
 and commit), what it is running on, and QR codes for the repository and for reporting a
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
 for the latest release, only when you tap it, and tells you what changed if there is a newer one.
 
-When there is a newer release, **Update now** downloads it, checks it against the checksum GitHub
-publishes, makes sure the Lua loads and the version matches, and only then swaps it in. If any
-step fails nothing is changed. The previous copy is kept as `shelfspace.koplugin.old` in the
-plugins folder, so you can roll back by swapping the folders. Restart KOReader to run the new
-version. The button is hidden when the copy is a symlink, or when the setting
-`shelfspace_updates_managed` is true in KOReader's settings (for a device that something else
-keeps up to date).
+You can do all of that without opening ShelfSpace: in KOReader's Tools menu, ShelfSpace is a submenu with
+**Open ShelfSpace** (or **Close**), **About**, **Check for updates** and **Changelog**. The changelog shows the
+notes of every release, one per page, newest first, with Older and Newer to move between them. It is fetched from
+GitHub the first time you open it and kept on the device, so after that it reads offline; **Refresh** pulls newer
+releases. (Bookshelf's start menu can launch ShelfSpace too: Add to menu, Plugin, ShelfSpace.)
 
 ## Scan speed
 

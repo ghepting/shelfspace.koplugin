@@ -193,6 +193,21 @@ local function hexOf(color)
 end
 
 -- The sort direction icon, `size` pixels square, in the colour `ink` on `bg` (Blitbuffer colours).
+-- The ShelfSpace mark alone, in the text colour and with no tile behind it, for the header. The gaps cut
+-- out of the books are the page colour, so it reads as part of the page. The canvas is cropped to the mark
+-- (it fills only the middle of the square the tile version is drawn on), so it can be shown large and sharp.
+local MARK_X, MARK_Y, MARK_W, MARK_H = 44, 54, 112, 92
+function Icons.markWidget(width, ink, bg)
+    local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
+    local path = string.format("%s/cache/shelfspace/shelfspace-mark-%s-%s.svg", DataStorage:getDataDir(), ink_hex, bg_hex)
+    local svg = Icons.svg("shelfspace", bg_hex, nil, { bare = true, glyph = ink_hex })
+    if not svg then return nil end
+    svg = svg:gsub('width="195" height="195" viewBox="0 0 195 195"',
+        string.format('width="%d" height="%d" viewBox="%d %d %d %d"', MARK_W, MARK_H, MARK_X, MARK_Y, MARK_W, MARK_H), 1)
+    if not store(path, svg) then return nil end
+    return IconWidget:new{ file = path, width = width, height = math.floor(width * MARK_H / MARK_W), alpha = true }
+end
+
 function Icons.sortWidget(kind, descending, size, ink, bg)
     local ink_hex, bg_hex = hexOf(ink), hexOf(bg)
     local path = string.format("%s/cache/shelfspace/sort-%s-%s-%s-%s.svg", DataStorage:getDataDir(), kind,

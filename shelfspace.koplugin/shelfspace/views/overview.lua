@@ -30,7 +30,7 @@ return function(screen, th, width)
         color = th.brand,
         icon = "shelfspace",
         named = true, -- the mark with the ShelfSpace wordmark under it
-        title = _("ShelfSpace"),
+        title = _("Overview"),
         subtitle = T(_("%1 free of %2"), util.getFriendlySize(u.available), util.getFriendlySize(u.total)),
         chips = b and Stats.shareChips({
             { name = _("BOOKS"), bytes = b.books },
