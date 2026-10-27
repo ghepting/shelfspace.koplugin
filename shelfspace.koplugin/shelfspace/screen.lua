@@ -33,15 +33,19 @@ local Selection = require("shelfspace/selection")
 local UI = require("shelfspace/ui")
 local sp = UI.sp
 
--- The title with the ShelfSpace mark on the left and the menu on the right; our own so the icons can be
--- transparent on the page colour. Everything else (updates, the changelog, About, closing) is in the menu.
-local function header(th, width, on_menu)
+-- The title, with the ShelfSpace mark on the left (it opens the menu) and a close button on the right; our own so
+-- the icons can be transparent on the page colour.
+local function header(th, width, on_menu, on_close)
     local h = sp(46)
-    local menu = UI.tappable(CenterContainer:new{
+    local close = UI.tappable(CenterContainer:new{
         dimen = Geom:new{ w = sp(56), h = h },
-        IconWidget:new{ icon = "appbar.menu", alpha = true, width = sp(26), height = sp(26) },
-    }, on_menu)
+        IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) },
+    }, on_close)
     local mark = Icons.markWidget(sp(44), th.ink, th.bg)
+    local menu = mark and UI.tappable(CenterContainer:new{
+        dimen = Geom:new{ w = sp(76), h = h },
+        mark,
+    }, on_menu) or HorizontalSpan:new{ width = 0 }
     return VerticalGroup:new{
         align = "left",
         OverlapGroup:new{
@@ -52,9 +56,9 @@ local function header(th, width, on_menu)
             },
             LeftContainer:new{
                 dimen = Geom:new{ w = width, h = h },
-                HorizontalGroup:new{ HorizontalSpan:new{ width = sp(16) }, mark or HorizontalSpan:new{ width = 0 } },
+                HorizontalGroup:new{ HorizontalSpan:new{ width = sp(6) }, menu },
             },
-            RightContainer:new{ dimen = Geom:new{ w = width, h = h }, menu },
+            RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
         },
         LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
     }
@@ -223,7 +227,7 @@ function ShelfScreen:setKeeper(set, i)
     self:refresh()
 end
 
--- The menu behind the icon at the top right: what is not a page of its own. A grid, two to a row, each
+-- The menu behind the ShelfSpace mark at the top left: what is not a page of its own. A grid, two to a row, each
 -- button with an icon. Four buttons make a 2 x 2 with Exit in the last cell; with sets set aside there is a
 -- fifth, and Exit takes the bottom row alone.
 function ShelfScreen:showMenu()
@@ -425,7 +429,7 @@ function ShelfScreen:rebuild()
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
 
-    local titlebar = header(th, self.dimen.w, function() self:showMenu() end)
+    local titlebar = header(th, self.dimen.w, function() self:showMenu() end, function() self:onClose() end)
     local tabs = {
         { id = "overview", label = _("OVERVIEW") },
         { id = "browse", label = _("BROWSE") },
