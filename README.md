@@ -165,8 +165,3 @@ reading progress, the donut's geometry and the icons:
 ## License
 
 MIT
-
-The colours are the design tokens in [`assets/theme.json`](assets/theme.json), also saved as the
-[shelfspace.koreader palette](https://www.colourlovers.com/palette/4987334/shelfspacekoreader) on
-COLOURlovers. It is built on [Coup de Grâce](https://www.colourlovers.com/palette/1098589/coup-de-grce),
-with two neutrals added, on a beige page.
