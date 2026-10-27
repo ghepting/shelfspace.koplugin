@@ -234,23 +234,28 @@ function ShelfScreen:showMenu()
                 fn()
             end
         end
-        -- A grid, like the About card: two to a row, and Exit across the bottom.
+        -- A grid, like the About card, two to a row. Four buttons make a 2 x 2 with Exit in the last cell;
+        -- with sets set aside there is a fifth, and Exit takes the bottom row alone.
         local function button(text, fn) return { text = text, callback = act(fn) } end
         local cells = {
             button(_("About"), function() plugin:showAbout() end),
             button(_("Check for updates"), function() plugin:checkForUpdates(version) end),
             button(_("Changelog"), function() plugin:showChangelog() end),
         }
+        local exit = button(_("Exit ShelfSpace"), function() self:onClose() end)
         local kept = #(plugin.ignored_duplicates or {})
         if kept > 0 then
             table.insert(cells, button(T(_("Kept on purpose · %1"), kept), function() self:openDuplicates() self:showIgnoredDuplicates() end))
         end
         local buttons = {}
-        for i = 1, #cells, 2 do
-            table.insert(buttons, { cells[i], cells[i + 1] })
+        if kept > 0 then
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
+            table.insert(buttons, { exit })
+        else
+            table.insert(cells, exit)
+            for i = 1, #cells, 2 do table.insert(buttons, { cells[i], cells[i + 1] }) end
         end
-        table.insert(buttons, { button(_("Exit ShelfSpace"), function() self:onClose() end) })
-        dialog = ButtonDialog:new { title = T(_("ShelfSpace %1"), version), title_align = "center", buttons = buttons }
+        dialog = ButtonDialog:new { title = _("ShelfSpace"), title_align = "center", buttons = buttons }
         return dialog
     end)
 end
