@@ -9,6 +9,7 @@ local Updater = {
     ASSET = "shelfspace.koplugin.zip", -- the zip every release carries
 }
 Updater.API = "https://api.github.com/repos/" .. Updater.REPO .. "/releases/latest"
+Updater.RELEASES = "https://api.github.com/repos/" .. Updater.REPO .. "/releases?per_page=100" -- every release, for the changelog
 
 -- What a release (GitHub's JSON, decoded) means for someone running `current`:
 -- { state = "available" | "current" | "ahead" | "unknown" | "error", latest, date, notes, page, asset, message }.

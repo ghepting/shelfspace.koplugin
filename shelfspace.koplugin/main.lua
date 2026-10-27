@@ -17,6 +17,7 @@ local T = ffiUtil.template
 
 local Deleter = require("shelfspace/deleter")
 local About = require("shelfspace/about")
+local Changelog = require("shelfspace/changelog")
 local Details = require("shelfspace/details")
 local Duplicates = require("shelfspace/duplicates")
 local Installer = require("shelfspace/installer")
@@ -57,7 +58,11 @@ function ShelfSpace:addToMainMenu(menu_items)
         callback = function() self:showOverview() end,
         sub_item_table = {
             { text = _("Open ShelfSpace"), callback = function() self:showOverview() end },
-            { text = _("Check for updates"), callback = function() self:checkForUpdates(About.info(self.path).version) end },
+            {
+                text_func = function() return T(_("Check for updates (v%1)"), About.info(self.path).version) end,
+                callback = function() self:checkForUpdates(About.info(self.path).version) end,
+            },
+            { text = _("View changelog"), callback = function() self:showChangelog() end },
             { text = _("About ShelfSpace"), callback = function() self:showAbout() end },
         },
     }
@@ -365,7 +370,10 @@ function ShelfSpace:showAbout()
             title = About.lines(info),
             title_align = "center",
             buttons = {
-                { { text = _("Check for updates"), callback = act(function() self:checkForUpdates(info.version) end) } },
+                {
+                    { text = _("Check for updates"), callback = act(function() self:checkForUpdates(info.version) end) },
+                    { text = _("Changelog"), callback = act(function() self:showChangelog() end) },
+                },
                 {
                     { text = _("Repository (QR)"), callback = function() self:showQR(_("ShelfSpace on GitHub"), About.repoUrl()) end },
                     { text = _("Report a problem (QR)"), callback = function() self:showQR(_("Report a problem"), About.issueUrl(info)) end },
@@ -375,6 +383,90 @@ function ShelfSpace:showAbout()
         }
         return dialog
     end)
+end
+
+-- The release notes of every release. They are kept on the device after the first fetch, so reading them
+-- needs no network; a fetch happens only when there is nothing kept yet, or when "Refresh" is tapped.
+function ShelfSpace:changelogFile()
+    return DataStorage:getDataDir() .. "/cache/shelfspace/changelog.json"
+end
+
+function ShelfSpace:keptChangelog()
+    local file = io.open(self:changelogFile(), "rb")
+    if not file then return nil end
+    local text = file:read("*a")
+    file:close()
+    local ok, releases = pcall(require("json").decode, text)
+    local entries = ok and Changelog.entries(releases) or {}
+    return #entries > 0 and entries or nil
+end
+
+-- Fetches the releases, keeps them, and calls done(entries) or done(nil, why not).
+function ShelfSpace:fetchChangelog(done)
+    require("ui/network/manager"):runWhenOnline(function()
+        local busy = InfoMessage:new { text = _("Fetching the changelog…") }
+        UIManager:show(busy)
+        UIManager:forceRePaint()
+        local body, err = Updater.get(Updater.RELEASES)
+        UIManager:close(busy)
+        local ok, releases = false, nil
+        if body then ok, releases = pcall(require("json").decode, body) end
+        local entries = ok and Changelog.entries(releases) or {}
+        if #entries == 0 then
+            done(nil, err or _("GitHub's answer had no releases in it"))
+            return
+        end
+        lfs.mkdir(DataStorage:getDataDir() .. "/cache")
+        lfs.mkdir(DataStorage:getDataDir() .. "/cache/shelfspace")
+        local file = io.open(self:changelogFile(), "wb")
+        if file then
+            file:write(body)
+            file:close()
+        end
+        done(entries)
+    end)
+end
+
+-- One release per page, newest first, in KOReader's own text viewer.
+function ShelfSpace:showChangelog(index)
+    local entries = self:keptChangelog()
+    if not entries then
+        self:fetchChangelog(function(fetched, err)
+            if fetched then self:showChangelog(1) else self:notify(T(_("Could not fetch the changelog\n\n%1"), err)) end
+        end)
+        return
+    end
+    index = math.max(1, math.min(index or 1, #entries))
+    local viewer
+    local function go(to)
+        return function()
+            UIManager:close(viewer)
+            self:showChangelog(to)
+        end
+    end
+    local function enabled(on, callback) return { enabled = on, callback = on and callback or function() end } end
+    local older, newer = enabled(index < #entries, go(index + 1)), enabled(index > 1, go(index - 1))
+    older.text, newer.text = "\xE2\x80\xB9 " .. _("Older"), _("Newer") .. " \xE2\x80\xBA"
+    viewer = require("ui/widget/textviewer"):new {
+        title = T(_("Changelog (%1 of %2)"), index, #entries),
+        text = Changelog.render(entries[index]),
+        buttons_table = {
+            { older, newer },
+            {
+                {
+                    text = _("Refresh"),
+                    callback = function()
+                        UIManager:close(viewer)
+                        self:fetchChangelog(function(fetched, err)
+                            if fetched then self:showChangelog(1) else self:showChangelog(index) self:notify(T(_("Could not refresh\n\n%1"), err)) end
+                        end)
+                    end,
+                },
+                { text = _("Close"), callback = function() UIManager:close(viewer) end },
+            },
+        },
+    }
+    UIManager:show(viewer)
 end
 
 -- Asks GitHub for the latest release, when online, and says what it found. Runs only when asked.
