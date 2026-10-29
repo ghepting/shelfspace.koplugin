@@ -19,6 +19,17 @@ local function get(on_colour_screen)
     return th
 end
 
+-- Every colour in the theme, one by one: the nested tables (a colour for each kind of file) are flattened and flags skipped.
+local function each(th, fn)
+    for key, value in pairs(th) do
+        if type(value) == "table" then
+            for k2, v2 in pairs(value) do fn(key .. "." .. k2, v2) end
+        elseif type(value) ~= "boolean" then
+            fn(key, value)
+        end
+    end
+end
+
 print("theme")
 
 T.test("the page is white and the text black", function()
@@ -28,9 +39,9 @@ T.test("the page is white and the text black", function()
 end)
 
 T.test("on a gray screen every colour is black, white or a gray: ShelfSpace has none of its own", function()
-    for key, value in pairs(get(false)) do
+    each(get(false), function(key, value)
         assert(value == "white" or value == "black" or tostring(value):find("^gray:"), key .. " is not black, white or a gray")
-    end
+    end)
 end)
 
 local function luminance(hex)
@@ -50,16 +61,16 @@ end
 T.test("on a colour screen the colours come from the palette, and everything else stays black, white or gray", function()
     local th, in_palette = get(true), {}
     for _, hex in pairs(Theme.PALETTE) do in_palette["rgb:" .. hex] = true end
-    for key, value in pairs(th) do
+    each(th, function(key, value)
         assert(value == "white" or value == "black" or tostring(value):find("^gray:") or in_palette[value], key .. " is not from the palette")
-    end
+    end)
     for _, key in ipairs({ "ink", "bg", "muted", "line", "chip", "free", "white" }) do
         assert(th[key] == "white" or th[key] == "black" or tostring(th[key]):find("^gray:"), key .. " is not black, white or a gray")
     end
 end)
 
 T.test("a colour that carries text or sits under white text has at least 4.5:1 against white", function()
-    for _, name in ipairs({ "indigo", "teal", "red", "magenta", "orange", "purple" }) do
+    for _, name in ipairs({ "indigo", "teal", "red", "magenta", "orange", "purple", "slate" }) do
         assert(contrast_with_white(Theme.PALETTE[name]) >= 4.5, name .. " is under 4.5:1")
     end
 end)
@@ -75,8 +86,41 @@ T.test("the chart's colours are at least 10 points of lightness apart, so they s
     for i = 2, #shades do assert(shades[i] - shades[i - 1] >= 10, "two chart colours are within 10 points of lightness") end
 end)
 
-T.test("the pale fill under a clear-able copy keeps black text above 15:1", function()
-    assert((luminance(Theme.PALETTE.clear) + 0.05) / 0.05 > 15)
+T.test("every pale fill keeps black text above 15:1", function()
+    for name, hex in pairs(Theme.PALETTE) do
+        if name:find("^tint_") or name == "clear" then
+            assert((luminance(hex) + 0.05) / 0.05 > 15, name .. " is too dark for black text")
+        end
+    end
+end)
+
+T.test("on a colour screen a row is tinted and the header is a band; on a gray screen neither is", function()
+    local colour, gray = get(true), get(false)
+    assert(colour.tinted and not gray.tinted)
+    T.eq(colour.band, "rgb:" .. Theme.PALETTE.indigo)
+    T.eq(gray.band, "white")
+    T.eq(gray.on_band, "black")
+end)
+
+T.test("a file's tint and the letters on its tile follow its kind", function()
+    local th = get(true)
+    T.eq(Theme.tint(th, { name = "a.epub" }), th.tint_kind.epub)
+    T.eq(Theme.tint(th, { name = "a.pdf" }), th.tint_kind.pdf)
+    T.eq(Theme.tint(th, { name = "x", is_dir = true }), th.tint_kind.dir)
+    T.eq(Theme.on(th, { name = "a.cbz" }), th.on_kind.comic)
+    T.eq(Theme.kindName({ name = "a.so" }), "other")
+    T.eq(Theme.kindName({ name = "README" }), "other")
+end)
+
+T.test("a folder is neither the books' indigo nor KOReader's teal", function()
+    local th = get(true)
+    assert(th.folder ~= th.books and th.folder ~= th.koreader)
+end)
+
+T.test("on a gray screen the letters on a tile are readable on its shade", function()
+    local th = get(false)
+    T.eq(th.on_kind.dir, "black") -- light gray tile
+    T.eq(th.on_kind.epub, "white") -- black tile
 end)
 
 T.test("no two chart slices share a shade", function()

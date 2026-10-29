@@ -13,7 +13,11 @@ local Theme = {}
 -- cannot touch (Other files), so it is the one chart colour with no hue.
 Theme.PALETTE = {
     indigo = "#3B2FD1", teal = "#00796B", green = "#34A853", gray = "#BBBBBB", red = "#D32F2F",
-    magenta = "#C2185B", orange = "#B35C00", purple = "#6A2C91", clear = "#FFDAD6",
+    magenta = "#C2185B", orange = "#B35C00", purple = "#6A2C91", slate = "#6B6B6B", clear = "#FFDAD6",
+    -- Pale fills behind a row, under black text (16:1 or better). A colour e-ink screen washes them nearly to white, so a
+    -- row never depends on its tint: the label and the size say everything.
+    tint_indigo = "#E0DEFF", tint_teal = "#D3F2EC", tint_gray = "#E6E6E6", tint_green = "#DDF5DF", tint_magenta = "#FBD9E8",
+    tint_orange = "#FFE3CC", tint_purple = "#F0E1FA", tint_slate = "#EDEDED",
 }
 
 function Theme.get()
@@ -30,6 +34,14 @@ function Theme.get()
         -- the tiles beside files in Browse: the file's type is also in its name, so shade only needs to help
         folder = Blitbuffer.COLOR_GRAY_9, epub = Blitbuffer.COLOR_BLACK, pdf = Blitbuffer.COLOR_GRAY_5,
         comic = Blitbuffer.COLOR_GRAY_B,
+        -- what a legend row sits on; white on a gray screen, where a rule between rows does the separating
+        tint_books = Blitbuffer.COLOR_WHITE, tint_koreader = Blitbuffer.COLOR_WHITE, tint_other = Blitbuffer.COLOR_WHITE,
+        tint_free = Blitbuffer.COLOR_WHITE, tint_duplicates = Blitbuffer.COLOR_WHITE,
+        -- the page's title band: white with a rule on a gray screen, indigo on a colour one; and whether rows are tinted
+        band = Blitbuffer.COLOR_WHITE, on_band = Blitbuffer.COLOR_BLACK, tinted = false,
+        -- the row of each kind of file: its fill, and the colour of the letters on its tile
+        tint_kind = { dir = Blitbuffer.COLOR_WHITE, epub = Blitbuffer.COLOR_WHITE, pdf = Blitbuffer.COLOR_WHITE, comic = Blitbuffer.COLOR_WHITE, other = Blitbuffer.COLOR_WHITE },
+        on_kind = { dir = Blitbuffer.COLOR_BLACK, epub = Blitbuffer.COLOR_WHITE, pdf = Blitbuffer.COLOR_WHITE, comic = Blitbuffer.COLOR_BLACK, other = Blitbuffer.COLOR_BLACK },
     }
     if not Screen:isColorEnabled() then return th end
     local function hex(name) return Blitbuffer.colorFromString(Theme.PALETTE[name]) end
@@ -37,21 +49,34 @@ function Theme.get()
     th.koreader_tile, th.koreader, th.folder = hex("teal"), hex("teal"), hex("teal")
     th.other, th.free_space, th.danger, th.clear = hex("gray"), hex("green"), hex("red"), hex("clear")
     th.duplicates = hex("magenta")
+    th.tint_books, th.tint_koreader, th.tint_other = hex("tint_indigo"), hex("tint_teal"), hex("tint_gray")
+    th.tint_free, th.tint_duplicates = hex("tint_green"), hex("tint_magenta")
     th.pdf, th.comic = hex("orange"), hex("purple")
+    th.folder = hex("slate") -- teal means KOReader's data and indigo means books, so a folder is neither
+    th.band, th.on_band, th.tinted = hex("indigo"), th.white, true
+    th.tint_kind = { dir = hex("tint_slate"), epub = hex("tint_indigo"), pdf = hex("tint_orange"), comic = hex("tint_purple"), other = hex("tint_gray") }
+    th.on_kind = { dir = th.white, epub = th.white, pdf = th.white, comic = th.white, other = th.ink }
     return th
 end
 
-function Theme.kind(th, entry)
-    if entry.is_dir then return th.folder end
+-- "dir", "epub" (books), "pdf", "comic" or "other": what a row's tile and tint are drawn for.
+function Theme.kindName(entry)
+    if entry.is_dir then return "dir" end
     local ext = (entry.name:match("%.([^.]+)$") or ""):lower()
     if ext == "epub" or ext == "kepub" or ext == "mobi" or ext == "azw3" or ext == "azw" or ext == "fb2" then
-        return th.epub
+        return "epub"
     elseif ext == "pdf" or ext == "djvu" then
-        return th.pdf
+        return "pdf"
     elseif ext == "cbz" or ext == "cbr" then
-        return th.comic
+        return "comic"
     end
-    return th.line
+    return "other"
 end
+
+local KIND_COLOR = { dir = "folder", epub = "epub", pdf = "pdf", comic = "comic", other = "line" }
+
+function Theme.kind(th, entry) return th[KIND_COLOR[Theme.kindName(entry)]] end
+function Theme.tint(th, entry) return th.tint_kind[Theme.kindName(entry)] end
+function Theme.on(th, entry) return th.on_kind[Theme.kindName(entry)] end
 
 return Theme

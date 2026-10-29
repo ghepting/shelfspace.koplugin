@@ -25,6 +25,8 @@ local T = require("ffi/util").template
 local Screen = Device.screen
 
 local About = require("shelfspace/about")
+local Deleter = require("shelfspace/deleter")
+local Stats = require("shelfspace/stats")
 local Icons = require("shelfspace/icons")
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
@@ -34,25 +36,25 @@ local Zones = require("shelfspace/zones")
 local sp = UI.sp
 
 -- The title, with the ShelfSpace mark on the left (it opens the menu) and a close button on the right; our own so
--- the icons can be transparent on the page colour.
+-- the icons can be transparent on the page colour. On a colour screen it is a band of the accent colour with the mark and
+-- the title in white; on a gray one it is plain, with a rule under it.
 local function header(th, width, on_menu, on_close)
     local h = sp(46)
-    local close = UI.tappable(CenterContainer:new{
-        dimen = Geom:new{ w = sp(56), h = h },
-        IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) },
-    }, on_close)
-    local mark = Icons.markWidget(sp(44), th.ink, th.bg)
+    local close_icon = th.tinted and UI.text("✕", 26, { color = th.on_band })
+        or IconWidget:new{ icon = "close", alpha = true, width = sp(26), height = sp(26) }
+    local close = UI.tappable(CenterContainer:new{ dimen = Geom:new{ w = sp(56), h = h }, close_icon }, on_close)
+    local mark = Icons.markWidget(sp(44), th.on_band, th.band)
     local menu = mark and UI.tappable(CenterContainer:new{
         dimen = Geom:new{ w = sp(76), h = h },
         mark,
     }, on_menu) or HorizontalSpan:new{ width = 0 }
-    return VerticalGroup:new{
-        align = "left",
+    local bar = FrameContainer:new{
+        bordersize = 0, padding = 0, margin = 0, background = th.band,
         OverlapGroup:new{
             dimen = Geom:new{ w = width, h = h },
             CenterContainer:new{
                 dimen = Geom:new{ w = width, h = h },
-                UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.ink }),
+                UI.text(_("ShelfSpace"), 22, { face = "tfont", color = th.on_band }),
             },
             LeftContainer:new{
                 dimen = Geom:new{ w = width, h = h },
@@ -60,13 +62,16 @@ local function header(th, width, on_menu, on_close)
             },
             RightContainer:new{ dimen = Geom:new{ w = width, h = h }, close },
         },
-        LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink },
+    }
+    return VerticalGroup:new{
+        align = "left",
+        bar,
+        not th.tinted and LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.medium }, background = th.ink } or VerticalSpan:new{ width = 0 },
     }
 end
 
 local views = {
-    overview = require("shelfspace/views/overview"),
-    browse = require("shelfspace/views/browse"),
+    library = require("shelfspace/views/library"),
     koreader = require("shelfspace/views/koreader"),
     duplicates = require("shelfspace/views/duplicates"),
 }
@@ -75,14 +80,15 @@ local views = {
 -- or { hero, count, row_h, build } for a paged list; `message` replaces the body.
 local ShelfScreen = InputContainer:extend{
     plugin = nil, -- the ShelfSpace plugin: usage, tree, and the delete / clear actions
-    tab = "overview",
-    dir = nil, -- folder shown on the Browse tab
-    sort = "size", -- how Browse orders rows: a category id from Search.SORTS
+    tab = "library",
+    dir = nil, -- folder shown on the Library tab
+    only_books = false, -- the list is every book in the library, whichever folder it is in (the Books row of the chart)
+    sort = "size", -- how the Library orders rows: a category id from Search.SORTS
     descending = true, -- ...and which way: biggest, newest or most recent first (names: Z to A)
-    query = nil, -- name search on Browse, over the shown folder and everything under it
-    status = nil, -- a reading status (Search.STATUSES) Browse is narrowed to, e.g. "complete" for finished books
-    filter = nil, -- one file type (a Stats.extension) Browse is narrowed to, from the chips in the header
-    selecting = false, -- Browse is in select mode: rows get checkboxes
+    query = nil, -- name search in the Library, over the shown folder and everything under it
+    status = nil, -- a reading status (Search.STATUSES) the Library is narrowed to, e.g. "complete" for finished books
+    filter = nil, -- one file type (a Stats.extension) the Library is narrowed to, from the Filter button
+    selecting = false, -- the Library is in select mode: rows get checkboxes
     dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
     dup_ignored = false, -- the list shows the sets you chose to keep, not the ones still to deal with
     dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
@@ -93,7 +99,7 @@ function ShelfScreen:init()
     self.covers_fullscreen = true
     self.theme = Theme.get()
     self.pages = {}
-    self.left_at = {} -- pageKey -> the page of Browse a folder was on when you left it
+    self.left_at = {} -- pageKey -> the page of the Library a folder was on when you left it
     self.selected = {} -- path -> entry; survives paging, folders and searches
     self.dup_keep = {}
     if Device:hasKeys() then
@@ -114,13 +120,13 @@ function ShelfScreen:refresh()
     UIManager:setDirty(self, "ui")
 end
 
--- What is ticked on Browse floats over the page as a bar (how many, how big, and Delete), so ticking
+-- What is ticked in the Library floats over the page as a bar (how many, how big, and Delete), so ticking
 -- never moves the table under your finger. The screen draws it itself, last, and claims taps inside it:
 -- a widget of its own on top would take every other tap on the page with it, since KOReader only
 -- gives taps to the topmost widget.
 function ShelfScreen:buildActionBar()
     self.action_bar, self.bar_hits, self.bar_zone = nil, nil, nil
-    local chosen = self.tab == "browse" and self:chosen() or {}
+    local chosen = self.tab == "library" and self:chosen() or {}
     if #chosen == 0 then return end
     local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
         { text = _("Cancel"), callback = function() self:clearSelection() end },
@@ -156,10 +162,10 @@ function ShelfScreen:propagateEvent(event)
     return InputContainer.propagateEvent(self, event)
 end
 
--- Puts Browse back to everything: no search, no file type, no status.
+-- Puts the Library back to everything: no search, no file type, no status.
 function ShelfScreen:clearFilters()
-    self.query, self.filter, self.status = nil, nil, nil
-    self.pages.browse = 1
+    self.query, self.filter, self.status, self.only_books = nil, nil, nil, false
+    self.pages.library = 1
     self:refresh()
 end
 
@@ -272,13 +278,14 @@ function ShelfScreen:switchTab(id)
     self:refresh()
 end
 
--- Jump to the Browse tab showing `dir`.
+-- Jump to the Library tab showing `dir`.
 function ShelfScreen:openBrowse(dir)
-    self.tab = "browse"
+    self.tab = "library"
+    self.only_books = false
     self:setDir(dir)
 end
 
--- Browse remembers the page each folder was on (for the sort and status it was shown with), so going Up
+-- The Library remembers the page each folder was on (for the sort and status it was shown with), so going Up
 -- lands where you were instead of on page 1.
 function ShelfScreen:pageKey(dir)
     return table.concat({ dir or self.plugin.root, tostring(self.status), self.sort, tostring(self.descending) }, "|")
@@ -286,11 +293,11 @@ end
 
 function ShelfScreen:setDir(dir)
     -- A page of search results or of one file type says nothing about the folder's own pages.
-    if not self.query and not self.filter then self.left_at[self:pageKey(self.dir)] = self.pages.browse end
+    if not self.query and not self.filter then self.left_at[self:pageKey(self.dir)] = self.pages.library end
     self.dir = dir
     self.query = nil
     self.filter = nil
-    self.pages.browse = self.left_at[self:pageKey(dir)] or 1
+    self.pages.library = self.left_at[self:pageKey(dir)] or 1
     self:refresh()
 end
 
@@ -298,8 +305,45 @@ end
 -- it is how the library is shown, not something you are looking for.
 function ShelfScreen:setStatus(id)
     self.status = id
-    self.pages.browse = 1
+    self.pages.library = 1
     self:refresh()
+end
+
+-- The Books row of the chart: the list becomes every book in the library, wherever it is, or goes back to the folder it was on.
+function ShelfScreen:toggleBooks()
+    self.only_books = not self.only_books
+    if self.only_books then self.dir = self.plugin.root end
+    self.pages.library = 1
+    self:refresh()
+end
+
+-- The file type and the reading status in one dialog: each is a choice, the current one ticked, and tapping it again clears it.
+function ShelfScreen:askFilter()
+    local tree = self.plugin.tree
+    if not tree then return end
+    self.plugin:showDialog(function()
+        local dialog
+        local function pick(fn) return function() UIManager:close(dialog) fn() end end
+        local types = {}
+        for _, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, self.plugin.root, Deleter.isBook), 4)) do
+            local ext = x.ext
+            table.insert(types, {
+                text = (self.filter == ext and "✓  " or "") .. ext:upper(),
+                callback = pick(function() self:toggleFilter(ext) end),
+            })
+        end
+        local buttons = { types }
+        table.insert(buttons, { { text = _("Show"), enabled = false } })
+        for _, option in ipairs(Search.STATUSES) do
+            table.insert(buttons, { {
+                text = (option.id == self.status and "✓  " or "     ") .. option.label,
+                callback = pick(function() self:setStatus(option.id) end),
+            } })
+        end
+        table.insert(buttons, { { text = _("Clear filters"), callback = pick(function() self:clearFilters() end) } })
+        dialog = ButtonDialog:new{ title = _("Filter"), title_align = "center", buttons = buttons }
+        return dialog
+    end)
 end
 
 -- Every status filter at once, the current one ticked.
@@ -324,7 +368,7 @@ end
 -- Switches the file-type filter to `ext`, or off when it is already on.
 function ShelfScreen:toggleFilter(ext)
     self.filter = self.filter ~= ext and ext or nil
-    self.pages.browse = 1
+    self.pages.library = 1
     self:refresh()
 end
 
@@ -334,7 +378,7 @@ function ShelfScreen:setSelecting(on)
     self:refresh()
 end
 
--- Ticks or unticks one row; `key` identifies it (a path on Browse, a title on the KOReader tab).
+-- Ticks or unticks one row; `key` identifies it (a path in the Library, a title on the KOReader tab).
 function ShelfScreen:toggleKey(key, value)
     self.selected[key] = (not self.selected[key]) and (value or true) or nil
     self:refresh()
@@ -365,13 +409,13 @@ end
 function ShelfScreen:setSort(id)
     self.sort = id
     self.descending = Search.sortBy(id).descending
-    self.pages.browse = 1
+    self.pages.library = 1
     self:refresh()
 end
 
 function ShelfScreen:flipSort()
     self.descending = not self.descending
-    self.pages.browse = 1
+    self.pages.library = 1
     self:refresh()
 end
 
@@ -397,7 +441,7 @@ end
 function ShelfScreen:setQuery(query)
     query = query and query:match("^%s*(.-)%s*$")
     self.query = query ~= "" and query or nil
-    self.pages.browse = 1
+    self.pages.library = 1
     self:refresh()
 end
 
@@ -438,17 +482,18 @@ function ShelfScreen:rebuild()
     local view = views[self.tab](self, th, width)
 
     local titlebar = header(th, self.dimen.w, function() self:showMenu() end, function() self:onClose() end)
-    local tabs = {
-        { id = "overview", label = _("OVERVIEW") },
-        { id = "browse", label = _("BROWSE") },
-        { id = "koreader", label = _("KOREADER") },
-    }
+    -- Duplicates is a tab only while there is something to decide; the sets kept on purpose live in the menu.
+    local tabs = { { id = "library", label = _("Library") }, { id = "koreader", label = _("KOReader") } }
+    local sets = #(self.plugin.duplicates or {})
+    if sets > 0 or self.tab == "duplicates" then
+        table.insert(tabs, { id = "duplicates", label = sets > 0 and T(_("Duplicates · %1"), sets) or _("Duplicates") })
+    end
     local gap = sp(10)
     local body = VerticalGroup:new{
         align = "left",
-        view.hero,
+        UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end),
         VerticalSpan:new{ width = gap },
-        UI.tabbar(th, width, tabs, self.tab == "duplicates" and "overview" or self.tab, function(id) self:switchTab(id) end),
+        view.hero,
         VerticalSpan:new{ width = gap },
     }
 

@@ -207,39 +207,23 @@ function UI.tappable(widget, on_tap, on_hold)
     return c
 end
 
--- tabs = { { id, label }, ... }; the active one is filled.
+-- tabs = { { id, label }, ... }: pills side by side, the active one filled.
 function UI.tabbar(th, width, tabs, active, on_select)
-    local h = sp(42)
-    local line = Size.line.thin
-    local cell_w = math.floor((width - line * (#tabs - 1)) / #tabs)
+    local h = sp(40)
+    local border = Size.border.button
     local row = HorizontalGroup:new{}
     for i, tab in ipairs(tabs) do
         local on = tab.id == active
-        local w = (i == #tabs) and (width - (cell_w + line) * (#tabs - 1)) or cell_w
-        local cell = FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0, background = on and th.accent or th.bg,
-            CenterContainer:new{
-                dimen = Geom:new{ w = w, h = h },
-                UI.text(tab.label, 15, { bold = true, color = on and th.white or th.ink }),
-            },
+        local label = UI.text(tab.label, 15, { bold = true, color = on and th.white or th.ink })
+        local pill = FrameContainer:new{
+            bordersize = border, color = on and th.accent or th.ink, radius = math.floor(h / 2), margin = 0, padding = 0,
+            background = on and th.accent or th.bg,
+            CenterContainer:new{ dimen = Geom:new{ w = label:getSize().w + 2 * sp(18), h = h - 2 * border }, label },
         }
-        table.insert(row, UI.tappable(cell, function() on_select(tab.id) end))
-        if i < #tabs then
-            -- A short hairline between tabs; beside the filled tab it blends into the fill instead.
-            if on or tabs[i + 1].id == active then
-                table.insert(row, UI.block(line, h, th.accent))
-            else
-                table.insert(row, FrameContainer:new{
-                    bordersize = 0, padding = 0, margin = 0, background = th.bg,
-                    CenterContainer:new{
-                        dimen = Geom:new{ w = line, h = h },
-                        LineWidget:new{ dimen = Geom:new{ w = line, h = sp(20) }, background = th.line },
-                    },
-                })
-            end
-        end
+        if i > 1 then table.insert(row, HorizontalSpan:new{ width = sp(8) }) end
+        table.insert(row, UI.tappable(pill, function() on_select(tab.id) end))
     end
-    return UI.rounded(th, row, sp(12), Size.border.button)
+    return row
 end
 
 -- « ‹ Page 1 of 3 › » ; on_page(n) is called with the page to show.
