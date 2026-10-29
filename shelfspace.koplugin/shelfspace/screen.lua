@@ -325,7 +325,7 @@ function ShelfScreen:askFilter()
         local dialog
         local function pick(fn) return function() UIManager:close(dialog) fn() end end
         local types = {}
-        for _, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, self.plugin.root, Deleter.isBook), 4)) do
+        for _, x in ipairs(Stats.topExtensions(Stats.typeBytes(tree, self.plugin.root, Deleter.isSupported), 4)) do
             local ext = x.ext
             table.insert(types, {
                 text = (self.filter == ext and "✓  " or "") .. ext:upper(),

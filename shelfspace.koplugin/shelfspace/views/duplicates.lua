@@ -190,7 +190,7 @@ return function(screen, th, width)
     local function day(time) return time and os.date("%b %d", time) or "" end
 
     local tag_text = {
-        suggested = _("SUGGESTED"), fixed_layout = _("PDF · FIXED LAYOUT"), older_format = _("OLDER FORMAT"),
+        suggested = _("SUGGESTED"), fixed_layout = _("FIXED LAYOUT"), older_format = _("OLDER FORMAT"),
         newest = _("NEWEST"), smallest = _("SMALLEST"),
     }
     -- The copy to keep has a heavy outline in the accent colour and a filled radio; the others a thin red one and an

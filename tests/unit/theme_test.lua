@@ -70,7 +70,7 @@ T.test("on a colour screen the colours come from the palette, and everything els
 end)
 
 T.test("a colour that carries text or sits under white text has at least 4.5:1 against white", function()
-    for _, name in ipairs({ "indigo", "teal", "red", "magenta", "orange", "purple", "slate" }) do
+    for _, name in ipairs({ "indigo", "teal", "red", "magenta", "orange", "purple", "slate", "cyan", "olive" }) do
         assert(contrast_with_white(Theme.PALETTE[name]) >= 4.5, name .. " is under 4.5:1")
     end
 end)
@@ -102,14 +102,33 @@ T.test("on a colour screen a row is tinted and the header is a band; on a gray s
     T.eq(gray.on_band, "black")
 end)
 
-T.test("a file's tint and the letters on its tile follow its kind", function()
+T.test("a file's tint and the letters on its tile follow its kind, whatever the case", function()
     local th = get(true)
-    T.eq(Theme.tint(th, { name = "a.epub" }), th.tint_kind.epub)
-    T.eq(Theme.tint(th, { name = "a.pdf" }), th.tint_kind.pdf)
+    for name, kind in pairs({ ["a.epub"] = "book", ["a.KEPUB.EPUB"] = "book", ["a.Mobi"] = "book", ["a.txt"] = "document", ["a.DOCX"] = "document",
+        ["a.PDF"] = "fixed", ["a.djvu"] = "fixed", ["a.cbz"] = "comic", ["a.ZIP"] = "comic", ["a.JPG"] = "image", ["a.webp"] = "image",
+        ["a.so"] = "other", ["README"] = "other" }) do
+        T.eq(Theme.kindName({ name = name }), kind, name)
+        T.eq(Theme.tint(th, { name = name }), th.tint_kind[kind], name)
+        T.eq(Theme.on(th, { name = name }), th.on_kind[kind], name)
+    end
+    T.eq(Theme.kindName({ name = "x", is_dir = true }), "dir")
     T.eq(Theme.tint(th, { name = "x", is_dir = true }), th.tint_kind.dir)
-    T.eq(Theme.on(th, { name = "a.cbz" }), th.on_kind.comic)
-    T.eq(Theme.kindName({ name = "a.so" }), "other")
-    T.eq(Theme.kindName({ name = "README" }), "other")
+end)
+
+T.test("each kind of file has its own colour on a colour screen", function()
+    local th, seen = get(true), {}
+    for _, key in ipairs({ "folder", "book", "document", "fixed", "comic", "image" }) do
+        assert(not seen[th[key]], key .. " shares a colour with " .. tostring(seen[th[key]]))
+        seen[th[key]] = key
+    end
+end)
+
+T.test("each kind of file has its own shade on a gray screen, but for the unreadable-by-shade ones named by their letters", function()
+    local th, seen = get(false), {}
+    for _, key in ipairs({ "book", "document", "fixed", "comic", "image" }) do
+        assert(not seen[th[key]], key .. " shares a shade with " .. tostring(seen[th[key]]))
+        seen[th[key]] = key
+    end
 end)
 
 T.test("a folder is neither the books' indigo nor KOReader's teal", function()
@@ -120,7 +139,9 @@ end)
 T.test("on a gray screen the letters on a tile are readable on its shade", function()
     local th = get(false)
     T.eq(th.on_kind.dir, "black") -- light gray tile
-    T.eq(th.on_kind.epub, "white") -- black tile
+    T.eq(th.on_kind.book, "white") -- black tile
+    T.eq(th.on_kind.document, "white") -- dark gray tile
+    T.eq(th.on_kind.image, "black") -- very light gray tile
 end)
 
 T.test("no two chart slices share a shade", function()
@@ -136,12 +157,15 @@ T.test("on a gray screen a delete button is as dark as the text, so it reads", f
     T.eq(th.danger, th.ink)
 end)
 
-T.test("files are shaded by type, and unknown ones fall back to the rule shade", function()
+T.test("files are coloured by kind, and unknown ones fall back to the rule shade", function()
     local th = get(true)
     T.eq(Theme.kind(th, { name = "x", is_dir = true }), th.folder)
-    T.eq(Theme.kind(th, { name = "a.EPUB" }), th.epub)
-    T.eq(Theme.kind(th, { name = "a.pdf" }), th.pdf)
+    T.eq(Theme.kind(th, { name = "a.EPUB" }), th.book)
+    T.eq(Theme.kind(th, { name = "a.kepub.epub" }), th.book)
+    T.eq(Theme.kind(th, { name = "a.pdf" }), th.fixed)
     T.eq(Theme.kind(th, { name = "a.cbz" }), th.comic)
+    T.eq(Theme.kind(th, { name = "a.md" }), th.document)
+    T.eq(Theme.kind(th, { name = "a.png" }), th.image)
     T.eq(Theme.kind(th, { name = "a.so" }), th.line)
 end)
 

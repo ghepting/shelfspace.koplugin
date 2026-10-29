@@ -6,6 +6,7 @@ local Stats = require("shelfspace/stats")
 local UIManager = require("ui/uimanager")
 local util = require("util")
 local _ = require("gettext")
+local Formats = require("shelfspace/formats")
 local T = require("ffi/util").template
 
 -- A short card about one file, so a person can tell what it is before keeping or deleting it.
@@ -41,9 +42,9 @@ end
 
 -- The facts shown for `entry`; `dir` is the folder it sits in, `reason` why it can't be deleted (or nil).
 function Details.text(root, entry, dir, reason, book)
-    local ext = entry.name:match("%.([^.]+)$")
+    local ext = Formats.extension(entry.name) and Formats.label(entry.name)
     local lines = { entry.name, "" }
-    table.insert(lines, ext and T(_("%1 · %2"), ext:upper(), util.getFriendlySize(entry.size))
+    table.insert(lines, ext and T(_("%1 · %2"), ext, util.getFriendlySize(entry.size))
         or util.getFriendlySize(entry.size))
     table.insert(lines, T(_("In: %1"), whereIs(root, dir)))
     if entry.modified then

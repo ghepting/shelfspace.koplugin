@@ -166,4 +166,27 @@ T.test("no query and no filter finds nothing", function()
     T.eq(#Search.find(mixed, "/r", nil, nil), 0)
 end)
 
+local cased = {
+    ["/r"] = { entries = {
+        e("SHOUT.EPUB", "/r/SHOUT.EPUB", 5, 1), e("quiet.kepub.epub", "/r/quiet.kepub.epub", 6, 2), e("Old.FB2.ZIP", "/r/Old.FB2.ZIP", 7, 3),
+        e("Photo.JPEG", "/r/Photo.JPEG", 8, 4), e("page.HTM", "/r/page.HTM", 9, 5), e("scan.DJV", "/r/scan.DJV", 10, 6),
+        e("notes.Markdown", "/r/notes.Markdown", 11, 7),
+    } },
+}
+
+T.test("a search ignores case in the name", function()
+    T.eq(T.names((Search.find(cased, "/r", "shout"))), "SHOUT.EPUB")
+    T.eq(T.names((Search.find(cased, "/r", "QUIET"))), "quiet.kepub.epub")
+    T.eq(T.names((Search.find(cased, "/r", "photo JPEG"))), "Photo.JPEG")
+end)
+
+T.test("a type filter ignores case and counts a format's other spellings as one type", function()
+    T.eq(T.names((Search.find(cased, "/r", "", "epub"))), "SHOUT.EPUB|quiet.kepub.epub")
+    T.eq(T.names((Search.find(cased, "/r", "", "fb2"))), "Old.FB2.ZIP")
+    T.eq(T.names((Search.find(cased, "/r", "", "jpg"))), "Photo.JPEG")
+    T.eq(T.names((Search.find(cased, "/r", "", "html"))), "page.HTM")
+    T.eq(T.names((Search.find(cased, "/r", "", "djvu"))), "scan.DJV")
+    T.eq(T.names((Search.find(cased, "/r", "", "md"))), "notes.Markdown")
+end)
+
 T.done()

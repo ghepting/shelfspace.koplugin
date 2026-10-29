@@ -71,4 +71,14 @@ T.test("KOReader's tags: the clearable parts while something can be cleared, one
     T.eq(table.concat(Stats.dataChips(parts, 100, 3, 0, "ALL CLEAR"), "|"), "ALL CLEAR")
 end)
 
+T.test("a type is counted the same in any case, and a format's other spellings are one type", function()
+    T.eq(Stats.extension("a.EPUB"), "epub")
+    T.eq(Stats.extension("a.kepub.epub"), "epub")
+    T.eq(Stats.extension("a.KEPUB.EPUB"), "epub")
+    T.eq(Stats.extension("a.fb2.zip"), "fb2")
+    T.eq(Stats.extension("a.JPEG"), "jpg")
+    T.eq(Stats.extension("a.htm"), "html")
+    T.eq(Stats.extension("a.Prc"), "mobi")
+end)
+
 T.done()

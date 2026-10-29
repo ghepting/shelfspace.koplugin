@@ -1,9 +1,11 @@
 -- Facts about a folder, read from the scan.
+local Formats = require("shelfspace/formats")
 local Stats = {}
 
--- The type a file is counted under: its lower-cased extension, or "other" when it has none.
+-- The type a file is counted under: its extension in lower case, with a format's other spellings and compound forms
+-- counted as one ("a.kepub.epub" is epub, "a.fb2.zip" is fb2), or "other" when it has none.
 function Stats.extension(name)
-    return (name:match("%.([^.]+)$") or "other"):lower()
+    return Formats.extension(name) or "other"
 end
 
 -- How many files are under `path`, and the bytes per file extension.

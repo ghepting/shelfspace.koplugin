@@ -17,6 +17,7 @@ local N_ = _.ngettext
 local T = require("ffi/util").template
 
 local Deleter = require("shelfspace/deleter")
+local Formats = require("shelfspace/formats")
 local Empty = require("shelfspace/empty")
 local Icons = require("shelfspace/icons")
 local Progress = require("shelfspace/progress")
@@ -59,7 +60,10 @@ return function(screen, th, width)
     local status = screen.status
     local include
     if status or screen.only_books then
-        include = function(e) return Deleter.isBook(e) and (not status or BookList.getBookStatus(e.path) == status) end
+        include = function(e)
+            if status then return Deleter.isBook(e) and BookList.getBookStatus(e.path) == status end
+            return Deleter.isSupported(e)
+        end
     end
     if screen.query or screen.filter or include then
         entries, where = Search.find(tree, dir, screen.query, screen.filter, include)
@@ -90,7 +94,7 @@ return function(screen, th, width)
 
     -- The tile in front of a name: three or four letters of its type on its kind's colour ("DIR" for a folder).
     local function type_tile(item)
-        local label = item.is_dir and "DIR" or (item.name:match("%.([^.]+)$") or "?"):upper():sub(1, 4)
+        local label = item.is_dir and "DIR" or Formats.label(item.name)
         return FrameContainer:new{
             bordersize = 0, padding = 0, margin = 0, radius = sp(7), background = Theme.kind(th, item),
             CenterContainer:new{ dimen = Geom:new{ w = tile, h = tile }, UI.text(label, 11, { bold = true, color = Theme.on(th, item) }) },

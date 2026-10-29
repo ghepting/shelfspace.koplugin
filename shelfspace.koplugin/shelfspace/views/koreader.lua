@@ -136,16 +136,20 @@ return function(screen, th, width)
             })
         end
         local label = t.count and T(_("%1 (%2)"), t.title, t.count) or t.title
-        local text_w = width - size_w - button:getSize().w - 2 * gap
+        -- On a colour screen a row is a teal-tinted card; on a gray one it keeps the rule under it.
+        local inner = th.tinted and (width - 2 * gap) or width
+        local text_w = inner - size_w - button:getSize().w - 2 * gap
         local title = UI.text(label, 19, { bold = true, color = clearable and th.ink or th.muted, max_width = text_w })
         local note = UI.text(t.blocked or t.note, 14, { color = th.muted, max_width = text_w })
         local used = math.max(title:getSize().w, note:getSize().w)
         local row = FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0,
+            bordersize = 0, padding = 0, margin = 0, radius = th.tinted and sp(8) or nil,
+            padding_left = th.tinted and gap or 0, padding_right = th.tinted and gap or 0,
+            background = th.tinted and th.tint_koreader or nil,
             VerticalGroup:new{
                 align = "left",
                 CenterContainer:new{
-                    dimen = Geom:new{ w = width, h = ROW_H - Size.line.thin },
+                    dimen = Geom:new{ w = inner, h = ROW_H - Size.line.thin },
                     HorizontalGroup:new{
                         align = "center",
                         VerticalGroup:new{ align = "left", title, note },
@@ -158,7 +162,8 @@ return function(screen, th, width)
                         button,
                     },
                 },
-                LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
+                th.tinted and VerticalSpan:new{ width = Size.line.thin }
+                    or LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
             },
         }
         -- In select mode the whole row ticks it, not just the box.
@@ -166,6 +171,7 @@ return function(screen, th, width)
             row = UI.tappable(row, function() screen:toggleKey(t.title) end)
         end
         table.insert(body, row)
+        if th.tinted then table.insert(body, VerticalSpan:new{ width = sp(5) }) end
     end
     local bottom = UI.button(th, {
         text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
