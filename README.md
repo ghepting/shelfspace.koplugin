@@ -10,7 +10,7 @@
 A [KOReader](https://github.com/koreader/koreader) plugin to see where your
 device storage went and free it up. It uses only KOReader's own APIs, so it is
 meant to work on every device KOReader supports; so far it has been run in the
-desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Android.
+desktop emulator, on a Kobo Libra Colour and Clara Colour, on a Kindle Paperwhite 6 and on Android.
 
 ## Screenshots
 
@@ -150,8 +150,10 @@ Download `shelfspace.koplugin.zip` from the
 [latest release](https://github.com/ghepting/shelfspace.koplugin/releases/latest), unzip it
 into KOReader's `plugins` directory and restart KOReader.
 
-ShelfSpace is 0.x: it has been run in the desktop emulator, on one Kobo
-(Libra Colour) and, by users' reports, on a Kobo Clara Colour, a Kindle Paperwhite 6 and on Android. Reports from other devices are welcome.
+ShelfSpace has been run in the desktop emulator and on a Kobo Libra Colour and, by users' reports, on a Kobo Clara Colour, a
+Kindle Paperwhite 6 and on Android (see [Tested on](#tested-on)). Its colours were designed for how a colour e-ink screen
+washes them out, from the emulator and a wash that approximates it, so reports of how they look on your device are
+especially welcome, as are reports from any other.
 
 ## Development
 
