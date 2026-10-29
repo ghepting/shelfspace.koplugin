@@ -14,11 +14,11 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 
 ## Screenshots
 
-| Overview | Browse by size | Quick filters |
+| Library | Books, biggest first | Filters |
 | --- | --- | --- |
-| <img src="assets/overview.png" width="260"> | <img src="assets/browse.png" width="260"> | <img src="assets/filter.png" width="260"> |
+| <img src="assets/library.png" width="260"> | <img src="assets/books.png" width="260"> | <img src="assets/filter.png" width="260"> |
 
-| Search and sort | Tick several | File details |
+| Search | Tick several | File details |
 | --- | --- | --- |
 | <img src="assets/search.png" width="260"> | <img src="assets/select.png" width="260"> | <img src="assets/details.png" width="260"> |
 
@@ -26,9 +26,9 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 | --- | --- | --- |
 | <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear-several.png" width="260"> |
 
-| Show menu | Finished books | ShelfSpace menu |
+| File types | On a gray screen | ShelfSpace menu |
 | --- | --- | --- |
-| <img src="assets/show-menu.png" width="260"> | <img src="assets/finished.png" width="260"> | <img src="assets/menu.png" width="260"> |
+| <img src="assets/formats.png" width="260"> | <img src="assets/gray.png" width="260"> | <img src="assets/menu.png" width="260"> |
 
 | Sets of copies | Compare and choose | Confirm |
 | --- | --- | --- |
@@ -38,55 +38,72 @@ desktop emulator, on a Kobo Libra Colour, on a Kindle Paperwhite 6 and on Androi
 | --- | --- | --- |
 | <img src="assets/duplicates-kept.png" width="260"> | <img src="assets/changelog.png" width="260"> | <img src="assets/about.png" width="260"> |
 
-Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, so the
-totals are a Mac's. ShelfSpace is plain black and white with grays, like KOReader
-itself; the one colour is a green for free space, which shows on colour screens
-such as the Libra Colour.
+Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, on a made-up library and an 8 GB
+device, so the totals are not a real one's. The colour screenshots are softened with `tools/kaleido-wash.sh`
+to look the way a colour e-ink screen (Kaleido) shows them, which is paler than a monitor. On a screen with no
+colour, ShelfSpace is black, white and grays, as in the gray one above.
 
 ## What it does
 
 Open **Tools › ShelfSpace**. Three tabs:
 
-- **Overview**: free space as a donut chart, and where the rest went (books,
-  KOReader data, everything else). Tap a slice or a row to jump to Books or
-  KOReader data; the info icon on Other files explains what that space is and
-  why it is left alone.
-- **Browse**: your library, largest first. A **% Read** column shows how far through
-  each book you are (0% to 99%, or Read once it is finished), from KOReader's own
-  reading progress. The file
-  type chips at the top are quick filters: tap one to show only that type
-  (tap it again to clear). Sort by size, name, date or when you last opened it (the arrow beside the sort flips the direction), or search by name (the magnifier tag after the types; once you have searched, the tag shows your search and tapping it clears it) across
-  the folder you are in and everything under it. **Show** narrows the list to the
-  books KOReader has marked as finished, or to the ones you never opened,
-  wherever they are in the library, so what you have already read (or never
-  will) is easy to clear. When a search or filter leaves nothing, you get a message
-  saying why and a button that undoes it. Tap a folder to open it, or tap
-  a file to see what it is; pressing and holding any row opens its card (for a folder, what is in it and what you can do with it) (type, size, where it is, when it changed, your
-  reading progress), with Open and Book info buttons, and, for the book you have open, Close book so you can delete it. Every row has a checkbox;
-  tick the ones you want (the checkbox in the header ticks them all) a bar
-  floats over the bottom of the list, so nothing moves under your finger, saying how
-  many are ticked and how big they are, with a **Delete** that deletes them in one go. You always get a confirmation first, including how many books lose
-  their reading progress. Only books KOReader can open, and folders holding
-  nothing else, can be deleted here. Anything else (system folders, other
-  files) is shown with the reason it is locked, and so are KOReader itself and
-  the book you are reading.
-- **Duplicates**: when a book is in the library more than once, a Duplicates row appears
-  on Overview (a tidy library never sees it). It lists each book that has several copies, with how
-  much clearing the extras would free. Copies with the same bytes are marked **Same file**; the
-  same name in another format or with a "(1)" on the end is **Same book**. Open one to compare the
-  copies, stacked as cards with their file name, size, how far through you are, when they were added and where they are,
-  and tags for what sets one apart (the newest, the smallest, an older format). One copy is
-  marked **Keep**, and it says why: the book you are reading, or the copy you have read most,
-  never goes; after that the format that reads best on an e-ink screen (EPUB, then MOBI, then
-  PDF), then the copy nearest the top of the library, then the newest. Tap another copy to keep that
-  one instead. **Clear** removes the others after a confirmation that names them, and **Keep all**
-  leaves the set alone from then on.
-  It is one book at a time on purpose, so every deletion is something you have looked at.
+- **Library**: where your storage went, and your files. At the top a donut chart and its legend:
+  books, KOReader's data, other files and free space. The legend is also the controls. Tap **Books** to narrow the
+  list to every book in the library, wherever it is (tap it again to go back), or **KOReader** to open that tab; tapping a
+  slice does the same. The info icon on **Other** explains what that space is and why it is left alone. Under it, your
+  library, largest first. Each row is a card with a tile for its type, on a colour for its kind (see File types
+  below), and a **% Read** column showing how far through each book you are (0% to 99%, or Read once it is
+  finished), from KOReader's own reading progress. Tap a folder to open it (**‹ Up** takes you back), or tap a file to see
+  what it is; pressing and holding any row opens its card too (for a folder, what is in it and what you can
+  do with it; for a file its type, size, where it is, when it changed, when you last opened it and your progress,
+  with Open and Book info buttons, and, for the book you have open, Close book so you can delete it).
+  - **Search** (the magnifier): by name, across the folder you are in and everything under it. Once you
+    have searched, the button shows your search and tapping it clears it.
+  - **Filter**: by file type, and by **Show**, which narrows the list to the books KOReader has marked as finished, or
+    to the ones you never opened, wherever they are in the library, so what you have already read (or never will) is easy
+    to clear. What is narrowing the list shows as chips with a ✕, each undoing just that. When a search or filter leaves
+    nothing, you get a message saying why and a button that undoes it.
+  - **Sort** by size, name, date or when you last opened it; the arrow beside it flips the direction.
+  - **Select** turns on checkboxes: tick the rows you want (**Select all** ticks everything that can be deleted), and a
+    bar floats over the bottom of the list, so nothing moves under your finger, saying how many are ticked and how big they are,
+    with a **Delete** that deletes them in one go. You always get a confirmation first, including how many books lose
+    their reading progress.
+- **Duplicates**: a tab that appears when a book is in the library more than once (a tidy library never sees it), with how many
+  books it holds. It opens on how much clearing the extras would free, then shows each book as a card with its copies: the one
+  that stays marked ✓, the others ✕, and what clearing them frees. Copies with the same bytes are marked **Same file**; the
+  same name in another format or with a "(1)" on the end is **Same book**; spellings and capitals do not matter, so
+  `Dune.epub`, `dune.KEPUB.EPUB` and `DUNE.fb2.zip` are one book. Open one to compare the copies, stacked as cards with
+  their file name, size, how far through you are, when they were added and where they are, and tags for what sets one
+  apart (the newest, the smallest, an older format). The copy to keep has a heavy outline and a filled radio, and says why:
+  the book you are reading, or the copy you have read most, never goes; after that the format that reads best on an
+  e-ink screen (EPUB, then MOBI, then the formats that reflow, then fixed layouts such as PDF), then the copy nearest the top
+  of the library, then the newest. Tap another copy to keep that one instead. A sentence above the buttons says exactly what
+  **Clear** will do, and the confirmation names what it keeps and what it clears. **Keep all** leaves the set alone from then
+  on; the sets you kept are under **Kept on purpose** in the menu behind the ShelfSpace mark. It is one book at a time on
+  purpose, so every deletion is something you have looked at.
 - **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
   update downloads, crash logs, screenshots, reading progress of books that are
   gone), each with a Clear button. **Select** ticks several to clear together,
   and **Clear all** clears everything listed. Either way you are asked first,
   with a warning that screenshots and reading progress cannot be recovered.
+
+### File types
+
+ShelfSpace knows every format KOReader opens, in any case (`.epub`, `.EPUB` and `.ePub` are the same), and gives each a tile with its
+own letters and a colour for its kind. The type filter and the duplicate finder count a format's other spellings as one.
+
+| Kind | Colour | Formats |
+| --- | --- | --- |
+| Books | indigo | epub (also `.kepub.epub`, `.epub3`), mobi (`.prc`), fb2 (`.fb2.zip`), fb3, pdb, azw |
+| Documents | cyan | doc, docx, docm, odt, rtf, txt, md, html (`.htm`), xhtml, htmlz, chm, and `.txt.zip`, `.md.zip`, `.html.zip` and the like |
+| Fixed layout | orange | pdf, djvu (`.djv`), xps |
+| Comics and archives | purple | cbz, cbt, cbr, zip |
+| Pictures | olive | jpg (`.jpeg`), png, bmp, webp, gif, tif, svg and the other image types KOReader shows |
+| Folders | gray | |
+
+Only files KOReader itself opens can be deleted here, plus pictures. A format KOReader does not register on your build (for example
+`.azw3`, `.kfx`, `.text`, `.markdown` or `.oxps` in KOReader's 2026.07 nightlies) is listed as a locked file, with the reason, until you
+set an "open with" for it in KOReader.
 
 ## Safety
 
@@ -141,9 +158,11 @@ Run the KOReader desktop emulator (`./kodev run`), then link the plugin in:
 
     ./dev.sh /path/to/koreader/plugins
 
-Screenshots in this README always go through `tools/kaleido-wash.sh` (needs ImageMagick), which
-mutes a capture from the emulator to how a Kaleido colour e-ink screen shows it. Capture in the
-emulator on a colour screen, then run `tools/kaleido-wash.sh assets/<name>.png` once per new capture.
+Screenshots in this README are taken by `tools/screenshots/run.sh /path/to/KOReader.app`: it builds a sample library and a made-up
+8 GB device, drives ShelfSpace through every screen in the desktop emulator, checks it as it goes (what may be deleted, every
+file type in any case, duplicates, the filters), and then washes the colour screenshots with `tools/kaleido-wash.sh`, which
+mutes them to how a Kaleido colour e-ink screen shows them. Add `--readme` to put the washed ones in `assets/`. Every screenshot in
+this repository goes through that wash; run `tools/kaleido-wash.sh shot.png` on any other colour capture, once.
 
 `tools/make-wordmark.py` draws the name under the logo as outlines from a font
 file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
