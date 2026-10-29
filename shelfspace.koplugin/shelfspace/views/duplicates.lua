@@ -221,7 +221,7 @@ return function(screen, th, width)
             align = "center",
             field(_("Size"), UI.text(util.getFriendlySize(copy.size), 14, { bold = true, color = th.ink })), HorizontalSpan:new{ width = gap },
             field(_("Read"), HorizontalGroup:new{
-                align = "center", UI.bar(th, sp(54), sp(8), fraction, th.ink), HorizontalSpan:new{ width = sp(6) },
+                align = "center", FrameContainer:new{ bordersize = Size.border.default, color = th.ink, radius = sp(5), margin = 0, padding = 0, UI.bar(th, sp(54), sp(8), fraction, th.ink) }, HorizontalSpan:new{ width = sp(6) },
                 UI.text(readText(copy), 14, { bold = true, color = th.ink }) }), HorizontalSpan:new{ width = gap },
             field(_("Added"), UI.text(day(copy.modified), 14, { bold = true, color = th.ink })),
         }
