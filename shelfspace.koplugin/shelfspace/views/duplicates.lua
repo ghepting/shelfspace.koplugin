@@ -244,6 +244,8 @@ return function(screen, th, width)
             VerticalSpan:new{ width = sp(3) },
             facts,
             VerticalSpan:new{ width = sp(4) },
+            kept and UI.text(reason, 12, { bold = true, color = th.ink, max_width = rest_w }) or VerticalSpan:new{ width = 0 },
+            kept and VerticalSpan:new{ width = sp(3) } or VerticalSpan:new{ width = 0 },
             tags,
         }
         local border = kept and keep_border or clear_border
@@ -296,7 +298,7 @@ return function(screen, th, width)
                 align = "center",
                 UI.button(th, { text = _("‹ Back"), size = 15, callback = function() screen:closeSet() end }),
                 HorizontalSpan:new{ width = gap },
-                UI.text(T(_("%1 Tap a copy to keep that one instead."), reason), 13, { color = th.muted, max_width = width - sp(120) }),
+                UI.text(_("Tap the copy you want to keep."), 14, { color = th.muted, max_width = width - sp(120) }),
             },
             VerticalSpan:new{ width = sp(8) },
             summary,
