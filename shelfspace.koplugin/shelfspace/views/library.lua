@@ -97,7 +97,7 @@ return function(screen, th, width)
         local label = item.is_dir and "DIR" or Formats.label(item.name)
         return FrameContainer:new{
             bordersize = 0, padding = 0, margin = 0, radius = sp(7), background = Theme.kind(th, item),
-            CenterContainer:new{ dimen = Geom:new{ w = tile, h = tile }, UI.text(label, 11, { bold = true, color = Theme.on(th, item) }) },
+            CenterContainer:new{ dimen = Geom:new{ w = tile, h = tile }, UI.text(label, #label >= 4 and 10 or 11, { bold = true, color = Theme.on(th, item) }) },
         }
     end
 
