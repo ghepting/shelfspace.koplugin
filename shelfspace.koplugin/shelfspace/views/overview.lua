@@ -28,8 +28,7 @@ return function(screen, th, width)
 
     local hero = UI.hero(th, width, {
         color = th.brand,
-        icon = "shelfspace",
-        named = true, -- the mark with the ShelfSpace wordmark under it
+        icon = "donut", -- the chart below, in miniature
         title = _("Overview"),
         subtitle = T(_("%1 free of %2"), util.getFriendlySize(u.available), util.getFriendlySize(u.total)),
         chips = b and Stats.shareChips({
@@ -107,9 +106,9 @@ return function(screen, th, width)
         if #sets > 0 then
             local note = T(N_("%1 book more than once", "%1 books more than once", #sets), #sets)
             if kept > 0 then note = note .. T(_(" · %1 kept"), kept) end
-            table.insert(rows, 3, { th.brand, _("Duplicates"), util.getFriendlySize(Duplicates.reclaimable(sets)), go.duplicates, note })
+            table.insert(rows, 3, { th.duplicates, _("Duplicates"), util.getFriendlySize(Duplicates.reclaimable(sets)), go.duplicates, note })
         elseif kept > 0 then
-            table.insert(rows, 3, { th.brand, _("Duplicates"), "", go.duplicates, T(_("Nothing to clear · %1 kept on purpose"), kept) })
+            table.insert(rows, 3, { th.duplicates, _("Duplicates"), "", go.duplicates, T(_("Nothing to clear · %1 kept on purpose"), kept) })
         end
         slices = {
             { fraction = b.books / u.total, color = th.books, on_tap = go.books },

@@ -59,7 +59,7 @@ T.test("on a colour screen the colours come from the palette, and everything els
 end)
 
 T.test("a colour that carries text or sits under white text has at least 4.5:1 against white", function()
-    for _, name in ipairs({ "indigo", "teal", "red", "orange", "purple" }) do
+    for _, name in ipairs({ "indigo", "teal", "red", "magenta", "orange", "purple" }) do
         assert(contrast_with_white(Theme.PALETTE[name]) >= 4.5, name .. " is under 4.5:1")
     end
 end)
@@ -69,7 +69,7 @@ T.test("a colour only used as a chart fill has at least 3:1 against white, or is
 end)
 
 T.test("the chart's colours are at least 10 points of lightness apart, so they stay apart without hue", function()
-    local names, shades = { "indigo", "teal", "green", "amber" }, {}
+    local names, shades = { "indigo", "teal", "green", "gray" }, {}
     for _, name in ipairs(names) do table.insert(shades, lightness(Theme.PALETTE[name])) end
     table.sort(shades)
     for i = 2, #shades do assert(shades[i] - shades[i - 1] >= 10, "two chart colours are within 10 points of lightness") end

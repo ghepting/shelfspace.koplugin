@@ -8,13 +8,15 @@
 #
 # Running it twice washes twice; wash a fresh capture, not a screenshot that already went through it.
 set -euo pipefail
-cd "$(dirname "$0")/.."
+here="$PWD"
+root="$(cd "$(dirname "$0")/.." && pwd)"
 command -v magick >/dev/null || { echo "kaleido-wash: ImageMagick (magick) is not installed" >&2; exit 1; }
 
 # magick -modulate is brightness,saturation,hue in percent: 97% brightness, 55% saturation, hue untouched. The contrast
 # step takes 5% off, since the colour layer also lowers the screen's contrast.
-if [ "$#" -eq 0 ]; then set -- assets/*.png; fi
+if [ "$#" -eq 0 ]; then set -- "$root"/assets/*.png; fi
 for f in "$@"; do
+    case "$f" in /*) ;; *) f="$here/$f" ;; esac
     magick "$f" -modulate 97,55,100 -brightness-contrast 0x-5 "$f"
     echo "washed $f"
 done

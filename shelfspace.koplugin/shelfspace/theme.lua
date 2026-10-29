@@ -8,11 +8,12 @@ local Screen = require("device").screen
 -- apart in lightness, so it still reads for someone who cannot tell them apart. A gray screen gets the grays below.
 local Theme = {}
 
--- Contrast against white: indigo 8.4, teal 5.3, red 5.0, burnt orange 4.7, purple 7.1 (all fine under white text); green 3.1 and
--- amber 2.1 are only ever a fill beside a black outline and a label, never text.
+-- Contrast against white: indigo 8.4, teal 5.3, magenta 5.9, red 5.0, burnt orange 4.7, purple 7.1 (all fine under white text);
+-- green 3.1 and gray 1.9 are only ever a fill beside a black outline and a label, never text. Gray is for what ShelfSpace
+-- cannot touch (Other files), so it is the one chart colour with no hue.
 Theme.PALETTE = {
-    indigo = "#3B2FD1", teal = "#00796B", green = "#34A853", amber = "#F5A300", red = "#D32F2F",
-    orange = "#B35C00", purple = "#6A2C91", clear = "#FFDAD6",
+    indigo = "#3B2FD1", teal = "#00796B", green = "#34A853", gray = "#BBBBBB", red = "#D32F2F",
+    magenta = "#C2185B", orange = "#B35C00", purple = "#6A2C91", clear = "#FFDAD6",
 }
 
 function Theme.get()
@@ -23,7 +24,7 @@ function Theme.get()
         accent = Blitbuffer.COLOR_BLACK, danger = Blitbuffer.COLOR_BLACK, white = Blitbuffer.COLOR_WHITE,
         -- what the chart and the header tiles stand for. The chart's slices run from black to a mid gray, and free space is
         -- the empty part of the ring (white, inside the chart's black outline).
-        brand = Blitbuffer.COLOR_BLACK, koreader_tile = Blitbuffer.COLOR_BLACK,
+        brand = Blitbuffer.COLOR_BLACK, koreader_tile = Blitbuffer.COLOR_BLACK, duplicates = Blitbuffer.COLOR_BLACK,
         books = Blitbuffer.COLOR_BLACK, koreader = Blitbuffer.COLOR_GRAY_5, other = Blitbuffer.COLOR_GRAY_9,
         free_space = Blitbuffer.COLOR_WHITE,
         -- the tiles beside files in Browse: the file's type is also in its name, so shade only needs to help
@@ -34,7 +35,8 @@ function Theme.get()
     local function hex(name) return Blitbuffer.colorFromString(Theme.PALETTE[name]) end
     th.accent, th.brand, th.books, th.epub = hex("indigo"), hex("indigo"), hex("indigo"), hex("indigo")
     th.koreader_tile, th.koreader, th.folder = hex("teal"), hex("teal"), hex("teal")
-    th.other, th.free_space, th.danger, th.clear = hex("amber"), hex("green"), hex("red"), hex("clear")
+    th.other, th.free_space, th.danger, th.clear = hex("gray"), hex("green"), hex("red"), hex("clear")
+    th.duplicates = hex("magenta")
     th.pdf, th.comic = hex("orange"), hex("purple")
     return th
 end
