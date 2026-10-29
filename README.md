@@ -141,6 +141,10 @@ Run the KOReader desktop emulator (`./kodev run`), then link the plugin in:
 
     ./dev.sh /path/to/koreader/plugins
 
+Screenshots in this README always go through `tools/kaleido-wash.sh` (needs ImageMagick), which
+mutes a capture from the emulator to how a Kaleido colour e-ink screen shows it. Capture in the
+emulator on a colour screen, then run `tools/kaleido-wash.sh assets/<name>.png` once per new capture.
+
 `tools/make-wordmark.py` draws the name under the logo as outlines from a font
 file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
 
