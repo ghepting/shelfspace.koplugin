@@ -103,6 +103,7 @@ you, keep a copy elsewhere.
 | KOReader desktop emulator (macOS) | nightly 2026.07.2 | Works |
 | Kindle Paperwhite 6 (12th gen) | v2026.07.2 | Works, [reported by a user](https://github.com/ghepting/shelfspace.koplugin/issues/56) |
 | Android | not stated | Works, [reported on Reddit](https://www.reddit.com/r/koreader/comments/1xfe6r4/i_made_my_first_koreader_plugin/) by a user |
+| Kobo Clara Colour | not stated | Works, [reported on Reddit](https://www.reddit.com/r/koreader/comments/1xfe6r4/comment/19rt1oz4v5tgh/) by a user |
 
 Anything else is untested. If you try it on another device, please
 [tell us how it went](https://github.com/ghepting/shelfspace.koplugin/issues/new?template=device_report.yml).
@@ -133,7 +134,7 @@ Download `shelfspace.koplugin.zip` from the
 into KOReader's `plugins` directory and restart KOReader.
 
 ShelfSpace is 0.x: it has been run in the desktop emulator, on one Kobo
-(Libra Colour) and, by users' reports, on a Kindle Paperwhite 6 and on Android. Reports from other devices are welcome.
+(Libra Colour) and, by users' reports, on a Kobo Clara Colour, a Kindle Paperwhite 6 and on Android. Reports from other devices are welcome.
 
 ## Development
 
