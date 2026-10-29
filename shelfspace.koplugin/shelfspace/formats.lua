@@ -15,17 +15,21 @@ local ALIASES = {
     jpeg = "jpg",
     djv = "djvu",
     oxps = "xps",
+    epub3 = "epub",
 }
+
+-- Formats KOReader reads zipped, as "name.txt.zip" (KOReader registers these); the zip is not a comic then.
+local ZIPPED = { fb2 = true, htm = true, html = true, md = true, rtf = true, txt = true, log = true }
 
 -- What each format is, for the colour of its tile and its row.
 --   book: reflowable e-books. document: reflowable documents and web pages. fixed: fixed-layout pages (a PDF, a scan).
 --   comic: archives of pages, read as a comic. image: a lone picture.
 local KINDS = {
-    book = { "epub", "mobi", "azw", "azw3", "azw4", "fb2", "pdb" },
-    document = { "doc", "docx", "rtf", "txt", "md", "html", "chm" },
+    book = { "epub", "mobi", "azw", "azw3", "azw4", "fb2", "fb3", "pdb" },
+    document = { "doc", "docx", "docm", "odt", "rtf", "txt", "md", "html", "xhtml", "htmlz", "chm", "cfb", "pptx", "xlsx", "xml", "log", "py", "sh" },
     fixed = { "pdf", "djvu", "xps" },
     comic = { "cbz", "cbt", "cbr", "zip" },
-    image = { "jpg", "png", "bmp", "webp", "gif", "tif", "tiff", "svg" },
+    image = { "jpg", "png", "bmp", "webp", "gif", "tif", "tiff", "svg", "jp2", "j2k", "jxr", "hdp", "wdp", "pbm", "pgm", "pnm", "ppm", "pam" },
 }
 local KIND_OF = {}
 for kind, list in pairs(KINDS) do
@@ -36,7 +40,7 @@ end
 local RANK = {
     epub = 1,
     mobi = 2, azw = 2, azw3 = 2, azw4 = 2,
-    fb2 = 3, pdb = 3, doc = 3, docx = 3, rtf = 3, txt = 3, md = 3, html = 3, chm = 3, zip = 3,
+    fb2 = 3, fb3 = 3, pdb = 3, doc = 3, docx = 3, docm = 3, odt = 3, rtf = 3, txt = 3, md = 3, html = 3, xhtml = 3, htmlz = 3, chm = 3, zip = 3,
     djvu = 4, cbz = 4, cbr = 4, cbt = 4,
     pdf = 5, xps = 5,
 }
@@ -48,7 +52,10 @@ function Formats.extension(name)
     local lower = name:lower()
     local last = lower:match("%.([^./]+)$")
     if not last then return nil end
-    if last == "zip" and lower:match("%.fb2%.zip$") then return "fb2" end
+    if last == "zip" then
+        local inner = lower:match("%.([^./]+)%.zip$")
+        if inner and ZIPPED[inner] then return ALIASES[inner] or inner end
+    end
     return ALIASES[last] or last
 end
 
@@ -71,14 +78,15 @@ function Formats.isFixedLayout(name)
     return Formats.kind(name) == "fixed"
 end
 
--- The name without its extension, and without the half of a compound one: "Dune" for "Dune.kepub.epub", "Dune.fb2.zip", "Dune.epub".
+-- The name without its extension, and without the half of a compound one: "Dune" for "Dune.kepub.epub", "Dune.fb2.zip", "Dune.txt.zip", "Dune.epub".
 function Formats.stem(name)
     local stem = name:gsub("%.[^./]+$", "")
     local ext = name:lower():match("%.([^./]+)$")
     if ext == "epub" then
         stem = stem:gsub("%.[Kk][Ee][Pp][Uu][Bb]$", "")
     elseif ext == "zip" then
-        stem = stem:gsub("%.[Ff][Bb]2$", "")
+        local inner = name:lower():match("%.([^./]+)%.zip$")
+        if inner and ZIPPED[inner] then stem = stem:gsub("%.[^./]+$", "") end
     end
     return stem
 end

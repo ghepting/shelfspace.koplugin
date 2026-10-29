@@ -21,6 +21,12 @@ local SUPPORTED = {
     { "cbz", "cbz", "comic", "CBZ" }, { "cbt", "cbt", "comic", "CBT" }, { "zip", "zip", "comic", "ZIP" },
     { "jpg", "jpg", "image", "JPG" }, { "jpeg", "jpg", "image", "JPG" }, { "png", "png", "image", "PNG" },
     { "bmp", "bmp", "image", "BMP" }, { "webp", "webp", "image", "WEBP" }, { "gif", "gif", "image", "GIF" },
+    -- more that KOReader registers
+    { "epub3", "epub", "book", "EPUB" }, { "fb3", "fb3", "book", "FB3" },
+    { "odt", "odt", "document", "ODT" }, { "docm", "docm", "document", "DOCM" }, { "xhtml", "xhtml", "document", "XHTM" }, { "htmlz", "htmlz", "document", "HTML" },
+    { "txt.zip", "txt", "document", "TXT" }, { "md.zip", "md", "document", "MD" }, { "html.zip", "html", "document", "HTML" },
+    { "htm.zip", "html", "document", "HTML" }, { "rtf.zip", "rtf", "document", "RTF" }, { "log.zip", "log", "document", "LOG" },
+    { "tif", "tif", "image", "TIF" }, { "svg", "svg", "image", "SVG" }, { "jp2", "jp2", "image", "JP2" }, { "ppm", "ppm", "image", "PPM" },
 }
 
 -- "epub" in three cases: as written, in capitals, and in a mix.
@@ -48,10 +54,13 @@ T.test("a name's own case, or dots in the title, do not change its format", func
     T.eq(Formats.extension("Mixed.Fb2.ZIP"), "fb2")
 end)
 
-T.test("a zip is a comic archive, unless it is a zipped FB2", function()
+T.test("a zip is a comic archive, unless it is a format KOReader reads zipped (name.fb2.zip, name.txt.zip, ...)", function()
     T.eq(Formats.kind("pages.zip"), "comic")
     T.eq(Formats.kind("pages.fb2.zip"), "book")
-    T.eq(Formats.kind("notes.txt.zip"), "comic", "only .fb2.zip is a book in a zip")
+    T.eq(Formats.kind("notes.txt.zip"), "document")
+    T.eq(Formats.kind("page.HTM.ZIP"), "document")
+    T.eq(Formats.kind("notes.docx.zip"), "comic", "only the formats KOReader registers zipped")
+    T.eq(Formats.kind("holiday.jpg.zip"), "comic")
 end)
 
 T.test("a file with no extension, or one nobody knows, is other", function()
@@ -76,6 +85,9 @@ T.test("the name without its extension drops the half of a compound one too, in 
     T.eq(Formats.stem("Dune.KEPUB.EPUB"), "Dune")
     T.eq(Formats.stem("Dune.fb2.zip"), "Dune")
     T.eq(Formats.stem("Dune.FB2.ZIP"), "Dune")
+    T.eq(Formats.stem("Dune.txt.zip"), "Dune")
+    T.eq(Formats.stem("Dune.TXT.ZIP"), "Dune")
+    T.eq(Formats.stem("Dune.docx.zip"), "Dune.docx", "a docx is not read zipped")
     T.eq(Formats.stem("Dune.1.2.pdf"), "Dune.1.2")
     T.eq(Formats.stem("Saga.kepub.cbz"), "Saga.kepub", "only an epub has a kepub half")
 end)

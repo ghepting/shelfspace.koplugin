@@ -43,7 +43,7 @@ local function within(path, dir)
 end
 
 -- Files that travel with a book and are harmless to remove along with it.
-local COMPANIONS = { jpg = true, jpeg = true, png = true, gif = true, webp = true, opf = true }
+local COMPANIONS = { jpg = true, jpeg = true, png = true, gif = true, webp = true, bmp = true, opf = true }
 
 local function isManaged(name, path)
     local ext = (name:match("%.([^.]+)$") or ""):lower()
