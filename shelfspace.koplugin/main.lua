@@ -255,8 +255,8 @@ function ShelfSpace:confirmClearCopies(set, keep)
     if #items > 4 then table.insert(names, T(_("and %1 more"), #items - 4)) end
     local lines = {
         T(N_("Clear %1 copy of %2?", "Clear %1 copies of %2?", #items), #items, set.title),
-        table.concat(names, "\n"),
-        T(_("Keeps %1."), set.copies[keep].path:sub(#self.root + 2)),
+        _("KEEPS") .. "\n" .. set.copies[keep].path:sub(#self.root + 2),
+        _("CLEARS") .. "\n" .. table.concat(names, "\n"),
         T(_("Frees %1."), util.getFriendlySize(size)),
     }
     if sidecars > 0 then
@@ -293,7 +293,7 @@ function ShelfSpace:showOverview(state)
     self.usage = usage
     state = state or {}
     self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, status = state.status, sort = state.sort, descending = state.descending }
-    self.screen.pages.browse = state.page
+    self.screen.pages.library = state.page
     UIManager:show(self.screen)
     self:scan(function() self:refresh() end)
 end
@@ -316,7 +316,7 @@ function ShelfSpace:resumeState(file, opened)
     local screen = self.screen
     return {
         file = file, opened = opened, tab = screen.tab, dir = screen.dir, query = screen.query, status = screen.status,
-        sort = screen.sort, descending = screen.descending, page = screen.pages.browse,
+        sort = screen.sort, descending = screen.descending, page = screen.pages.library,
     }
 end
 

@@ -171,4 +171,38 @@ T.test("sameBytes compares files byte for byte", function()
     os.execute("rm -rf " .. dir)
 end)
 
+T.test("the key is the same for every spelling and case of a format, compound ones included", function()
+    for _, name in ipairs({ "Dune.EPUB", "dune.epub", "DUNE.KEPUB.EPUB", "Dune.kepub.epub", "dune.Mobi", "Dune.PRC", "Dune.FB2.ZIP", "Dune.fb2.zip",
+        "DUNE.Docx", "Dune.PDF", "Dune.DJVU", "Dune.XPS", "Dune.TXT", "Dune.Html", "Dune.cbz" }) do
+        T.eq(Duplicates.key(name), "dune", name)
+    end
+end)
+
+T.test("one book in four spellings is one set, titled without a half extension", function()
+    local sets = Duplicates.find({
+        file("/lib/a/Dune.EPUB", 100), file("/lib/b/dune.kepub.epub", 110), file("/lib/c/DUNE.mobi", 120), file("/lib/d/Dune.fb2.zip", 90),
+    }, never)
+    T.eq(#sets, 1)
+    T.eq(#sets[1].copies, 4)
+    T.eq(sets[1].kind, "same")
+    local title = Duplicates.title(sets[1].copies)
+    T.eq(title:lower(), "dune", "the shortest name, with no .kepub or .fb2 left on it")
+    assert(not title:find(".", 1, true), "a half extension is left on " .. title)
+end)
+
+T.test("the extension, whatever its case or form, ranks the format", function()
+    assert(Duplicates.formatRank("a.EPUB") < Duplicates.formatRank("a.MOBI"))
+    T.eq(Duplicates.formatRank("a.KEPUB.EPUB"), Duplicates.formatRank("a.epub"))
+    T.eq(Duplicates.formatRank("a.PRC"), Duplicates.formatRank("a.mobi"))
+    T.eq(Duplicates.extension("a.FB2.ZIP"), "fb2")
+    T.eq(Duplicates.extension("README"), "")
+end)
+
+T.test("every fixed-layout format is tagged as one, in any case", function()
+    local set = { copies = { file("/lib/B.EPUB", 100, 5), file("/lib/B.PDF", 100, 5), file("/lib/B.djv", 100, 5), file("/lib/B.OXPS", 100, 5) } }
+    T.eq(tagIds(set, 2, {}), "fixed_layout")
+    T.eq(tagIds(set, 3, {}), "fixed_layout")
+    T.eq(tagIds(set, 4, {}), "fixed_layout")
+end)
+
 T.done()

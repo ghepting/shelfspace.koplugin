@@ -5,6 +5,7 @@ local DocumentRegistry = require("document/documentregistry")
 local ReadCollection = require("readcollection")
 local ReadHistory = require("readhistory")
 local ffiUtil = require("ffi/util")
+local Formats = require("shelfspace/formats")
 
 -- Deletes a file or folder the way KOReader's own file manager does, so reading
 -- progress, history and collections go with it.
@@ -42,23 +43,26 @@ local function within(path, dir)
 end
 
 -- Files that travel with a book and are harmless to remove along with it.
-local COMPANIONS = { jpg = true, jpeg = true, png = true, gif = true, webp = true, opf = true }
+local COMPANIONS = { jpg = true, jpeg = true, png = true, gif = true, webp = true, bmp = true, opf = true }
 
 local function isManaged(name, path)
     local ext = (name:match("%.([^.]+)$") or ""):lower()
     return COMPANIONS[ext] or DocumentRegistry:hasProvider(path)
 end
 
--- A single picture is something KOReader can open, but it is not a book: it has no reading progress, and
--- it is not what a "never read" or "finished" list is about.
-local PICTURES = { png = true, jpg = true, jpeg = true, gif = true, bmp = true, webp = true, svg = true, tif = true, tiff = true }
-
 -- A book KOReader can open: not a companion file such as a cover image, and not a lone picture. Used for
 -- what Browse shows about books (type tags, % Read, the Show filters), not for what may be deleted.
+-- A single picture is something KOReader can open, but it is not a book: it has no reading progress, and it is not what
+-- a "never read" or "finished" list is about.
 function Deleter.isBook(entry)
-    local ext = entry.name:match("%.([^.]+)$")
-    if ext and PICTURES[ext:lower()] then return false end
+    if Formats.kind(entry.name) == "image" then return false end
     return DocumentRegistry:hasProvider(entry.path) and true or false
+end
+
+-- Anything in the library ShelfSpace lists as part of it and lets you filter by type: a book, or a picture KOReader can show.
+function Deleter.isSupported(entry)
+    if Formats.kind(entry.name) == "image" then return isManaged(entry.name, entry.path) and true or false end
+    return Deleter.isBook(entry)
 end
 
 -- True when every file under `entry` is a book KOReader can open or a companion

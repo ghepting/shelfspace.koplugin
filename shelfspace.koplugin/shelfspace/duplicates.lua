@@ -2,30 +2,20 @@
 -- the files and a way to compare two of them, so it runs the same under the tests as on a device.
 local Duplicates = {}
 
--- How well a format reads on an e-ink screen: lower is better. PDFs are fixed-layout, so they come last.
-local FORMATS = {
-    epub = 1, kepub = 1,
-    mobi = 2, azw = 2, azw3 = 2, azw4 = 2,
-    fb2 = 3, fbz = 3, docx = 3, rtf = 3, txt = 3, htm = 3, html = 3, chm = 3, zip = 3,
-    djvu = 4, cbz = 4, cbr = 4,
-    pdf = 5,
-}
-local OTHER_FORMAT = 4
+local Formats = require("shelfspace/formats")
 
 function Duplicates.extension(name)
-    return (name:match("%.([^./]+)$") or ""):lower()
+    return Formats.extension(name) or ""
 end
 
 function Duplicates.formatRank(name)
-    return FORMATS[Duplicates.extension(name)] or OTHER_FORMAT
+    return Formats.rank(name)
 end
 
 -- A name with the things that differ between copies of one book taken out: the extension, case,
 -- punctuation, and the " (1)" or " copy" a download or a file manager adds.
 function Duplicates.key(name)
-    local base = name:gsub("%.[^./]+$", "")
-    base = base:gsub("%.kepub$", "")
-    base = base:lower()
+    local base = Formats.stem(name):lower()
     local before
     repeat -- more than one suffix can stack: "Dune (1) copy"
         before = base
@@ -130,7 +120,7 @@ end
 function Duplicates.title(copies)
     local best
     for _, f in ipairs(copies) do
-        local shown = f.name:gsub("%.[^./]+$", "")
+        local shown = Formats.stem(f.name)
         if not best or #shown < #best then best = shown end
     end
     return best
@@ -195,10 +185,10 @@ function Duplicates.tags(set, i, info)
     if most > 0 and mine == most and unique(function(c) return info(c).progress or 0 end, most) then
         table.insert(tags, { id = "most_read", percent = math.floor(mine * 100) })
     end
-    local best, rank = OTHER_FORMAT + 1, Duplicates.formatRank(copy.name)
+    local best, rank = Formats.OTHER_RANK + 1, Duplicates.formatRank(copy.name)
     for _, c in ipairs(set.copies) do best = math.min(best, Duplicates.formatRank(c.name)) end
     if rank > best then
-        table.insert(tags, { id = Duplicates.extension(copy.name) == "pdf" and "fixed_layout" or "older_format" })
+        table.insert(tags, { id = Formats.isFixedLayout(copy.name) and "fixed_layout" or "older_format" })
     end
     local newest, smallest = 0, math.huge
     for _, c in ipairs(set.copies) do

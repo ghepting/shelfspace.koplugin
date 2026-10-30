@@ -45,6 +45,32 @@ local GLYPHS = {
         -- With a name under it (the logo) it is raised 13 instead, and not shifted.
         return string.format('<g transform="translate(%d %d)">', shift or 4, -(lift or 9)) .. table.concat(out) .. "</g>"
     end,
+    -- The Overview's chart in miniature: a ring of used slices, solid and cut apart by gaps, and the free part as a
+    -- dashed outline (the same empty slot as the ShelfSpace mark).
+    donut = function(tile, _, _, glyph)
+        glyph = "#" .. (glyph or "ffffff")
+        local r_out, r_in, gap = 56, 29, 0.012
+        local function pt(r, f)
+            local a = f * 2 * math.pi
+            return CENTER_X + r * math.sin(a), CENTER_Y - r * math.cos(a)
+        end
+        -- The ring between fractions f0 and f1 of a turn, starting at the top and going clockwise.
+        local function sector(f0, f1, style)
+            local x0, y0 = pt(r_out, f0)
+            local x1, y1 = pt(r_out, f1)
+            local x2, y2 = pt(r_in, f1)
+            local x3, y3 = pt(r_in, f0)
+            local large = (f1 - f0) > 0.5 and 1 or 0
+            return string.format('<path d="M%.1f %.1f A%d %d 0 %d 1 %.1f %.1f L%.1f %.1f A%d %d 0 %d 0 %.1f %.1f Z" %s/>',
+                x0, y0, r_out, r_out, large, x1, y1, x2, y2, r_in, r_in, large, x3, y3, style)
+        end
+        local out = {}
+        for _, s in ipairs({ { 0, 0.16 }, { 0.16, 0.27 }, { 0.27, 0.62 } }) do
+            out[#out + 1] = sector(s[1] + gap, s[2] - gap, 'fill="' .. glyph .. '"')
+        end
+        out[#out + 1] = sector(0.62 + gap, 1 - gap, 'fill="none" stroke="' .. glyph .. '" stroke-width="3" stroke-dasharray="7 5"')
+        return table.concat(out)
+    end,
     -- Three books lying in a stack, a band near each end of every spine: the Library.
     library = function(tile, _, _, glyph)
         glyph = "#" .. (glyph or "ffffff")
