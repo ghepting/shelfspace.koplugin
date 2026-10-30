@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.7.1...v0.8.0) (2026-10-30)
+
+
+### Features
+
+* one Library screen, colour for colour e-ink, every KOReader file type, and screenshots through a Kaleido wash ([#71](https://github.com/ghepting/shelfspace.koplugin/issues/71)) ([01cd4dd](https://github.com/ghepting/shelfspace.koplugin/commit/01cd4dd5da3089418b674545d1e919051064dfc5))
+
 ## [0.7.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.7.0...v0.7.1) (2026-10-27)
 
 
