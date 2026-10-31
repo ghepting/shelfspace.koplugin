@@ -117,7 +117,8 @@ function ShelfScreen:refresh()
     if self.closed then return end
     self:rebuild()
     self:buildActionBar()
-    UIManager:setDirty(self, "ui")
+    -- "partial", not the fast "ui": a new page drawn over the last one with "ui" leaves its remnants showing, most on colour e-ink.
+    UIManager:setDirty(self, "partial")
 end
 
 -- What is ticked in the Library floats over the page as a bar (how many, how big, and Delete), so ticking
