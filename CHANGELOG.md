@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.8.0...v0.8.1) (2026-10-31)
+
+
+### Bug Fixes
+
+* redraw pages with a partial refresh so less of the last page ghosts through on colour e-ink ([#74](https://github.com/ghepting/shelfspace.koplugin/issues/74)) ([8fa1d61](https://github.com/ghepting/shelfspace.koplugin/commit/8fa1d61741373f2bba0a09c494bc6ef578097cec))
+
 ## [0.8.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.7.1...v0.8.0) (2026-10-30)
 
 
