@@ -93,6 +93,11 @@ function Details.show(plugin, entry, dir, reason)
         if current then
             table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
         end
+        -- Locked only for want of recognising it. KOReader's file manager can delete it, and once it is set to list such files (the
+        -- user's setting, never changed here) this takes you to it there.
+        if reason and Folderinfo.unrecognised(reason) and shownUnsupported() then
+            table.insert(rows, { { text = _("Show in file manager"), callback = act(function() plugin:showInFileManager(entry.path) end) } })
+        end
         local last = { { text = _("Close"), callback = act(function() end) } }
         if not reason then
             table.insert(last, 1, {
@@ -126,6 +131,11 @@ function Details.showFolder(plugin, entry, dir, reason)
         local rows = { { { text = _("Open"), callback = act(function() plugin.screen:setDir(entry.path) end) } } }
         if holds_open_book then
             table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
+        end
+        -- Locked only for want of recognising it. KOReader's file manager can delete it, and once it is set to list such files (the
+        -- user's setting, never changed here) this takes you to it there.
+        if reason and Folderinfo.unrecognised(reason) and shownUnsupported() then
+            table.insert(rows, { { text = _("Show in file manager"), callback = act(function() plugin:showInFileManager(entry.path) end) } })
         end
         local last = { { text = _("Close"), callback = act(function() end) } }
         if not reason then

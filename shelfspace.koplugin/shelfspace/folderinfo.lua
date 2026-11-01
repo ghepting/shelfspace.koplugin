@@ -18,7 +18,7 @@ end
 function Folderinfo.lockedLine(reason, shown)
     local line = T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))
     if Folderinfo.unrecognised(reason) then
-        line = line .. "\n" .. (shown and _("KOReader's file manager can delete it: press and hold it there.")
+        line = line .. "\n" .. (shown and _("KOReader's file manager can delete it: use the button below.")
             or _("KOReader's file manager can delete it: turn on Show unsupported files in its settings first."))
     end
     return line
