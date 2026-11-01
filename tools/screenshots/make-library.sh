@@ -7,7 +7,7 @@ W="$(cd "${1:?usage: make-library.sh <work dir>}" && pwd)"
 B="$W/Books"
 H="$W/home"
 rm -rf "$B"
-mkdir -p "$B/Sci-Fi" "$B/Fantasy" "$B/Manuals" "$B/Comics" "$B/Classics" "$B/Mixed" "$B/Formats" "$B/Shouting" "$H"
+mkdir -p "$B/Sci-Fi" "$B/Fantasy" "$B/Manuals" "$B/Comics" "$B/Classics" "$B/Mixed" "$B/Formats" "$B/Shouting" "$B/Backups" "$H"
 
 mk() { head -c $(( $2 * 1024 )) /dev/urandom > "$B/$1"; }
 mks() { truncate -s $(( $2 * 1024 )) "$B/$1"; } # sparse: only its size matters, and it costs no disk
@@ -18,6 +18,9 @@ mk "Fantasy/The Name of the Wind.epub" 2800; mk "Fantasy/Mistborn.epub" 3600; mk
 mks "Manuals/Kobo Libra Colour Guide.pdf" 48000; mks "Manuals/Lua Reference.pdf" 21000; mks "Manuals/KOReader Manual.pdf" 15500
 mks "Comics/Saga v1.cbz" 212000; mks "Comics/Saga v2.cbz" 198000; mks "Comics/Maus.cbz" 96000
 mk "Classics/Moby Dick.epub" 1500; mk "Classics/Dracula.epub" 820; mk "Classics/Frankenstein.fb2" 600
+# A folder KOReader cannot manage (a file it cannot open), for the locked row and its card.
+mk "Backups/router-config.bin" 64
+
 # Three books that are on the shelf twice.
 cp "$B/Sci-Fi/Dune.epub" "$B/Classics/Dune (copy).epub"; cp "$B/Fantasy/Mistborn.epub" "$B/Mistborn.epub"; cp "$B/Manuals/Lua Reference.pdf" "$B/Lua Reference.pdf"
 
@@ -48,3 +51,6 @@ truncate -s 86m "$H/ota/koreader-android-arm64-v2026.03.apk"
 truncate -s 5m "$H/crash.log"
 truncate -s 2m "$H/screenshots/KOReader_2026-10-02.png"; truncate -s 3m "$H/screenshots/KOReader_2026-10-11.png"
 truncate -s 410m "$H/dictionaries/wiktionary-en.dict"; truncate -s 90m "$H/history/history.lua"
+
+# A fixed modification time on every file and folder, so the "Changed" line on a card is the same on every run.
+find "$B" -exec touch -t 202607011200 {} +

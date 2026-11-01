@@ -140,9 +140,13 @@ Anything else is untested. If you try it on another device, please [tell us how 
 | --- | --- | --- |
 | <img src="assets/delete.png" width="260"> | <img src="assets/koreader.png" width="260"> | <img src="assets/clear-several.png" width="260"> |
 
-| File types | On a gray screen | ShelfSpace menu |
+| File types | ShelfSpace menu | Locked rows |
 | --- | --- | --- |
-| <img src="assets/formats.png" width="260"> | <img src="assets/gray.png" width="260"> | <img src="assets/menu.png" width="260"> |
+| <img src="assets/formats.png" width="260"> | <img src="assets/menu.png" width="260"> | <img src="assets/locked-rows.png" width="260"> |
+
+| Why it is locked | | |
+| --- | --- | --- |
+| <img src="assets/locked-card.png" width="260"> | | |
 
 | Sets of copies | Compare and choose | Confirm |
 | --- | --- | --- |
@@ -154,7 +158,7 @@ Anything else is untested. If you try it on another device, please [tell us how 
 
 </details>
 
-Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, on a made-up library and an 8 GB device, so the totals are not a real one's. The colour screenshots are softened with `tools/kaleido-wash.sh` to look the way a colour e-ink screen (Kaleido) shows them, which is paler than a monitor. On a screen with no colour, ShelfSpace is black, white and grays, as in the gray one above.
+Taken in the KOReader desktop emulator at Kobo Libra Colour proportions, on a made-up library and an 8 GB device, so the totals are not a real one's. The colour screenshots are softened with `tools/kaleido-wash.sh` to look the way a colour e-ink screen (Kaleido) shows them, which is paler than a monitor. On a screen with no colour, ShelfSpace is black, white and grays.
 
 ## How it works
 
