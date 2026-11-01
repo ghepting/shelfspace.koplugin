@@ -349,6 +349,11 @@ end
 -- delete but the file manager will (after asking).
 function ShelfSpace:showInFileManager(path)
     local folder = path:match("^(.*)/[^/]+$") or self.root
+    local FileChooser = require("ui/widget/filechooser")
+    -- The file manager lists only files KOReader can open, and what is locked here is mostly what it cannot, so it would not show
+    -- the file at all. Show unsupported files for this session only (nothing is saved: the setting comes back after a restart).
+    local was = FileChooser.show_unsupported
+    FileChooser.show_unsupported = true
     self.screen:onClose()
     UIManager:nextTick(function()
         if self.ui.document and self.ui.showFileManager then
@@ -360,6 +365,11 @@ function ShelfSpace:showInFileManager(path)
             else
                 FileManager:showFiles(folder, path)
             end
+        end
+        if not was then
+            UIManager:show(require("ui/widget/notification"):new{
+                text = _("Showing files KOReader can't open until it restarts"),
+            })
         end
     end)
 end
