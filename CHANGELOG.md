@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.8.1...v0.9.0) (2026-11-01)
+
+
+### Features
+
+* always-visible checkboxes, page-scoped select all with a running total, ../ row, clearer locked rows ([#76](https://github.com/ghepting/shelfspace.koplugin/issues/76)) ([d25bab4](https://github.com/ghepting/shelfspace.koplugin/commit/d25bab4062374304fcc1f910830512e7ec8e6131))
+
 ## [0.8.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.8.0...v0.8.1) (2026-10-31)
 
 
