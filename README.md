@@ -64,7 +64,7 @@ You always get a confirmation first, naming what goes and how many books lose th
 
 ### KOReader
 
-What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: select rows, use **Select all**, and the same bar offers **Clear**. **Clear all** at the bottom clears everything listed. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
+What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: select rows, use **Select all**, and the same bar offers **Clear**. **Clear all** at the bottom clears everything listed. When there is nothing to clear the tab says **ALL CLEAR**, and there is nothing to select. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
 
 ### Duplicates
 

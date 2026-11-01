@@ -76,26 +76,33 @@ return function(screen, th, width)
         end
     end
 
-    -- The line that ticks every row that can be cleared, over the boxes it ticks (as in the Library).
+    -- The line that ticks every row that can be cleared, over the boxes it ticks (as in the Library). With nothing to clear there is
+    -- nothing to tick, so there is no such line either.
     local all_chosen = #selectable > 0 and #chosen == #selectable
-    table.insert(body, VerticalSpan:new{ width = sp(8) })
-    table.insert(body, UI.selectAll(th, width, gap, {
-        label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)) or _("Select all"),
-        checked = all_chosen, mixed = #chosen > 0 and not all_chosen, disabled = #selectable == 0,
-        on_tap = function()
-            local keys = {}
-            for _, t in ipairs(selectable) do table.insert(keys, t.title) end
-            screen:selectKeys(keys, not all_chosen)
-        end,
-    }))
-    table.insert(body, VerticalSpan:new{ width = sp(8) })
+    if #selectable > 0 then
+        table.insert(body, VerticalSpan:new{ width = sp(8) })
+        table.insert(body, UI.selectAll(th, width, gap, {
+            label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)) or _("Select all"),
+            checked = all_chosen, mixed = #chosen > 0 and not all_chosen,
+            on_tap = function()
+                local keys = {}
+                for _, t in ipairs(selectable) do table.insert(keys, t.title) end
+                screen:selectKeys(keys, not all_chosen)
+            end,
+        }))
+        table.insert(body, VerticalSpan:new{ width = sp(8) })
+    else
+        table.insert(body, VerticalSpan:new{ width = sp(10) })
+    end
 
     for i, t in ipairs(targets) do
         local clearable = t.size > 0
         local pickable = clearable and not t.blocked
+        -- Something empty has nothing to clear, so it has no box; only what is held back (blocked) gets the padlock.
         local box = CenterContainer:new{
             dimen = Geom:new{ w = tick, h = ROW_H - Size.line.thin },
-            UI.checkbox(th, screen.selected[t.title] ~= nil, { disabled = not pickable }),
+            clearable and UI.checkbox(th, screen.selected[t.title] ~= nil, { disabled = not pickable })
+                or HorizontalSpan:new{ width = tick },
         }
         local label = t.count and T(_("%1 (%2)"), t.title, t.count) or t.title
         -- On a colour screen a row is a teal-tinted card; on a gray one it keeps the rule under it. Either way its box ends a gap
