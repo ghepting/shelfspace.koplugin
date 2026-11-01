@@ -205,6 +205,16 @@ function Icons.upSvg(color)
         .. "</svg>"
 end
 
+-- A padlock: the mark in the box of a row that cannot be ticked. Transparent ground, one even stroke.
+function Icons.lockSvg(color)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"', color)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48">'
+        .. string.format('<rect x="10" y="21" width="28" height="20" rx="4" %s/>', stroke)
+        .. string.format('<path d="M16 21 V15 Q16 7 24 7 Q32 7 32 15 V21" %s/>', stroke)
+        .. "</svg>"
+end
+
 local function readFile(path)
     local f = io.open(path, "rb")
     if not f then return nil end
@@ -274,6 +284,14 @@ function Icons.tickWidget(kind, size, ink)
     local hex = hexOf(ink)
     local path = string.format("%s/cache/shelfspace/%s-%s.svg", DataStorage:getDataDir(), kind, hex)
     if not store(path, Icons.tickSvg(kind, hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
+end
+
+-- The padlock for a box that cannot be ticked, `size` pixels square, in the colour `ink`; nil if it can't be produced.
+function Icons.lockWidget(size, ink)
+    local hex = hexOf(ink)
+    local path = string.format("%s/cache/shelfspace/lock-%s.svg", DataStorage:getDataDir(), hex)
+    if not store(path, Icons.lockSvg(hex)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size, alpha = true }
 end
 

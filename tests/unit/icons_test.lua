@@ -155,4 +155,11 @@ T.test("the up icon is a folder with an arrow, in the colour asked for, on a tra
     assert(svg:find("L24 21 L30 27", 1, true), "the arrow's head")
 end)
 
+T.test("the padlock is one even round stroke in the colour asked for, on a transparent ground", function()
+    local svg = Icons.lockSvg("555555")
+    assert(svg:find('stroke="#555555"', 1, true), "drawn in the colour asked for")
+    assert(svg:find('fill="none"', 1, true) and not svg:find('fill="#', 1, true), "no fill, so the ground stays transparent")
+    assert(svg:find("<rect", 1, true) and svg:find("<path", 1, true), "a body and a shackle")
+end)
+
 T.done()

@@ -56,7 +56,7 @@ function Details.text(root, entry, dir, reason, book)
     else
         table.insert(lines, _("KOReader can't open this file type"))
     end
-    if reason then table.insert(lines, T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))) end
+    if reason then table.insert(lines, Folderinfo.lockedLine(reason)) end
     return table.concat(lines, "\n")
 end
 
@@ -87,6 +87,10 @@ function Details.show(plugin, entry, dir, reason)
         -- A book that was already open when ShelfSpace was can't be deleted; closing it here unlocks it.
         if current then
             table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
+        end
+        -- Locked only for want of recognising it: KOReader's file manager can still delete it, so offer to go there.
+        if reason and Folderinfo.unrecognised(reason) then
+            table.insert(rows, { { text = _("Show in file manager"), callback = act(function() plugin:showInFileManager(entry.path) end) } })
         end
         local last = { { text = _("Close"), callback = act(function() end) } }
         if not reason then
@@ -121,6 +125,10 @@ function Details.showFolder(plugin, entry, dir, reason)
         local rows = { { { text = _("Open"), callback = act(function() plugin.screen:setDir(entry.path) end) } } }
         if holds_open_book then
             table.insert(rows, { { text = _("Close book"), callback = act(function() plugin:closeBook() end) } })
+        end
+        -- Locked only for want of recognising it: KOReader's file manager can still delete it, so offer to go there.
+        if reason and Folderinfo.unrecognised(reason) then
+            table.insert(rows, { { text = _("Show in file manager"), callback = act(function() plugin:showInFileManager(entry.path) end) } })
         end
         local last = { { text = _("Close"), callback = act(function() end) } }
         if not reason then

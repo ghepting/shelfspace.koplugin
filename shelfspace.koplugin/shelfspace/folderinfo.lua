@@ -7,6 +7,17 @@ local T = require("ffi/util").template
 local Folderinfo = {}
 
 -- `entry` is the folder, `place` where it sits ("Library" or a folder's name), `files` how many files are
+-- Whether a lock is only that ShelfSpace does not recognise the file (or what is in the folder): KOReader's own file manager
+-- deletes anything, and asks first, so such a card offers to show it there.
+function Folderinfo.unrecognised(reason)
+    return reason == _("Not a book KOReader manages") or reason == _("Has files KOReader doesn't manage")
+end
+
+-- The "Locked" line of a card.
+function Folderinfo.lockedLine(reason)
+    return T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))
+end
+
 -- under it, `reason` why it can't be deleted (nil when it can).
 function Folderinfo.text(entry, place, files, reason)
     local lines = { entry.name .. "/", "" }
@@ -15,7 +26,7 @@ function Folderinfo.text(entry, place, files, reason)
     if entry.modified then
         table.insert(lines, T(_("Changed: %1"), os.date("%Y-%m-%d %H:%M", entry.modified)))
     end
-    if reason then table.insert(lines, T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))) end
+    if reason then table.insert(lines, Folderinfo.lockedLine(reason)) end
     return table.concat(lines, "\n")
 end
 

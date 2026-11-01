@@ -24,4 +24,11 @@ T.test("the change date is shown when the folder has one", function()
     assert(Folderinfo.text(folder("Sci-Fi", 1, os.time()), "Library", 2, nil):find("Changed: ", 1, true))
 end)
 
+T.test("only a lock that is about not recognising a file offers the file manager", function()
+    assert(Folderinfo.unrecognised("Not a book KOReader manages"))
+    assert(Folderinfo.unrecognised("Has files KOReader doesn't manage"))
+    assert(not Folderinfo.unrecognised("KOReader is installed here"))
+    assert(not Folderinfo.unrecognised("You are reading this book"))
+end)
+
 T.done()

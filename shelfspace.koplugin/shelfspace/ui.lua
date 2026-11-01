@@ -138,6 +138,11 @@ function UI.checkbox(th, checked, opts)
     local size = opts.size or UI.CHECKBOX
     local filled = (checked or opts.mixed) and not opts.disabled
     local border = Size.border.thick
+    -- A box that cannot be ticked is no box at all, just a padlock the size of one, so it reads as locked rather than empty.
+    if opts.disabled then
+        local lock = Icons.lockWidget(math.floor(size * 1.1), th.muted)
+        if lock then return CenterContainer:new{ dimen = Geom:new{ w = size, h = size }, lock } end
+    end
     local inner
     if filled then
         local mark = size - 2 * border
@@ -147,7 +152,7 @@ function UI.checkbox(th, checked, opts)
         inner = HorizontalGroup:new{ HorizontalSpan:new{ width = size - 2 * border }, VerticalSpan:new{ width = size - 2 * border } }
     end
     return FrameContainer:new{
-        bordersize = border, color = opts.disabled and th.line or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
+        bordersize = border, color = opts.disabled and th.muted or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
         background = filled and th.accent or (opts.disabled and th.bg or th.white),
         inner,
     }
