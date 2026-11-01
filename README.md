@@ -39,7 +39,7 @@ It uses only KOReader's own APIs, so it is meant to work on every device KOReade
 2. Unzip it into KOReader's `plugins` folder and restart KOReader.
 3. Open **Tools › ShelfSpace**.
 
-After that ShelfSpace updates itself: see [Updates](#about-and-updates).
+To update later, you can do it from inside ShelfSpace when you choose to: see [About and updates](#about-and-updates). It never checks or installs anything on its own.
 
 ## Using it
 
