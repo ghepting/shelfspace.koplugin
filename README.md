@@ -19,7 +19,7 @@
 
 <p align="center">
   <img src="assets/library.png" width="260" alt="The Library tab: a chart of where the storage went, and the files, largest first">
-  <img src="assets/select.png" width="260" alt="Ticking files, with a Delete bar floating over the list">
+  <img src="assets/select.png" width="260" alt="Selecting files, with a Delete bar floating over the list">
   <img src="assets/duplicates-compare.png" width="260" alt="Comparing the copies of a book to choose which to keep">
 </p>
 
@@ -27,7 +27,7 @@ ShelfSpace answers "where did my space go?" and lets you do something about it, 
 
 - **See it.** A chart of books, KOReader's own data, other files and free space, with your library under it, largest first.
 - **Find the big things.** Search, filter by file type or by what you have (or have not) read, and sort by size, name, date or last opened.
-- **Clear it safely.** Tick what you want gone and delete it in one go. Every delete asks first, and only books and pictures KOReader can open can be deleted.
+- **Clear it safely.** Select what you want gone and delete it in one go. Every delete asks first, and only books and pictures KOReader can open can be deleted.
 - **Clean KOReader up.** Its rendering cache, update downloads, crash logs, old screenshots and the reading progress of books that are gone.
 - **Find duplicates.** The same book in two formats or twice over, shown side by side so you choose which copy stays.
 
@@ -58,13 +58,13 @@ Under it, your files, largest first. Each row has a tile for its type, a colour 
 
 #### Deleting
 
-Every row has a checkbox on the right. Tick the ones you want, or use the **Select all** line above them, which ticks the deletable rows on the page you are looking at (so a delete is never of rows you have not seen). That line always shows the total you have selected, across every page and folder, with its size: "Select all · 15 selected · 668.0 MB". A bar floats over the bottom of the list with **Cancel** and **Delete**, and nothing moves under your finger when it appears.
+Every row has a checkbox on the right. Select the ones you want, or use the **Select all** line above them, which selects the deletable rows on the page you are looking at (so a delete is never of rows you have not seen). That line always shows the total you have selected, across every page and folder, with its size: "Select all · 15 selected · 668.0 MB". A bar floats over the bottom of the list with **Cancel** and **Delete**, and nothing moves under your finger when it appears.
 
 You always get a confirmation first, naming what goes and how many books lose their reading progress. Rows that cannot be deleted are greyed out, and tapping their box tells you why.
 
 ### KOReader
 
-What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: tick rows, use **Select all**, and the same bar offers **Clear**. **Clear all** at the bottom clears everything listed. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
+What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: select rows, use **Select all**, and the same bar offers **Clear**. **Clear all** at the bottom clears everything listed. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
 
 ### Duplicates
 
@@ -132,7 +132,7 @@ Anything else is untested. If you try it on another device, please [tell us how 
 | --- | --- | --- |
 | <img src="assets/library.png" width="260"> | <img src="assets/books.png" width="260"> | <img src="assets/filter.png" width="260"> |
 
-| Search | Tick several | File details |
+| Search | Select several | File details |
 | --- | --- | --- |
 | <img src="assets/search.png" width="260"> | <img src="assets/select.png" width="260"> | <img src="assets/details.png" width="260"> |
 
