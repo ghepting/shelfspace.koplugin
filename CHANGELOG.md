@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.1...v0.10.2) (2026-11-01)
+
+
+### Bug Fixes
+
+* page the KOReader tab like the Library so it fits any screen, and add a check that every tab fits common e-reader sizes ([#86](https://github.com/ghepting/shelfspace.koplugin/issues/86)) ([d5cb696](https://github.com/ghepting/shelfspace.koplugin/commit/d5cb696bf5a584105fec57556c5b0dafb55e80fa))
+
 ## [0.10.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.0...v0.10.1) (2026-11-01)
 
 
