@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.0...v0.10.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* clear the selection when the folder, search or filter changes, so Delete only acts on rows on screen ([#83](https://github.com/ghepting/shelfspace.koplugin/issues/83)) ([c1b6324](https://github.com/ghepting/shelfspace.koplugin/commit/c1b6324d21cd23970b739ef21138d4d0d5f01b2e))
+* the KOReader tab has no Select all line, and no padlock on empty rows, when there is nothing to clear ([#84](https://github.com/ghepting/shelfspace.koplugin/issues/84)) ([4d6929b](https://github.com/ghepting/shelfspace.koplugin/commit/4d6929b8cec116dc9e99a1a2dbd873b4bd550dba))
+
 ## [0.10.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.9.0...v0.10.0) (2026-11-01)
 
 
