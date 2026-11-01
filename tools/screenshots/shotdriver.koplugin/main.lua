@@ -172,6 +172,13 @@ function Driver:init()
         { nil, function() closeDialogs() end, 1 },
         { "delete", function() local e = entry(root .. "/Sci-Fi", "Neuromancer.epub") P:confirmDelete(e, root .. "/Sci-Fi") end, 2 },
         { nil, function() closeDialogs() S():setDir(root) end, 1 },
+        { "locked-library", function()
+            local e = entry(root, "Backups")
+            check("Backups holds a file KOReader cannot open, so it is locked", Deleter.blockedReason(e, P:deleteContext()) ~= nil)
+            S():switchTab("library") S():setDir(root) S():setPage(2)
+        end, 2 },
+        { "locked-card", function() P:showFolder(entry(root, "Backups"), root) end, 2 },
+        { nil, function() closeDialogs() S():setPage(1) end, 1 },
         { "koreader-data", function() S():switchTab("koreader") end, 2 },
         { "clear-several", function()
            
@@ -185,30 +192,12 @@ function Driver:init()
             P:confirmClear(clearable)
         end, 2 },
         { nil, function() closeDialogs() S():clearSelection() S():switchTab("library") end, 1 },
-        ---------------------------------------------------------------- gray screen
-        { nil, function() setColour(false) end, 4 },
-        { "gray-library", function() end, 0 },
+        ---------------------------------------------------------------- put the format fixtures back
         { nil, function() stash_formats(false) S():onClose() P:showOverview() end, 5 },
         { nil, function()
             state.sets = #P.duplicates
             check("with the format fixtures back there are four sets (Emma in three spellings)", state.sets == 4, state.sets)
         end, 0 },
-        { "gray-formats-1", function() S():setDir(root .. "/Formats") S():setPage(1) end, 2 },
-        { "gray-formats-2", function() S():setPage(2) end, 2 },
-        { nil, function() S():setDir(root) end, 1 },
-        { "gray-library-books", function() S():toggleBooks() end, 2 },
-        { "gray-library-select", function()
-            S():toggleBooks() S():setDir(root .. "/Comics")
-            local e = P.tree[root .. "/Comics"].entries
-            S():select({ e[1], e[2] }, true)
-        end, 2 },
-        { nil, function() S():clearSelection() end, 1 },
-        { "gray-koreader", function() S():switchTab("koreader") end, 2 },
-        { "gray-duplicates", function() S():switchTab("duplicates") end, 2 },
-        { "gray-duplicates-compare", function() S():openSet(P.duplicates[#P.duplicates].id) end, 2 },
-        { "gray-menu", function() S():switchTab("library") S():showMenu() end, 2 },
-        { nil, function() closeDialogs() end, 1 },
-        { nil, function() setColour(true) end, 4 },
         ---------------------------------------------------------------- every format, in lower case and in capitals
         { "formats-readme", function() S():setDir(root .. "/Mixed") S():setPage(1) end, 2 },
         { "formats-1", function() S():setDir(root .. "/Formats") S():setPage(1) end, 2 },

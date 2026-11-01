@@ -30,10 +30,10 @@ return {
 }
 S
 
-# 632 x 840 points is 1264 x 1680 pixels on a Retina screen: the Kobo Libra Colour's proportions and the size of the screenshots.
+# 632 x 840 points is 1264 x 1680 pixels on a Retina screen (with no window, SDL_VIDEODRIVER=dummy, set EMULATE_READER_W=1264 EMULATE_READER_H=1680 EMULATE_READER_DPI=600 for the same): the Kobo Libra Colour's proportions and the size of the screenshots.
 echo "running ShelfSpace in $bin (about four minutes)..."
 KO_HOME="$work/home" SHOT_OUT="$work/shots" SHOT_LIBRARY="$work/Books" \
-    EMULATE_READER_W=632 EMULATE_READER_H=840 EMULATE_READER_DPI=300 "$bin" > "$work/run.log" 2>&1 || true
+    EMULATE_READER_W="${EMULATE_READER_W:-632}" EMULATE_READER_H="${EMULATE_READER_H:-840}" EMULATE_READER_DPI="${EMULATE_READER_DPI:-300}" "$bin" > "$work/run.log" 2>&1 || true
 
 grep -E "TEST (PASS|FAIL)|TESTS [0-9]+ passed" "$work/run.log" | sed -E 's/^[0-9\/:-]+ //' | grep -E "FAIL|TESTS" || true
 if grep -q "TEST FAIL" "$work/run.log" || ! grep -q "shotdriver: done" "$work/run.log"; then
@@ -41,16 +41,23 @@ if grep -q "TEST FAIL" "$work/run.log" || ! grep -q "shotdriver: done" "$work/ru
     exit 1
 fi
 
-# Wash the colour screenshots. The gray screen is already what a gray screen shows, so it is left alone.
+# Wash the colour screenshots.
 for f in "$work"/shots/*.png; do
-    case "$(basename "$f")" in gray-*) ;; *) "$repo/tools/kaleido-wash.sh" "$f" > /dev/null ;; esac
+    "$repo/tools/kaleido-wash.sh" "$f" > /dev/null
 done
 echo "screenshots (washed): $work/shots"
 
 if [ "${2:-}" = "--readme" ]; then
     # what the README shows: the screenshot, and the name it has in assets/
+    # A screenshot that looks the same as the one already there (to within a hair) is left alone, so a re-run does not touch every file.
+    kept=0
     while read -r shot name; do
-        cp "$work/shots/$shot.png" "$repo/assets/$name.png"
+        old="$repo/assets/$name.png"; new="$work/shots/$shot.png"
+        if [ -f "$old" ]; then
+            diff=$(magick compare -metric RMSE "$old" "$new" null: 2>&1 | sed -E 's/.*\(([0-9.e-]+)\).*/\1/' || true)
+            if awk -v d="$diff" 'BEGIN { exit !(d ~ /^[0-9.e-]+$/ && d + 0 < 0.002) }'; then kept=$((kept + 1)); continue; fi
+        fi
+        cp "$new" "$old"
     done <<M
 library library
 library-books books
@@ -58,11 +65,12 @@ library-filter-dialog filter
 library-search search
 library-select select
 details details
+locked-library locked-rows
+locked-card locked-card
 delete delete
 koreader-data koreader
 clear-several clear-several
 formats-readme formats
-gray-library gray
 menu menu
 duplicates duplicates-list
 duplicates-compare duplicates-compare
@@ -71,5 +79,5 @@ duplicates-kept duplicates-kept
 changelog changelog
 about about
 M
-    echo "assets/ updated"
+    echo "assets/ updated ($kept unchanged)"
 fi
