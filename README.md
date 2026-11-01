@@ -64,7 +64,7 @@ You always get a confirmation first, naming what goes and how many books lose th
 
 ### KOReader
 
-What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: select rows, use **Select all**, and the same bar offers **Clear**. **Clear all** at the bottom clears everything listed. When there is nothing to clear the tab says **ALL CLEAR**, and there is nothing to select. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
+What KOReader can rebuild or no longer needs: the rendering cache, update downloads, crash logs, screenshots, and the reading progress of books that are gone. It works like the Library: select rows, use **Select all**, and the same bar offers **Clear**. The list pages like the Library's, so it fits any screen size. With nothing selected, a bar at the bottom offers **Clear all** for everything listed. When there is nothing to clear the tab says **ALL CLEAR**, and there is nothing to select. Either way you are asked first, with a warning that screenshots and reading progress cannot be recovered.
 
 ### Duplicates
 
@@ -175,6 +175,8 @@ The logic runs under plain `luajit`, without KOReader. It covers what may be del
     tests/run.sh
 
 Screenshots are taken by `tools/screenshots/run.sh /path/to/KOReader.app`. It builds a sample library and a made-up 8 GB device, drives ShelfSpace through every screen in the desktop emulator, checks it as it goes (what may be deleted, every file type, duplicates, the filters), and washes the colour screenshots with `tools/kaleido-wash.sh`. Add `--readme` to put the washed ones in `assets/`. Every screenshot in this repository goes through that wash; run `tools/kaleido-wash.sh shot.png` on any other colour capture, once.
+
+`tools/screenshots/sizes.sh /path/to/KOReader.app` opens ShelfSpace at the screen sizes of common e-readers (from 600 × 800 up to 1440 × 1920, 167 to 300 dpi) and checks that every tab fits, with a screenshot of each. Portrait only for now: in landscape the Library shows a single row a page.
 
 `tools/make-wordmark.py` draws the name under the logo as outlines from a font file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
 

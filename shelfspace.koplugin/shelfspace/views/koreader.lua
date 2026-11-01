@@ -62,9 +62,8 @@ return function(screen, th, width)
     local gap = sp(10)
     local size_w = sp(78)
     local tick = UI.CHECKBOX
-    local body = VerticalGroup:new{ align = "left" }
 
-    -- A row can be ticked when it has something to clear and nothing stops it.
+    -- A row can be selected when it has something to clear and nothing stops it.
     local selectable, chosen, chosen_size = {}, {}, 0
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
@@ -76,31 +75,34 @@ return function(screen, th, width)
         end
     end
 
-    -- The line that ticks every row that can be cleared, over the boxes it ticks (as in the Library). With nothing to clear there is
-    -- nothing to tick, so there is no such line either.
+    -- The line that selects every row that can be cleared, over the boxes it selects (as in the Library). It covers all the rows, on
+    -- every page. With nothing to clear there is nothing to select, so there is no such line either.
     local all_chosen = #selectable > 0 and #chosen == #selectable
-    if #selectable > 0 then
-        table.insert(body, VerticalSpan:new{ width = sp(8) })
-        table.insert(body, UI.selectAll(th, width, gap, {
-            label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)) or _("Select all"),
-            checked = all_chosen, mixed = #chosen > 0 and not all_chosen,
-            on_tap = function()
-                local keys = {}
-                for _, t in ipairs(selectable) do table.insert(keys, t.title) end
-                screen:selectKeys(keys, not all_chosen)
-            end,
-        }))
-        table.insert(body, VerticalSpan:new{ width = sp(8) })
-    else
-        table.insert(body, VerticalSpan:new{ width = sp(10) })
+    local function select_all()
+        if #selectable == 0 then return nil end
+        return VerticalGroup:new{
+            align = "left",
+            UI.selectAll(th, width, gap, {
+                label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)) or _("Select all"),
+                checked = all_chosen, mixed = #chosen > 0 and not all_chosen,
+                on_tap = function()
+                    local keys = {}
+                    for _, t in ipairs(selectable) do table.insert(keys, t.title) end
+                    screen:selectKeys(keys, not all_chosen)
+                end,
+            }),
+            VerticalSpan:new{ width = sp(8) },
+        }
     end
 
-    for i, t in ipairs(targets) do
+    local function build(i, row_h)
+        local t = targets[i]
+        local h = (row_h or ROW_H) - Size.line.thin - (th.tinted and sp(5) or 0)
         local clearable = t.size > 0
         local pickable = clearable and not t.blocked
         -- Something empty has nothing to clear, so it has no box; only what is held back (blocked) gets the padlock.
         local box = CenterContainer:new{
-            dimen = Geom:new{ w = tick, h = ROW_H - Size.line.thin },
+            dimen = Geom:new{ w = tick, h = h },
             clearable and UI.checkbox(th, screen.selected[t.title] ~= nil, { disabled = not pickable })
                 or HorizontalSpan:new{ width = tick },
         }
@@ -120,7 +122,7 @@ return function(screen, th, width)
             VerticalGroup:new{
                 align = "left",
                 CenterContainer:new{
-                    dimen = Geom:new{ w = inner, h = ROW_H - Size.line.thin },
+                    dimen = Geom:new{ w = inner, h = h },
                     HorizontalGroup:new{
                         align = "center",
                         UI.stack(title, note),
@@ -137,29 +139,19 @@ return function(screen, th, width)
                     or LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
             },
         }
-        -- A row has nothing to open, so a tap anywhere on it ticks it (or says why it cannot be).
-        table.insert(body, UI.tappable(row, function()
+        -- A row has nothing to open, so a tap anywhere on it selects it (or says why it cannot be).
+        local cell = VerticalGroup:new{ align = "left", UI.tappable(row, function()
             if pickable then
                 screen:toggleKey(t.title)
             elseif t.blocked then
                 plugin:notify(t.blocked)
             end
-        end))
-        if th.tinted then table.insert(body, VerticalSpan:new{ width = sp(5) }) end
+        end) }
+        if th.tinted then table.insert(cell, VerticalSpan:new{ width = sp(5) }) end
+        return cell
     end
 
-    local bottom = UI.button(th, {
-        text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
-        width = width,
-        enabled = can_free > 0,
-        background = th.danger,
-        color = th.white,
-        disabled_background = th.free,
-        callback = function()
-            plugin:confirmClear(clearable)
-        end,
-    })
-    -- What is ticked floats over the page as a bar, as in the Library; the screen draws it. Clear all gives way to it.
+    -- The bar in the middle of the pager row: what is selected with Cancel and Clear, and with nothing selected, Clear all.
     local bar
     if #chosen > 0 then
         bar = {
@@ -169,6 +161,14 @@ return function(screen, th, width)
                 { text = _("Clear"), danger = true, callback = function() plugin:confirmClear(chosen) end },
             },
         }
+    elseif can_free > 0 then
+        bar = {
+            labels = { T(_("%1 to clear"), util.getFriendlySize(can_free)), "" },
+            buttons = { { text = _("Clear all"), danger = true, callback = function() plugin:confirmClear(clearable) end } },
+        }
     end
-    return { hero = hero, body = body, bottom = #chosen == 0 and bottom or nil, bar = bar }
+    return {
+        hero = hero, header = VerticalSpan:new{ width = sp(8) }, count = #targets, row_h = ROW_H + (th.tinted and sp(5) or 0),
+        build = build, select_all = select_all, bar = bar,
+    }
 end

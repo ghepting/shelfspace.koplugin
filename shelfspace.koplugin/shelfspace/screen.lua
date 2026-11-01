@@ -142,9 +142,10 @@ function ShelfScreen:buildActionBar()
     end
     -- The fullest label that fits the slot: "4 selected · 660.3 MB", then "4 selected" (the size is on the Select all line above), and
     -- only then the bare number.
-    local slot, text = self.bar_slot, util.getFriendlySize(bytes)
+    local slot, text = self.bar_slot, util.getFriendlySize(bytes or 0)
     local bar, hits, size
-    for _, label in ipairs({ T(_("%1 selected · %2"), count, text), T(_("%1 selected"), count), tostring(count) }) do
+    local labels = self.view_bar and self.view_bar.labels or { T(_("%1 selected · %2"), count, text), T(_("%1 selected"), count), tostring(count) }
+    for _, label in ipairs(labels) do
         bar, hits = UI.floatingBar(self.theme, label, buttons, { compact = true })
         size = bar:getSize()
         if size.w <= slot.w then break end
@@ -559,7 +560,7 @@ function ShelfScreen:rebuild()
         table.insert(body, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
         table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end,
-            { hide_label = self.tab == "library" and next(self.selected) ~= nil }))
+            { hide_label = (self.tab == "library" and next(self.selected) ~= nil) or (self.tab == "koreader" and self.view_bar ~= nil) }))
     else
         self.page_count = 1
         if view.message then
