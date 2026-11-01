@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.10.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.9.0...v0.10.0) (2026-11-01)
+
+
+### Features
+
+* a padlock on locked rows, and Show in file manager for files ShelfSpace does not recognise ([#78](https://github.com/ghepting/shelfspace.koplugin/issues/78)) ([64a07d4](https://github.com/ghepting/shelfspace.koplugin/commit/64a07d47acddc9392690930672c261c9dd265218))
+
+
+### Bug Fixes
+
+* Show in file manager only when the file manager already lists unsupported files ([#81](https://github.com/ghepting/shelfspace.koplugin/issues/81)) ([630aa8c](https://github.com/ghepting/shelfspace.koplugin/commit/630aa8c41967c17edf068c792c41fbde8458de2a))
+
 ## [0.9.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.8.1...v0.9.0) (2026-11-01)
 
 
