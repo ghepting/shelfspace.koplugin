@@ -40,8 +40,13 @@ local function propsLines(path)
     return lines
 end
 
+-- Whether KOReader's file manager is set to list files it cannot open.
+local function shownUnsupported()
+    return require("ui/widget/filechooser").show_unsupported and true or false
+end
+
 -- The facts shown for `entry`; `dir` is the folder it sits in, `reason` why it can't be deleted (or nil).
-function Details.text(root, entry, dir, reason, book)
+function Details.text(root, entry, dir, reason, book, shown)
     local ext = Formats.extension(entry.name) and Formats.label(entry.name)
     local lines = { entry.name, "" }
     table.insert(lines, ext and T(_("%1 · %2"), ext, util.getFriendlySize(entry.size))
@@ -56,7 +61,7 @@ function Details.text(root, entry, dir, reason, book)
     else
         table.insert(lines, _("KOReader can't open this file type"))
     end
-    if reason then table.insert(lines, Folderinfo.lockedLine(reason)) end
+    if reason then table.insert(lines, Folderinfo.lockedLine(reason, shown)) end
     return table.concat(lines, "\n")
 end
 
@@ -97,7 +102,7 @@ function Details.show(plugin, entry, dir, reason)
         end
         table.insert(rows, last)
         dialog = ButtonDialog:new{
-            title = Details.text(plugin.root, entry, dir, reason, book),
+            title = Details.text(plugin.root, entry, dir, reason, book, shownUnsupported()),
             title_align = "center",
             buttons = rows,
         }
@@ -128,7 +133,7 @@ function Details.showFolder(plugin, entry, dir, reason)
         end
         table.insert(rows, last)
         dialog = ButtonDialog:new{
-            title = Folderinfo.text(entry, whereIs(plugin.root, dir), files, reason),
+            title = Folderinfo.text(entry, whereIs(plugin.root, dir), files, reason, shownUnsupported()),
             title_align = "center",
             buttons = rows,
         }

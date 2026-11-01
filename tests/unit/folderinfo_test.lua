@@ -31,6 +31,9 @@ T.test("only a lock that is about not recognising a file points to the file mana
     assert(not Folderinfo.unrecognised("You are reading this book"))
     assert(Folderinfo.lockedLine("Not a book KOReader manages"):find("file manager", 1, true))
     assert(not Folderinfo.lockedLine("KOReader is installed here"):find("file manager", 1, true))
+    assert(Folderinfo.lockedLine("Not a book KOReader manages", false):find("turn on Show unsupported files", 1, true), "off: say to turn it on")
+    local on = Folderinfo.lockedLine("Not a book KOReader manages", true)
+    assert(on:find("press and hold", 1, true) and not on:find("turn on", 1, true), "on: there is nothing left to turn on")
 end)
 
 T.done()
