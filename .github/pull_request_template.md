@@ -3,4 +3,5 @@
 What this changes and why:
 
 - [ ] `tests/run.sh` passes
-- [ ] README and screenshots updated if the UI changed
+- [ ] README checked against this change and updated where it is now wrong (or nothing in it is affected)
+- [ ] Screenshots retaken if the UI changed (or not needed)
