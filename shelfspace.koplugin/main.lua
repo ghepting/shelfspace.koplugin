@@ -345,13 +345,17 @@ function ShelfSpace:closeBook()
     UIManager:nextTick(function() self.ui:onHome() end)
 end
 
--- Closes ShelfSpace and shows `path` in KOReader's file manager, in its folder and highlighted: for what ShelfSpace will not
--- delete but the file manager will (after asking).
+-- Closes ShelfSpace and shows `path` in KOReader's file manager, in its folder and highlighted: for what ShelfSpace will not delete but
+-- the file manager will (after asking). Only offered once the file manager is set to show files it cannot open, which is the user's
+-- setting and is never changed here: without it the file would not be listed.
 function ShelfSpace:showInFileManager(path)
     local folder = path:match("^(.*)/[^/]+$") or self.root
     self.screen:onClose()
     UIManager:nextTick(function()
         if self.ui.document and self.ui.showFileManager then
+            -- A book is open: close it as KOReader's own Home does, then show the file manager.
+            UIManager:setSuspendRepaints(false)
+            self.ui:onClose()
             self.ui:showFileManager(path)
         else
             local FileManager = require("apps/filemanager/filemanager")
