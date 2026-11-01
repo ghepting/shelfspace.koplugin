@@ -7,15 +7,19 @@ local T = require("ffi/util").template
 local Folderinfo = {}
 
 -- `entry` is the folder, `place` where it sits ("Library" or a folder's name), `files` how many files are
--- Whether a lock is only that ShelfSpace does not recognise the file (or what is in the folder): KOReader's own file manager
--- deletes anything, and asks first, so such a card offers to show it there.
+-- Whether a lock is only that ShelfSpace does not recognise the file (or what is in the folder). KOReader's own file manager can
+-- delete such a file, once its "Show unsupported files" setting is on, so the card says so.
 function Folderinfo.unrecognised(reason)
     return reason == _("Not a book KOReader manages") or reason == _("Has files KOReader doesn't manage")
 end
 
 -- The "Locked" line of a card.
 function Folderinfo.lockedLine(reason)
-    return T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))
+    local line = T(_("Locked: %1"), reason:sub(1, 1):lower() .. reason:sub(2))
+    if Folderinfo.unrecognised(reason) then
+        line = line .. "\n" .. _("KOReader's file manager can delete it: turn on Show unsupported files in its settings first.")
+    end
+    return line
 end
 
 -- under it, `reason` why it can't be deleted (nil when it can).

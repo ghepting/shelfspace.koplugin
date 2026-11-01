@@ -345,35 +345,6 @@ function ShelfSpace:closeBook()
     UIManager:nextTick(function() self.ui:onHome() end)
 end
 
--- Closes ShelfSpace and shows `path` in KOReader's file manager, in its folder and highlighted: for what ShelfSpace will not
--- delete but the file manager will (after asking).
-function ShelfSpace:showInFileManager(path)
-    local folder = path:match("^(.*)/[^/]+$") or self.root
-    local FileChooser = require("ui/widget/filechooser")
-    self.screen:onClose()
-    UIManager:nextTick(function()
-        -- The file manager lists only files KOReader can open, and what is locked here is mostly what it cannot, so it would not
-        -- show the file at all. Its list is built once, so show unsupported files only while it is built, then put the setting back
-        -- as it was: nothing is saved and nothing stays changed.
-        local was = FileChooser.show_unsupported
-        FileChooser.show_unsupported = true
-        if self.ui.document and self.ui.showFileManager then
-            -- A book is open: close it as KOReader's own Home does, then show the file manager.
-            UIManager:setSuspendRepaints(false)
-            self.ui:onClose()
-            self.ui:showFileManager(path)
-        else
-            local FileManager = require("apps/filemanager/filemanager")
-            if FileManager.instance then
-                FileManager.instance:reinit(folder, path)
-            else
-                FileManager:showFiles(folder, path)
-            end
-        end
-        FileChooser.show_unsupported = was
-    end)
-end
-
 function ShelfSpace:showDetails(entry, dir)
     Details.show(self, entry, dir, Deleter.blockedReason(entry, self:deleteContext()))
 end
