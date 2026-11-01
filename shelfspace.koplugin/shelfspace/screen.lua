@@ -88,7 +88,6 @@ local ShelfScreen = InputContainer:extend{
     query = nil, -- name search in the Library, over the shown folder and everything under it
     status = nil, -- a reading status (Search.STATUSES) the Library is narrowed to, e.g. "complete" for finished books
     filter = nil, -- one file type (a Stats.extension) the Library is narrowed to, from the Filter button
-    selecting = false, -- the Library is in select mode: rows get checkboxes
     dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
     dup_ignored = false, -- the list shows the sets you chose to keep, not the ones still to deal with
     dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
@@ -121,21 +120,37 @@ function ShelfScreen:refresh()
     UIManager:setDirty(self, "partial")
 end
 
--- What is ticked in the Library floats over the page as a bar (how many, how big, and Delete), so ticking
--- never moves the table under your finger. The screen draws it itself, last, and claims taps inside it:
+-- What is ticked comes up as a bar (how many, how big, and what to do with them: Delete in the Library, Clear on the KOReader tab,
+-- which hands in its own as `view.bar`), drawn in the middle of the pager row, so ticking moves nothing and covers no row. The screen draws it itself, last, and claims taps inside it:
 -- a widget of its own on top would take every other tap on the page with it, since KOReader only
 -- gives taps to the topmost widget.
 function ShelfScreen:buildActionBar()
     self.action_bar, self.bar_hits, self.bar_zone = nil, nil, nil
-    local chosen = self.tab == "library" and self:chosen() or {}
-    if #chosen == 0 then return end
-    local bar, hits = UI.floatingBar(self.theme, T(_("%1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen))), {
-        { text = _("Cancel"), callback = function() self:clearSelection() end },
-        { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
-    })
-    local size = bar:getSize()
-    local x = math.floor((self.dimen.w - size.w) / 2)
-    local y = self.dimen.h - size.h - sp(76) -- over the bottom rows, clear of the pager
+    local count, bytes, buttons
+    if self.tab == "library" then
+        local chosen = self:chosen()
+        if #chosen == 0 then return end
+        count, bytes = #chosen, Selection.size(chosen)
+        buttons = {
+            { text = _("Cancel"), callback = function() self:clearSelection() end },
+            { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
+        }
+    elseif self.tab == "koreader" and self.view_bar then
+        count, bytes, buttons = self.view_bar.count, self.view_bar.bytes, self.view_bar.buttons
+    else
+        return
+    end
+    -- The fullest label that fits the slot: "4 selected · 660.3 MB", then "4 selected" (the size is on the Select all line above), and
+    -- only then the bare number.
+    local slot, text = self.bar_slot, util.getFriendlySize(bytes)
+    local bar, hits, size
+    for _, label in ipairs({ T(_("%1 selected · %2"), count, text), T(_("%1 selected"), count), tostring(count) }) do
+        bar, hits = UI.floatingBar(self.theme, label, buttons, { compact = true })
+        size = bar:getSize()
+        if size.w <= slot.w then break end
+    end
+    local x = slot.x + math.floor((slot.w - size.w) / 2)
+    local y = slot.y + math.floor((slot.h - size.h) / 2)
     self.action_bar, self.bar_hits = bar, hits
     self.bar_x, self.bar_y = x, y
     self.bar_zone = Geom:new{ x = x, y = y, w = size.w, h = size.h }
@@ -274,7 +289,7 @@ end
 
 function ShelfScreen:switchTab(id)
     -- A selection belongs to the tab it was made on.
-    if id ~= self.tab then self.selecting, self.selected = false, {} end
+    if id ~= self.tab then self.selected = {} end
     self.tab = id
     self:refresh()
 end
@@ -370,12 +385,6 @@ end
 function ShelfScreen:toggleFilter(ext)
     self.filter = self.filter ~= ext and ext or nil
     self.pages.library = 1
-    self:refresh()
-end
-
-function ShelfScreen:setSelecting(on)
-    self.selecting = on
-    if not on then self.selected = {} end
     self:refresh()
 end
 
@@ -481,6 +490,7 @@ function ShelfScreen:rebuild()
     local pad = sp(16)
     local width = self.dimen.w - 2 * pad
     local view = views[self.tab](self, th, width)
+    self.view_bar = view.bar
 
     local titlebar = header(th, self.dimen.w, function() self:showMenu() end, function() self:onClose() end)
     -- Duplicates is a tab only while there is something to decide; the sets kept on purpose live in the menu.
@@ -502,10 +512,16 @@ function ShelfScreen:rebuild()
         if view.header then table.insert(body, view.header) end
         -- A view with a `table_head` draws its rows as a table: a rounded, outlined box holding the head and the rows.
         local frame_w = Size.border.default * 2
+        -- A view with `select_all` has a line over its rows that ticks the page; it is built once the page is known, so its height is
+        -- measured here on an empty one.
+        local probe_all = view.select_all and view.select_all(1, 0)
         local used = titlebar:getSize().h + 2 * pad + body:getSize().h
             + (view.table_head and view.table_head:getSize().h + frame_w or 0)
+            + (probe_all and probe_all:getSize().h or 0)
         local pager_h = UI.pager(th, width, 1, 1, function() end):getSize().h
-        local avail = self.dimen.h - used - pager_h
+        -- A little air between the last row and the pager row, which the floating bar fills when something is ticked.
+        local pager_gap = sp(6)
+        local avail = self.dimen.h - used - pager_h - pager_gap
         local per_page = math.max(1, math.floor(avail / view.row_h))
         -- Whatever is left over (less than one row) is shared out among the rows, so the list fills the screen
         -- at any height instead of ending short; but never by more than a quarter of a row each. (Cards, which must
@@ -518,6 +534,7 @@ function ShelfScreen:rebuild()
         self.page_count = pages
         local first = (page - 1) * per_page + 1
         local last = math.min(view.count, first + per_page - 1)
+        if probe_all then table.insert(body, view.select_all(first, last)) end
         local rows = body
         if view.table_head then rows = VerticalGroup:new{ align = "left", view.table_head } end
         if view.count == 0 and view.empty then
@@ -527,8 +544,10 @@ function ShelfScreen:rebuild()
         end
         if view.table_head then table.insert(body, UI.rounded(th, rows, sp(10), Size.border.default)) end
         local shown = (view.count == 0 and view.empty) and per_page or (last - first + 1) -- the empty state takes the whole page
-        table.insert(body, VerticalSpan:new{ width = (per_page - shown) * row_h })
-        table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end))
+        table.insert(body, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap })
+        -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
+        table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end,
+            { hide_label = self.tab == "library" and next(self.selected) ~= nil }))
     else
         self.page_count = 1
         if view.message then
@@ -542,6 +561,10 @@ function ShelfScreen:rebuild()
         end
     end
 
+    -- Where the floating bar goes: the middle of the pager row, between its arrows; a tab with no pager gives it the whole row.
+    local geo = UI.pagerGeometry(width)
+    self.bar_slot = { x = pad + 2 * geo.cell_w, y = self.dimen.h - pad - geo.h, w = geo.centre_w, h = geo.h }
+    if not view.build then self.bar_slot.x, self.bar_slot.w = pad, width end
     body:resetLayout() -- getSize() above cached the group's height before the rows were added
     self[1] = FrameContainer:new{
         bordersize = 0, padding = 0, margin = 0, background = th.bg,

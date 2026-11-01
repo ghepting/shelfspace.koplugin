@@ -45,7 +45,7 @@ colour, ShelfSpace is black, white and grays, as in the gray one above.
 
 ## What it does
 
-Open **Tools › ShelfSpace**. Three tabs:
+Open **Tools › ShelfSpace**. Two tabs, **Library** and **KOReader**, and a third, **Duplicates**, that only appears when it has something to say:
 
 - **Library**: where your storage went, and your files. At the top a donut chart and its legend:
   books, KOReader's data, other files and free space. The legend is also the controls. Tap **Books** to narrow the
@@ -53,7 +53,7 @@ Open **Tools › ShelfSpace**. Three tabs:
   slice does the same. The info icon on **Other** explains what that space is and why it is left alone. Under it, your
   library, largest first. Each row is a card with a tile for its type, on a colour for its kind (see File types
   below), and a **% Read** column showing how far through each book you are (0% to 99%, or Read once it is
-  finished), from KOReader's own reading progress. Tap a folder to open it (**‹ Up** takes you back), or tap a file to see
+  finished), from KOReader's own reading progress. Tap a folder to open it (the folder-with-an-arrow button above the list takes you back up), or tap a file to see
   what it is; pressing and holding any row opens its card too (for a folder, what is in it and what you can
   do with it; for a file its type, size, where it is, when it changed, when you last opened it and your progress,
   with Open and Book info buttons, and, for the book you have open, Close book so you can delete it).
@@ -64,12 +64,17 @@ Open **Tools › ShelfSpace**. Three tabs:
     to clear. What is narrowing the list shows as chips with a ✕, each undoing just that. When a search or filter leaves
     nothing, you get a message saying why and a button that undoes it.
   - **Sort** by size, name, date or when you last opened it; the arrow beside it flips the direction.
-  - **Select** turns on checkboxes: tick the rows you want (**Select all** ticks everything that can be deleted), and a
-    bar floats over the bottom of the list, so nothing moves under your finger, saying how many are ticked and how big they are,
-    with a **Delete** that deletes them in one go. You always get a confirmation first, including how many books lose
-    their reading progress.
-- **Duplicates**: a tab that appears when a book is in the library more than once (a tidy library never sees it), with how many
-  books it holds. It opens on how much clearing the extras would free, then shows each book as a card with its copies: the one
+  - **Checkboxes** on the right of every row: tick the rows you want (the **Select all** line above them, with its dotted
+    line to its box, ticks everything that can be deleted), and a bar floats over the bottom of the list, so nothing moves
+    under your finger, saying how many are selected and how big they are, with a **Delete** that deletes them in one go.
+    You always get a confirmation first, including how many books lose their reading progress.
+- **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
+  update downloads, crash logs, screenshots, reading progress of books that are
+  gone), each with a box to tick, like the Library, and **Select all** above them. Ticking brings up the same floating bar,
+  with a **Clear**; **Clear all** at the bottom clears everything listed. Either way you are asked first,
+  with a warning that screenshots and reading progress cannot be recovered.
+- **Duplicates**: appears, with the number of books, when a book is in the library more than once (a tidy library never
+  sees it). It opens on how much clearing the extras would free, then shows each book as a card with its copies: the one
   that stays marked ✓, the others ✕, and what clearing them frees. Copies with the same bytes are marked **Same file**; the
   same name in another format or with a "(1)" on the end is **Same book**; spellings and capitals do not matter, so
   `Dune.epub`, `dune.KEPUB.EPUB` and `DUNE.fb2.zip` are one book. Open one to compare the copies, stacked as cards with
@@ -81,11 +86,9 @@ Open **Tools › ShelfSpace**. Three tabs:
   **Clear** will do, and the confirmation names what it keeps and what it clears. **Keep all** leaves the set alone from then
   on; the sets you kept are under **Kept on purpose** in the menu behind the ShelfSpace mark. It is one book at a time on
   purpose, so every deletion is something you have looked at.
-- **KOReader**: what KOReader can rebuild or no longer needs (rendering cache,
-  update downloads, crash logs, screenshots, reading progress of books that are
-  gone), each with a Clear button. **Select** ticks several to clear together,
-  and **Clear all** clears everything listed. Either way you are asked first,
-  with a warning that screenshots and reading progress cannot be recovered.
+
+Colour is for finding your way, never the only cue: every state also has an outline, a label, a ✓ or ✕, or a filled against an
+empty shape, so it reads the same on a gray screen, in strong sunlight or without colour vision.
 
 ### File types
 
@@ -130,7 +133,8 @@ Anything else is untested. If you try it on another device, please
 The ShelfSpace mark at the top left of the screen opens a menu (the ✕ at the top right closes ShelfSpace). It holds **About**, **Check for updates**, **Changelog**, **Kept on purpose** (when you have set some aside) and **Exit ShelfSpace**. **About** shows which ShelfSpace this is (version, release date
 and commit), what it is running on, and QR codes for the repository and for reporting a
 problem, with your device and versions already filled in. **Check for updates** asks GitHub
-for the latest release, only when you tap it, and tells you what changed if there is a newer one.
+for the latest release, only when you tap it, and tells you what changed if there is a newer one. **Update now** then
+downloads it, checks it against the release's size and checksum, installs it over the plugin and offers to restart KOReader.
 
 You can do all of that without opening ShelfSpace: in KOReader's Tools menu, ShelfSpace is a submenu with
 **Open ShelfSpace** (or **Close**), **About**, **Check for updates** and **Changelog**. The changelog shows the
@@ -148,7 +152,8 @@ read afresh, since its files change in place. Delete the file to force a full sc
 
 Download `shelfspace.koplugin.zip` from the
 [latest release](https://github.com/ghepting/shelfspace.koplugin/releases/latest), unzip it
-into KOReader's `plugins` directory and restart KOReader.
+into KOReader's `plugins` directory and restart KOReader. After that, ShelfSpace updates itself from its menu (see
+[About and updates](#about-and-updates)).
 
 ShelfSpace has been run in the desktop emulator and on a Kobo Libra Colour and, by users' reports, on a Kobo Clara Colour, a
 Kindle Paperwhite 6 and on Android (see [Tested on](#tested-on)). Its colours were designed for how a colour e-ink screen
@@ -180,10 +185,10 @@ merging it tags the release and attaches `shelfspace.koplugin.zip`.
 
 ## Tests
 
-The logic runs under plain `luajit`, without KOReader: what may be deleted and
-why (system folders, KOReader itself, the book being read), how a selection
-collapses, search, sort and the file type filter, the share chips, orphaned
-reading progress, the donut's geometry and the icons:
+The logic runs under plain `luajit`, without KOReader: what may be deleted and why (system folders, KOReader itself, the
+book being read), every file type KOReader opens in any case, how a selection collapses, search, sort and the filters, the
+duplicate finder and what it keeps, reading progress, the colour and gray themes, the donut's geometry, the icons, KOReader's
+data tab, the release check and the installer, the changelog, and the gestures ShelfSpace shares with KOReader:
 
     tests/run.sh
 

@@ -11,6 +11,7 @@ local LineWidget = require("ui/widget/linewidget")
 local LeftContainer = require("ui/widget/container/leftcontainer")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
+local Widget = require("ui/widget/widget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
@@ -35,6 +36,16 @@ function UI.text(text, size, opts)
         fgcolor = opts.color,
         max_width = opts.max_width,
     }
+end
+
+-- A title with a line of small print under it, grouped tight. A text box is taller than its letters (it leaves room above for
+-- tall letters and below for the tails of g and y), so two stacked boxes float apart; the title is measured shorter here, which
+-- closes the gap. Text is not clipped to its box, so nothing is cut off. `under` may be nil.
+function UI.stack(title, under)
+    title.forced_height = math.floor(title:getSize().h * 0.8)
+    local group = VerticalGroup:new{ align = "left", title }
+    if under then table.insert(group, under) end
+    return group
 end
 
 -- A solid w x h block; FrameContainer takes its size from its content.
@@ -85,7 +96,7 @@ end
 function UI.button(th, opts)
     local enabled = opts.enabled ~= false
     local border = Size.border.button
-    local pad_h, pad_v = sp(12), sp(6)
+    local pad_h, pad_v = opts.pad_h or sp(12), opts.pad_v or sp(6)
     -- `icon` (a widget) stands in for the text.
     local label = opts.icon or UI.text(opts.text, opts.size or 15,
         { bold = true, color = enabled and (opts.color or th.ink) or th.muted })
@@ -117,21 +128,62 @@ function UI.button(th, opts)
     return frame
 end
 
+-- Every checkbox is this big, so the ones in the Library and in the KOReader tab line up and look the same.
+UI.CHECKBOX = sp(28)
+
 -- A rounded square, filled with a tick when `checked`.
 -- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked), size.
 function UI.checkbox(th, checked, opts)
     opts = opts or {}
-    local size = opts.size or sp(32)
+    local size = opts.size or UI.CHECKBOX
     local filled = (checked or opts.mixed) and not opts.disabled
-    local inner = filled and CenterContainer:new{
-        dimen = Geom:new{ w = size, h = size },
-        UI.text(opts.mixed and "–" or "✓", math.floor(size * 0.62), { bold = true, color = th.white }),
-    } or HorizontalGroup:new{ HorizontalSpan:new{ width = size }, VerticalSpan:new{ width = size } }
+    local border = Size.border.thick
+    local inner
+    if filled then
+        local mark = size - 2 * border
+        inner = Icons.tickWidget(opts.mixed and "dash" or "tick", mark, th.white)
+            or CenterContainer:new{ dimen = Geom:new{ w = mark, h = mark }, UI.text(opts.mixed and "–" or "✓", math.floor(size * 0.62), { bold = true, color = th.white }) }
+    else
+        inner = HorizontalGroup:new{ HorizontalSpan:new{ width = size - 2 * border }, VerticalSpan:new{ width = size - 2 * border } }
+    end
     return FrameContainer:new{
-        bordersize = Size.border.button, color = opts.disabled and th.muted or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
-        background = filled and th.accent or (opts.disabled and th.free or th.white),
+        bordersize = border, color = opts.disabled and th.line or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
+        background = filled and th.accent or (opts.disabled and th.bg or th.white),
         inner,
     }
+end
+
+-- A row of small dots, w x h, to lead the eye across a gap (from a label to the box it belongs to).
+local Dotted = Widget:extend{ width = 0, height = 0, color = nil }
+
+function Dotted:getSize() return Geom:new{ w = self.width, h = self.height } end
+
+function Dotted:paintTo(bb, x, y)
+    self.dimen = Geom:new{ x = x, y = y, w = self.width, h = self.height }
+    local dot, step = math.max(2, sp(2)), sp(7)
+    local top = y + math.floor((self.height - dot) / 2)
+    for dx = 0, self.width - dot, step do bb:paintRect(x + dx, top, dot, dot, self.color) end
+end
+
+-- The "Select all" line above a list of rows: the label at the left, a soft dotted line leading across to its checkbox at the
+-- right, in the column of the row boxes under it (a row ends with `gap` after its box). Tapping the line ticks or clears them all.
+-- opts: label, checked, mixed, disabled, on_tap.
+function UI.selectAll(th, width, gap, opts)
+    local box = UI.checkbox(th, opts.checked, { mixed = opts.mixed, disabled = opts.disabled })
+    local pad = sp(8)
+    -- As much room as the label wants, but a stretch of dots is always left between it and the box.
+    local label = UI.text(opts.label, 15, { bold = true, color = th.ink, max_width = width - gap - box:getSize().w - 2 * pad - sp(40) })
+    local dots = width - gap - box:getSize().w - label:getSize().w - 2 * pad
+    local line = HorizontalGroup:new{
+        align = "center",
+        label,
+        HorizontalSpan:new{ width = pad },
+        dots > 0 and Dotted:new{ width = dots, height = box:getSize().h, color = th.line } or HorizontalSpan:new{ width = 0 },
+        HorizontalSpan:new{ width = pad },
+        box,
+        HorizontalSpan:new{ width = gap },
+    }
+    return (opts.on_tap and not opts.disabled) and UI.tappable(line, opts.on_tap) or line
 end
 
 -- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable), icon (a widget that
@@ -150,14 +202,17 @@ end
 -- A floating bar of actions, a dark pill: a label, then buttons. `buttons` is a list of
 -- { text, callback, danger }; the `danger` one is the light, filled button and the rest are outlined. Returns the bar and its buttons' widgets (their `dimen` is where they were
 -- last drawn), so that whoever draws the bar can pass taps on to them.
-function UI.floatingBar(th, label, buttons)
-    local row = HorizontalGroup:new{ align = "center", UI.text(label, 16, { bold = true, color = th.white }) }
+-- opts.compact: a slimmer bar, as tall as the pager row, for drawing in the middle of it.
+function UI.floatingBar(th, label, buttons, opts)
+    local compact = opts and opts.compact
+    local row = HorizontalGroup:new{ align = "center", UI.text(label, compact and 14 or 16, { bold = true, color = th.white }) }
     local hits = {}
     for _, b in ipairs(buttons) do
-        table.insert(row, HorizontalSpan:new{ width = sp(12) })
+        table.insert(row, HorizontalSpan:new{ width = sp(compact and 10 or 12) })
         -- On the bar's dark ground the main action is the light button, and the other is outlined in light.
         local button = UI.button(th, {
-            text = b.text, size = 15, callback = b.callback,
+            text = b.text, size = compact and 14 or 15, callback = b.callback,
+            pad_v = compact and sp(2) or nil, pad_h = compact and sp(10) or nil,
             background = b.danger and th.white or th.ink, color = b.danger and th.ink or th.white,
             border_color = th.white,
         })
@@ -165,8 +220,8 @@ function UI.floatingBar(th, label, buttons)
         table.insert(hits, { widget = button, callback = b.callback })
     end
     local bar = FrameContainer:new{
-        bordersize = 0, margin = 0, radius = sp(26), background = th.ink,
-        padding = sp(10), padding_left = sp(20), padding_right = sp(12),
+        bordersize = 0, margin = 0, radius = sp(compact and 22 or 26), background = th.ink,
+        padding = compact and sp(3) or sp(10), padding_left = compact and sp(16) or sp(20), padding_right = compact and sp(9) or sp(12),
         row,
     }
     return bar, hits
@@ -227,9 +282,16 @@ function UI.tabbar(th, width, tabs, active, on_select)
 end
 
 -- « ‹ Page 1 of 3 › » ; on_page(n) is called with the page to show.
-function UI.pager(th, width, page, pages, on_page)
-    local h = sp(44)
+-- The pager row's measures: its height, the width of each arrow, and the width of what is between the arrows.
+function UI.pagerGeometry(width)
     local cell_w = sp(56)
+    return { h = sp(44), cell_w = cell_w, centre_w = width - 4 * cell_w }
+end
+
+-- opts.hide_label: leave the middle (the "Page 1 of 3") empty, for the floating bar to be drawn there.
+function UI.pager(th, width, page, pages, on_page, opts)
+    local geo = UI.pagerGeometry(width)
+    local h, cell_w = geo.h, geo.cell_w
     local function cell(label, target)
         local c = CenterContainer:new{
             dimen = Geom:new{ w = cell_w, h = h },
@@ -242,8 +304,9 @@ function UI.pager(th, width, page, pages, on_page)
         cell("«", page > 1 and 1 or nil),
         cell("‹", page > 1 and page - 1 or nil),
         CenterContainer:new{
-            dimen = Geom:new{ w = width - 4 * cell_w, h = h },
-            UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
+            dimen = Geom:new{ w = geo.centre_w, h = h },
+            (opts and opts.hide_label) and HorizontalSpan:new{ width = 0 }
+                or UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
         },
         cell("›", page < pages and page + 1 or nil),
         cell("»", page < pages and pages or nil),

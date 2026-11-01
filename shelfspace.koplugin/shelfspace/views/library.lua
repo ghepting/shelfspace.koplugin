@@ -86,25 +86,25 @@ return function(screen, th, width)
     local gap = sp(10)
     local vgap = sp(5) -- between rows: each row's height includes it
     local tile = sp(34)
-    local tick_size = sp(26)
+    local tick = UI.CHECKBOX
     local read_w, size_w = sp(70), sp(92)
-    local name_w = width - tile - read_w - size_w - 4 * gap
+    -- A row is a gap, the tile, a gap, the name, the read share, the size, a gap, the checkbox and a gap: it runs the full width of
+    -- the page, like the controls above, and the box ends a gap short of the edge.
+    local name_w = width - tile - read_w - size_w - tick - 4 * gap
     local ctx = plugin:deleteContext()
-    local selecting = screen.selecting
 
     -- The tile in front of a name: three or four letters of its type on its kind's colour ("DIR" for a folder).
-    local function type_tile(item)
+    local function type_tile(item, locked)
         local label = item.is_dir and "DIR" or Formats.label(item.name)
         return FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0, radius = sp(7), background = Theme.kind(th, item),
-            CenterContainer:new{ dimen = Geom:new{ w = tile, h = tile }, UI.text(label, #label >= 4 and 10 or 11, { bold = true, color = Theme.on(th, item) }) },
+            bordersize = 0, padding = 0, margin = 0, radius = sp(7), background = locked and th.line or Theme.kind(th, item),
+            CenterContainer:new{ dimen = Geom:new{ w = tile, h = tile }, UI.text(label, #label >= 4 and 10 or 11, { bold = true, color = locked and th.white or Theme.on(th, item) }) },
         }
     end
 
-    -- A row: a tile (a checkbox while selecting), the name, how much of the book is read, and the size, on a tint of
-    -- its kind's colour. Under the name goes only what the row needs to say: why it is locked, or where a search result
-    -- is. Tapping opens a folder or says what a file is (while selecting, it ticks the row); pressing and holding opens
-    -- the card of a file or folder.
+    -- A row: a tile, the name, how much of the book is read, the size and a checkbox, on a tint of its kind's colour. Under
+    -- the name goes only what the row needs to say: why it is locked, or where a search result is. Tapping opens a folder or
+    -- says what a file is (the box at the right ticks it); pressing and holding opens the card of a file or folder.
     local function build(i, row_h)
         row_h = row_h or ROW_H -- the screen may stretch rows a little to fill the page
         local h = row_h - vgap
@@ -118,29 +118,28 @@ return function(screen, th, width)
             under = UI.text(rel == "" and _("here") or T(_("in %1"), rel), 12, { color = th.muted, max_width = name_w })
         end
         local read = Deleter.isBook(item) and Progress.cell(BookList.getBookInfo(item.path)) or ""
-        local lead
-        if selecting then
-            lead = UI.checkbox(th, screen.selected[item.path] ~= nil, { size = tick_size, disabled = reason ~= nil })
-        else
-            lead = type_tile(item)
-        end
-        local name = VerticalGroup:new{
-            align = "left",
-            UI.text(item.is_dir and (item.name .. "/") or item.name, 18,
-                { bold = true, color = reason and th.muted or th.ink, max_width = name_w }),
+        -- The box ticks the row (a row that cannot be deleted has a disabled one); the rest of the row opens it.
+        local box = CenterContainer:new{
+            dimen = Geom:new{ w = tick + 2 * gap, h = h }, -- a gap each side of the box: it ends a gap short of the row's edge
+            UI.checkbox(th, screen.selected[item.path] ~= nil, { disabled = reason ~= nil }),
         }
-        if under then table.insert(name, under) end
+        -- A tap on a locked row's box says why it cannot be ticked; it never falls through to the row and opens the folder.
+        box = UI.tappable(box, function()
+            if reason then plugin:notify(reason) else screen:toggle(item) end
+        end)
+        local name = UI.stack(UI.text(item.is_dir and (item.name .. "/") or item.name, 18,
+            { bold = true, color = reason and th.muted or th.ink, max_width = name_w }), under)
         local row = FrameContainer:new{
-            bordersize = 0, padding = 0, margin = 0, radius = sp(8), background = Theme.tint(th, item),
+            bordersize = 0, padding = 0, margin = 0, radius = sp(8), background = reason and th.bg or Theme.tint(th, item),
             HorizontalGroup:new{
                 align = "center",
                 HorizontalSpan:new{ width = gap },
-                CenterContainer:new{ dimen = Geom:new{ w = tile, h = h }, lead },
+                CenterContainer:new{ dimen = Geom:new{ w = tile, h = h }, type_tile(item, reason ~= nil) },
                 HorizontalSpan:new{ width = gap },
                 LeftContainer:new{ dimen = Geom:new{ w = name_w, h = h }, name },
                 RightContainer:new{ dimen = Geom:new{ w = read_w, h = h }, UI.text(read, 15, { bold = true, color = th.ink }) },
-                RightContainer:new{ dimen = Geom:new{ w = size_w, h = h }, UI.text(util.getFriendlySize(item.size), 15, { bold = true, color = th.ink }) },
-                HorizontalSpan:new{ width = gap },
+                RightContainer:new{ dimen = Geom:new{ w = size_w, h = h }, UI.text(util.getFriendlySize(item.size), 15, { bold = true, color = reason and th.muted or th.ink }) },
+                box,
             },
         }
         -- On a gray screen there is no tint to separate the rows, so a thin rule does.
@@ -155,16 +154,14 @@ return function(screen, th, width)
         local function card()
             if item.is_dir then plugin:showFolder(item, parent_dir) else plugin:showDetails(item, parent_dir) end
         end
-        if selecting and not reason then
-            return UI.tappable(cell, function() screen:toggle(item) end, card)
-        elseif item.is_dir then
+        if item.is_dir then
             return UI.tappable(cell, function() screen:setDir(item.path) end, card)
         end
         -- A file's card opens on a tap or a long press, so a long press is the card's gesture on every row.
         return UI.tappable(cell, card, card)
     end
 
-    -- One row of controls: search, the filters (file type, reading status), how it is sorted and which way, and Select.
+    -- One row of controls: search, the filters (file type, reading status), how it is sorted and which way.
     -- The labels are never squeezed: each button gets room for its own text.
     -- An arrow down is biggest, newest or most recent first (Z to A for names), an arrow up the other way round.
     local direction_button = UI.button(th, {
@@ -184,13 +181,8 @@ return function(screen, th, width)
             callback = function() screen:askQuery() end,
         })
     end
-    local select_button = UI.button(th, {
-        text = selecting and _("Done") or _("Select"), size = 15,
-        background = selecting and th.accent or nil, color = selecting and th.white or nil,
-        callback = function() screen:setSelecting(not selecting) end,
-    })
     local active = (screen.filter and 1 or 0) + (status and 1 or 0)
-    local rest_w = width - search_button:getSize().w - direction_button:getSize().w - select_button:getSize().w - 4 * gap
+    local rest_w = width - search_button:getSize().w - direction_button:getSize().w - 3 * gap
     local filter_w = math.floor(rest_w / 2)
     local controls = HorizontalGroup:new{
         align = "center",
@@ -208,20 +200,9 @@ return function(screen, th, width)
         }),
         HorizontalSpan:new{ width = gap },
         direction_button,
-        HorizontalSpan:new{ width = gap },
-        select_button,
     }
 
     local header = VerticalGroup:new{ align = "left", VerticalSpan:new{ width = sp(4) }, controls, VerticalSpan:new{ width = sp(8) } }
-
-    -- What can be ticked, and what is.
-    local deletable, ticked = {}, 0
-    for _, e in ipairs(entries) do
-        if not Deleter.blockedReason(e, ctx) then
-            table.insert(deletable, e)
-            if screen.selected[e.path] then ticked = ticked + 1 end
-        end
-    end
 
     -- What is narrowing the list, each with a ✕ that undoes just that.
     local flat = screen.query or screen.filter or include
@@ -233,31 +214,89 @@ return function(screen, th, width)
     if screen.only_books then add_chip(_("Books"), function() screen:toggleBooks() end) end
     if screen.filter then add_chip(screen.filter:upper(), function() screen:toggleFilter(screen.filter) end) end
     if status then add_chip(Search.status(status).short, function() screen:setStatus(nil) end) end
-    if #chips > 0 then
-        table.insert(header, chips)
-        table.insert(header, VerticalSpan:new{ width = sp(6) })
+    -- The line under the controls: where you are and the way back up, or how many there are.
+    local up_row = parent and not screen.only_books
+    local count_text
+    local count = #entries
+    local noun = flat and (screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count))
+        or N_("item", "items", count)
+    if not up_row and #entries > 0 then
+        count_text = UI.text(T(_("%1 · %2 %3"), name, count, noun), 15, { color = th.muted, max_width = width })
     end
-    -- The line under the controls: what to tick, or where you are and the way back up.
-    if selecting then
-        local all_ticked = #deletable > 0 and ticked == #deletable
-        local box = UI.checkbox(th, all_ticked, { mixed = ticked > 0 and not all_ticked, disabled = #deletable == 0, size = tick_size })
-        local label = UI.text(T(_("Select all · %1 ticked"), ticked), 15, { bold = true, color = th.ink })
-        local line = HorizontalGroup:new{ align = "center", box, HorizontalSpan:new{ width = sp(10) }, label }
-        table.insert(header, #deletable > 0 and UI.tappable(line, function() screen:select(deletable, not all_ticked) end) or line)
-    elseif parent and not screen.only_books then
-        table.insert(header, HorizontalGroup:new{
-            align = "center",
-            UI.button(th, { text = _("‹ Up"), size = 15, callback = function() screen:setDir(parent) end }),
-            HorizontalSpan:new{ width = sp(10) },
-            UI.text(T(_("Library / %1"), dir:sub(#root + 2)), 15, { color = th.muted, max_width = width - sp(120) }),
-        })
-    else
-        local count = #entries
-        local noun = flat and (screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count))
-            or N_("item", "items", count)
-        table.insert(header, UI.text(T(_("%1 · %2 %3"), name, count, noun), 15, { color = th.muted, max_width = width }))
+    if #chips > 0 then
+        -- The count goes on the chips' own line, at the right (ending where the boxes below do), when there is room for both.
+        local chips_size = chips:getSize()
+        if count_text and chips_size.w + gap + count_text:getSize().w <= width - gap then
+            table.insert(header, HorizontalGroup:new{
+                align = "center",
+                chips,
+                RightContainer:new{ dimen = Geom:new{ w = width - chips_size.w - gap, h = chips_size.h }, count_text },
+                HorizontalSpan:new{ width = gap },
+            })
+            count_text = nil
+        else
+            table.insert(header, chips)
+            table.insert(header, VerticalSpan:new{ width = sp(6) })
+        end
+    end
+    if up_row then
+        -- Where you are, with how many; the way back up is the first row of the list.
+        table.insert(header, UI.text(T(_("Library / %1 · %2 %3"), dir:sub(#root + 2), count, noun), 15, { color = th.muted, max_width = width }))
+    elseif count_text then
+        table.insert(header, count_text)
     end
     table.insert(header, VerticalSpan:new{ width = sp(8) })
+
+    -- The line over the boxes it ticks. Its box ticks the rows on the page you are looking at, and only those (`first` to `last`, which
+    -- the screen knows once it has paged the list), so a delete is never of rows you have not seen. An empty list says why in the
+    -- space below and needs no such line, so it gets none.
+    local function select_all(first, last)
+        if #entries == 0 then return nil end
+        local page, ticked = {}, 0
+        for i = first, last do
+            local e = entries[i]
+            if e and not Deleter.blockedReason(e, ctx) then
+                table.insert(page, e)
+                if screen.selected[e.path] then ticked = ticked + 1 end
+            end
+        end
+        local all_ticked = #page > 0 and ticked == #page
+        -- The label always says what a Delete would act on in total, whichever pages it was ticked on (the box is for this page).
+        local chosen = screen:chosen()
+        local lines = VerticalGroup:new{
+            align = "left",
+            UI.selectAll(th, width, gap, {
+                label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(Selection.size(chosen)))
+                    or _("Select all"),
+                checked = all_ticked, mixed = ticked > 0 and not all_ticked, disabled = #page == 0,
+                on_tap = function() screen:select(page, not all_ticked) end,
+            }),
+            VerticalSpan:new{ width = sp(8) },
+        }
+        -- Inside a folder the first row of every page is "../", the way back up.
+        if up_row then
+            local h = ROW_H - vgap
+            local row = FrameContainer:new{
+                bordersize = 0, padding = 0, margin = 0, radius = sp(8), background = th.tinted and th.chip or nil,
+                HorizontalGroup:new{
+                    align = "center",
+                    HorizontalSpan:new{ width = gap },
+                    CenterContainer:new{ dimen = Geom:new{ w = tile, h = h }, Icons.upWidget(sp(26), th.ink) },
+                    HorizontalSpan:new{ width = gap },
+                    LeftContainer:new{ dimen = Geom:new{ w = width - tile - 2 * gap, h = h }, UI.text("../", 18, { bold = true, color = th.ink }) },
+                },
+            }
+            local cell = VerticalGroup:new{ align = "left", row }
+            if th.tinted then
+                table.insert(cell, VerticalSpan:new{ width = vgap })
+            else
+                table.insert(cell, LineWidget:new{ dimen = Geom:new{ w = width, h = vgap }, background = th.bg })
+                table.insert(cell, LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line })
+            end
+            table.insert(lines, UI.tappable(cell, function() screen:setDir(parent) end))
+        end
+        return lines
+    end
 
     -- Nothing to list: say why, and offer the one thing that undoes it. Drawn under the controls, over the `h` pixels the
     -- rows would have taken.
@@ -290,5 +329,5 @@ return function(screen, th, width)
         }
     end
 
-    return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build, empty = empty_state }
+    return { hero = hero, header = header, count = #entries, row_h = ROW_H, build = build, empty = empty_state, select_all = select_all }
 end

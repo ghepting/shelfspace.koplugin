@@ -186,6 +186,25 @@ function Icons.searchSvg(ink, bg)
         .. string.format('<circle cx="21" cy="21" r="12" %s/><path d="M30 30 L41 41" %s/>', stroke, stroke) .. "</svg>"
 end
 
+-- The mark inside a checkbox: a tick, or a dash for a group that is only partly ticked. One even stroke with round ends,
+-- in `color`, on a transparent ground (the box behind it is a native frame, so its rounded corners stay clean).
+function Icons.tickSvg(kind, color)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"', color)
+    local d = kind == "dash" and "M13 24 H35" or "M11 25 L21 35 L37 14"
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48">' .. string.format('<path d="%s" %s/>', d, stroke) .. "</svg>"
+end
+
+-- A folder with an arrow up out of it: the way to the parent folder. Transparent ground, one even stroke.
+function Icons.upSvg(color)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"', color)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48">'
+        .. string.format('<path d="M5 14 Q5 9 10 9 H19 L24 15 H38 Q43 15 43 20 V35 Q43 40 38 40 H10 Q5 40 5 35 Z" %s/>', stroke)
+        .. string.format('<path d="M24 34 V21 M18 27 L24 21 L30 27" %s/>', stroke)
+        .. "</svg>"
+end
+
 local function readFile(path)
     local f = io.open(path, "rb")
     if not f then return nil end
@@ -248,6 +267,22 @@ function Icons.searchWidget(size, ink, bg)
     local path = string.format("%s/cache/shelfspace/search-%s-%s.svg", DataStorage:getDataDir(), ink_hex, bg_hex)
     if not store(path, Icons.searchSvg(ink_hex, bg_hex)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size }
+end
+
+-- The tick (or dash) for a checkbox, `size` pixels square, in the colour `ink`; nil if it can't be produced.
+function Icons.tickWidget(kind, size, ink)
+    local hex = hexOf(ink)
+    local path = string.format("%s/cache/shelfspace/%s-%s.svg", DataStorage:getDataDir(), kind, hex)
+    if not store(path, Icons.tickSvg(kind, hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
+end
+
+-- The folder-with-an-arrow-up icon, `size` pixels square, in the colour `ink`; nil if it can't be produced.
+function Icons.upWidget(size, ink)
+    local hex = hexOf(ink)
+    local path = string.format("%s/cache/shelfspace/up-%s.svg", DataStorage:getDataDir(), hex)
+    if not store(path, Icons.upSvg(hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
 end
 
 -- An icon drawn `size` pixels square on a tile of colour `tile`; nil if it can't be produced. The SVG is
