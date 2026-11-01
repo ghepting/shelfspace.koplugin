@@ -134,4 +134,25 @@ T.test("the bare mark is the glyph in the ink colour with no tile behind it", fu
     assert(not svg:find('fill="#ffffff"', 1, true), "nothing should be drawn in white")
 end)
 
+T.test("the checkbox marks are one even round stroke in the colour asked for, on a transparent ground, and tick and dash differ", function()
+    local tick, dash = Icons.tickSvg("tick", "ffffff"), Icons.tickSvg("dash", "ffffff")
+    for name, svg in pairs({ tick = tick, dash = dash }) do
+        assert(svg:find('stroke="#ffffff"', 1, true), name .. ": not in the colour asked for")
+        assert(svg:find('stroke-linecap="round"', 1, true), name .. ": ends should be round")
+        assert(not svg:find("<rect", 1, true), name .. ": the box behind it is drawn natively, so no ground here")
+        assert(not svg:find("<text", 1, true), name .. ": a drawn mark, not a font glyph")
+    end
+    assert(tick:find("L", 1, true), "a tick bends")
+    assert(dash:find("H35", 1, true) and not dash:find("L", 1, true), "a dash is one straight line")
+    assert(tick ~= dash)
+end)
+
+T.test("the up icon is a folder with an arrow, in the colour asked for, on a transparent ground", function()
+    local svg = Icons.upSvg("2a363b")
+    assert(svg:find('stroke="#2a363b"', 1, true), "not in the colour asked for")
+    assert(not svg:find("<rect", 1, true), "no ground")
+    assert(svg:find("M24 34 V21", 1, true), "the arrow's shaft")
+    assert(svg:find("L24 21 L30 27", 1, true), "the arrow's head")
+end)
+
 T.done()

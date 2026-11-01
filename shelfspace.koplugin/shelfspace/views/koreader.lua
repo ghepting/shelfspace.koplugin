@@ -61,10 +61,10 @@ return function(screen, th, width)
 
     local gap = sp(10)
     local size_w = sp(78)
+    local tick = UI.CHECKBOX
     local body = VerticalGroup:new{ align = "left" }
 
-    -- Select several: a row can be ticked when it has something to clear and nothing stops it.
-    local selecting = screen.selecting
+    -- A row can be ticked when it has something to clear and nothing stops it.
     local selectable, chosen, chosen_size = {}, {}, 0
     for i, t in ipairs(targets) do
         if t.size > 0 and not t.blocked then
@@ -75,70 +75,34 @@ return function(screen, th, width)
             end
         end
     end
-    local select_button = UI.button(th, {
-        text = selecting and _("Done") or _("Select"), size = 15,
-        enabled = #selectable > 0 or selecting,
-        callback = function() screen:setSelecting(not selecting) end,
-    })
-    table.insert(body, VerticalSpan:new{ width = sp(4) })
-    if selecting then
-        local all_chosen = #selectable > 0 and #chosen == #selectable
-        local all_button = UI.button(th, {
-            text = all_chosen and _("None") or _("All"), size = 15, enabled = #selectable > 0,
-            callback = function()
-                local keys = {}
-                for _, t in ipairs(selectable) do table.insert(keys, t.title) end
-                screen:selectKeys(keys, not all_chosen)
-            end,
-        })
-        local clear_button = UI.button(th, {
-            text = _("Clear"), size = 15, enabled = #chosen > 0, background = th.danger, color = th.white,
-            disabled_background = th.free,
-            callback = function() plugin:confirmClear(chosen) end,
-        })
-        local label_w = width - select_button:getSize().w - all_button:getSize().w - clear_button:getSize().w - 4 * gap
-        table.insert(body, HorizontalGroup:new{
-            align = "center",
-            LeftContainer:new{
-                dimen = Geom:new{ w = label_w, h = select_button:getSize().h },
-                UI.text(T(_("%1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)), 16,
-                    { bold = true, color = th.ink, max_width = label_w }),
-            },
-            HorizontalSpan:new{ width = gap }, all_button, HorizontalSpan:new{ width = gap }, clear_button,
-            HorizontalSpan:new{ width = gap }, select_button,
-        })
-    else
-        table.insert(body, RightContainer:new{ dimen = Geom:new{ w = width, h = select_button:getSize().h }, select_button })
-    end
-    table.insert(body, VerticalSpan:new{ width = sp(4) })
+
+    -- The line that ticks every row that can be cleared, over the boxes it ticks (as in the Library).
+    local all_chosen = #selectable > 0 and #chosen == #selectable
+    table.insert(body, VerticalSpan:new{ width = sp(8) })
+    table.insert(body, UI.selectAll(th, width, gap, {
+        label = #chosen > 0 and T(_("Select all · %1 selected · %2"), #chosen, util.getFriendlySize(chosen_size)) or _("Select all"),
+        checked = all_chosen, mixed = #chosen > 0 and not all_chosen, disabled = #selectable == 0,
+        on_tap = function()
+            local keys = {}
+            for _, t in ipairs(selectable) do table.insert(keys, t.title) end
+            screen:selectKeys(keys, not all_chosen)
+        end,
+    }))
+    table.insert(body, VerticalSpan:new{ width = sp(8) })
 
     for i, t in ipairs(targets) do
         local clearable = t.size > 0
-        local ticked = screen.selected[t.title] ~= nil
-        local button
-        if selecting and clearable and not t.blocked then
-            button = UI.tappable(CenterContainer:new{
-                dimen = Geom:new{ w = sp(70), h = sp(40) },
-                UI.checkbox(th, ticked),
-            }, function() screen:toggleKey(t.title) end)
-        else
-            button = UI.button(th, {
-                text = _("Clear"),
-                size = 15,
-                enabled = clearable and not selecting,
-                callback = function()
-                    if t.blocked then
-                        plugin:notify(t.blocked)
-                    else
-                        plugin:confirmClear({ t }, t.title:lower())
-                    end
-                end,
-            })
-        end
+        local pickable = clearable and not t.blocked
+        local box = CenterContainer:new{
+            dimen = Geom:new{ w = tick, h = ROW_H - Size.line.thin },
+            UI.checkbox(th, screen.selected[t.title] ~= nil, { disabled = not pickable }),
+        }
         local label = t.count and T(_("%1 (%2)"), t.title, t.count) or t.title
-        -- On a colour screen a row is a teal-tinted card; on a gray one it keeps the rule under it.
-        local inner = th.tinted and (width - 2 * gap) or width
-        local text_w = inner - size_w - button:getSize().w - 2 * gap
+        -- On a colour screen a row is a teal-tinted card; on a gray one it keeps the rule under it. Either way its box ends a gap
+        -- short of the edge, where the Library's boxes end.
+        local inner = th.tinted and (width - 2 * gap) or (width - gap)
+        -- The row's content is a gap before the size, a gap before the box and then the box: exactly `inner`, so the box ends at its edge.
+        local text_w = inner - size_w - tick - 2 * gap
         local title = UI.text(label, 19, { bold = true, color = clearable and th.ink or th.muted, max_width = text_w })
         local note = UI.text(t.blocked or t.note, 14, { color = th.muted, max_width = text_w })
         local used = math.max(title:getSize().w, note:getSize().w)
@@ -152,27 +116,31 @@ return function(screen, th, width)
                     dimen = Geom:new{ w = inner, h = ROW_H - Size.line.thin },
                     HorizontalGroup:new{
                         align = "center",
-                        VerticalGroup:new{ align = "left", title, note },
-                        HorizontalSpan:new{ width = text_w - used },
+                        UI.stack(title, note),
+                        HorizontalSpan:new{ width = text_w - used + gap },
                         RightContainer:new{
                             dimen = Geom:new{ w = size_w, h = sp(30) },
                             UI.text(util.getFriendlySize(t.size), 17, { bold = true, color = th.ink }),
                         },
                         HorizontalSpan:new{ width = gap },
-                        button,
+                        box,
                     },
                 },
                 th.tinted and VerticalSpan:new{ width = Size.line.thin }
                     or LineWidget:new{ dimen = Geom:new{ w = width, h = Size.line.thin }, background = th.line },
             },
         }
-        -- In select mode the whole row ticks it, not just the box.
-        if selecting and clearable and not t.blocked then
-            row = UI.tappable(row, function() screen:toggleKey(t.title) end)
-        end
-        table.insert(body, row)
+        -- A row has nothing to open, so a tap anywhere on it ticks it (or says why it cannot be).
+        table.insert(body, UI.tappable(row, function()
+            if pickable then
+                screen:toggleKey(t.title)
+            elseif t.blocked then
+                plugin:notify(t.blocked)
+            end
+        end))
         if th.tinted then table.insert(body, VerticalSpan:new{ width = sp(5) }) end
     end
+
     local bottom = UI.button(th, {
         text = T(_("Clear all · %1"), util.getFriendlySize(can_free)),
         width = width,
@@ -184,5 +152,16 @@ return function(screen, th, width)
             plugin:confirmClear(clearable)
         end,
     })
-    return { hero = hero, body = body, bottom = not selecting and bottom or nil }
+    -- What is ticked floats over the page as a bar, as in the Library; the screen draws it. Clear all gives way to it.
+    local bar
+    if #chosen > 0 then
+        bar = {
+            count = #chosen, bytes = chosen_size,
+            buttons = {
+                { text = _("Cancel"), callback = function() screen:clearSelection() end },
+                { text = _("Clear"), danger = true, callback = function() plugin:confirmClear(chosen) end },
+            },
+        }
+    end
+    return { hero = hero, body = body, bottom = #chosen == 0 and bottom or nil, bar = bar }
 end

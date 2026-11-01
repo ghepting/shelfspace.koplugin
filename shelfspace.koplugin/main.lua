@@ -681,7 +681,7 @@ function ShelfSpace:deleteMany(items, after)
         if not entry then
             UIManager:close(busy)
             self.block_cache = {}
-            if self.screen and not self.screen.closed then self.screen:setSelecting(false) end
+            if self.screen and not self.screen.closed then self.screen.selected = {} end
             self:refresh()
             if after then after() end
             if #failed > 0 then
@@ -721,7 +721,7 @@ function ShelfSpace:confirmClear(targets, label)
             ok_text = _("Clear"),
             ok_callback = function()
                 for i, t in ipairs(targets) do t.clear() end
-                if self.screen and not self.screen.closed then self.screen.selecting, self.screen.selected = false, {} end
+                if self.screen and not self.screen.closed then self.screen.selected = {} end
                 local busy = InfoMessage:new { text = _("Updating…") }
                 UIManager:show(busy)
                 UIManager:nextTick(function()

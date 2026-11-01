@@ -137,14 +137,14 @@ function Driver:init()
             check("clearFilters resets everything", not S().query and not S().filter and not S().status and not S().only_books)
         end, 1 },
         { "library-select", function()
-            S():setDir(root .. "/Comics") S():setSelecting(true)
+            S():setDir(root .. "/Comics")
             local e = P.tree[root .. "/Comics"].entries
             S():select({ e[1], e[2] }, true)
         end, 2 },
         { nil, function()
             check("two rows ticked", #S():chosen() == 2, #S():chosen())
             S():switchTab("koreader")
-            check("a selection belongs to its tab", not S().selecting and next(S().selected) == nil)
+            check("a selection belongs to its tab", next(S().selected) == nil)
             S():switchTab("library")
         end, 1 },
         { "koreader", function() S():switchTab("koreader") end, 2 },
@@ -174,8 +174,9 @@ function Driver:init()
         { nil, function() closeDialogs() S():setDir(root) end, 1 },
         { "koreader-data", function() S():switchTab("koreader") end, 2 },
         { "clear-several", function()
-            S():setSelecting(true)
+           
             S():toggleKey("Rendering cache") S():toggleKey("Update downloads")
+            check("the Clear bar appears for a selection on the KOReader tab", S().bar_hits ~= nil and #S().bar_hits == 2)
         end, 2 },
         { "clear-several-confirm", function()
             local clearable = {}
@@ -183,7 +184,7 @@ function Driver:init()
             for _, t in ipairs(Cleanup.targets(P.tree, P.koreader_dir, false, P.root)) do if t.size > 0 and S().selected[t.title] then clearable[#clearable + 1] = t end end
             P:confirmClear(clearable)
         end, 2 },
-        { nil, function() closeDialogs() S():setSelecting(false) S():switchTab("library") end, 1 },
+        { nil, function() closeDialogs() S():clearSelection() S():switchTab("library") end, 1 },
         ---------------------------------------------------------------- gray screen
         { nil, function() setColour(false) end, 4 },
         { "gray-library", function() end, 0 },
@@ -197,11 +198,11 @@ function Driver:init()
         { nil, function() S():setDir(root) end, 1 },
         { "gray-library-books", function() S():toggleBooks() end, 2 },
         { "gray-library-select", function()
-            S():toggleBooks() S():setDir(root .. "/Comics") S():setSelecting(true)
+            S():toggleBooks() S():setDir(root .. "/Comics")
             local e = P.tree[root .. "/Comics"].entries
             S():select({ e[1], e[2] }, true)
         end, 2 },
-        { nil, function() S():setSelecting(false) end, 1 },
+        { nil, function() S():clearSelection() end, 1 },
         { "gray-koreader", function() S():switchTab("koreader") end, 2 },
         { "gray-duplicates", function() S():switchTab("duplicates") end, 2 },
         { "gray-duplicates-compare", function() S():openSet(P.duplicates[#P.duplicates].id) end, 2 },
@@ -265,7 +266,7 @@ function Driver:init()
             check("the others are untouched", exists(root .. "/Classics/Dracula.epub"))
         end, 0 },
         { nil, function()
-            S():setDir(root .. "/Comics") S():setSelecting(true)
+            S():setDir(root .. "/Comics")
             local by_name = {}
             for _, x in ipairs(P.tree[root .. "/Comics"].entries) do by_name[x.name] = x end
             S():select({ by_name["Saga v1.cbz"], by_name["Saga v2.cbz"] }, true)
@@ -276,7 +277,7 @@ function Driver:init()
         { nil, function()
             check("deleting several removes them from disk", not exists(root .. "/Comics/Saga v1.cbz") and not exists(root .. "/Comics/Saga v2.cbz"))
             check("a row that was not ticked stays", exists(root .. "/Comics/Maus.cbz"))
-            check("selection mode ends afterwards", not S().selecting)
+            check("the selection is empty afterwards", next(S().selected) == nil)
         end, 0 },
         { nil, function()
             local set

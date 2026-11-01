@@ -15,6 +15,7 @@ bin="$app"; [ -d "$app" ] && bin="$app/Contents/MacOS/koreader"
 [ -x "$bin" ] || { echo "run.sh: cannot run $bin" >&2; exit 1; }
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/shelfspace-shots.XXXXXX")"
+work="$(cd "$work" && pwd -P)" # macOS temp folders sit behind a symlink (/var is /private/var); KOReader sees the real path, so use it
 mkdir -p "$work/home/plugins" "$work/shots"
 "$repo/tools/screenshots/make-library.sh" "$work"
 ln -s "$repo/shelfspace.koplugin" "$work/home/plugins/shelfspace.koplugin"
