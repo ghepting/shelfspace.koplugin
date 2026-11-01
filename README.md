@@ -27,7 +27,7 @@ ShelfSpace answers "where did my space go?" and lets you do something about it, 
 
 - **See it.** A chart of books, KOReader's own data, other files and free space, with your library under it, largest first.
 - **Find the big things.** Search, filter by file type or by what you have (or have not) read, and sort by size, name, date or last opened.
-- **Clear it safely.** Tick what you want gone and delete it in one go. Every delete asks first, and only books KOReader can open can be deleted.
+- **Clear it safely.** Tick what you want gone and delete it in one go. Every delete asks first, and only books and pictures KOReader can open can be deleted.
 - **Clean KOReader up.** Its rendering cache, update downloads, crash logs, old screenshots and the reading progress of books that are gone.
 - **Find duplicates.** The same book in two formats or twice over, shown side by side so you choose which copy stays.
 
@@ -58,7 +58,7 @@ Under it, your files, largest first. Each row has a tile for its type, a colour 
 
 #### Deleting
 
-Every row has a checkbox on the right. Tick the ones you want, or use the **Select all** line above them, which ticks the rows on the page you are looking at (so a delete is never of rows you have not seen). That line always shows the total you have selected, across every page and folder, with its size: "Select all · 15 selected · 668.0 MB". A bar floats over the bottom of the list with **Cancel** and **Delete**, and nothing moves under your finger when it appears.
+Every row has a checkbox on the right. Tick the ones you want, or use the **Select all** line above them, which ticks the deletable rows on the page you are looking at (so a delete is never of rows you have not seen). That line always shows the total you have selected, across every page and folder, with its size: "Select all · 15 selected · 668.0 MB". A bar floats over the bottom of the list with **Cancel** and **Delete**, and nothing moves under your finger when it appears.
 
 You always get a confirmation first, naming what goes and how many books lose their reading progress. Rows that cannot be deleted are greyed out, and tapping their box tells you why.
 
@@ -81,12 +81,12 @@ It is one book at a time on purpose, so every deletion is something you have loo
 
 Deleting is permanent: there is no trash. So ShelfSpace is conservative.
 
-- Only books KOReader can open, and folders holding nothing else, can be deleted. Anything it does not recognise is locked, with the reason shown.
+- Only books and pictures KOReader can open (and the covers and metadata that go with them), and folders holding nothing else, can be deleted. Anything it does not recognise is locked, with the reason shown.
 - System folders, KOReader's own folder and the book you are reading are always locked.
 - Every delete asks first and names what goes.
 - If the library matters to you, keep a copy elsewhere.
 
-### File types
+## File types
 
 ShelfSpace knows every format KOReader opens, in any case (`.epub`, `.EPUB` and `.ePub` are the same), and gives each a tile with its own letters and a colour for its kind. The type filter and the duplicate finder count a format's other spellings as one.
 
