@@ -147,6 +147,27 @@ function Driver:init()
             check("a selection belongs to its tab", next(S().selected) == nil)
             S():switchTab("library")
         end, 1 },
+        { nil, function()
+            -- What is selected is what Delete acts on, so it is always on screen: paging keeps it, a different view drops it.
+            local function pick()
+                local e = P.tree[root .. "/Comics"].entries
+                S():select({ e[1], e[2] }, true)
+            end
+            S():setDir(root .. "/Comics") pick() S():setPage(1)
+            check("paging keeps the selection", #S():chosen() == 2, #S():chosen())
+            S():setSort(S().sort)
+            check("sorting keeps the selection", #S():chosen() == 2, #S():chosen())
+            S():setQuery("Saga")
+            check("a search drops the selection", next(S().selected) == nil)
+            S():setQuery(nil) pick() S():toggleFilter("cbz")
+            check("a file type filter drops the selection", next(S().selected) == nil)
+            S():toggleFilter("cbz") pick() S():setStatus("new")
+            check("a status filter drops the selection", next(S().selected) == nil)
+            S():setStatus(nil) pick() S():toggleBooks()
+            check("the Books list drops the selection", next(S().selected) == nil)
+            S():toggleBooks() S():setDir(root .. "/Comics") pick() S():setDir(root)
+            check("another folder drops the selection", next(S().selected) == nil)
+        end, 1 },
         { "koreader", function() S():switchTab("koreader") end, 2 },
         { "duplicates", function() S():switchTab("duplicates") end, 2 },
         { "duplicates-compare", function() S():openSet(P.duplicates[#P.duplicates].id) end, 2 },
