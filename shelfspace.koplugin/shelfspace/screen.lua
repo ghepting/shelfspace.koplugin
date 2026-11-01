@@ -179,7 +179,14 @@ function ShelfScreen:propagateEvent(event)
 end
 
 -- Puts the Library back to everything: no search, no file type, no status.
+-- What is selected is what a Delete acts on, so it must always be on screen: paging keeps it, but a change of folder, search, filter or
+-- status shows other rows, and the selection goes.
+function ShelfScreen:viewChanged()
+    self.selected = {}
+end
+
 function ShelfScreen:clearFilters()
+    self:viewChanged()
     self.query, self.filter, self.status, self.only_books = nil, nil, nil, false
     self.pages.library = 1
     self:refresh()
@@ -308,6 +315,7 @@ function ShelfScreen:pageKey(dir)
 end
 
 function ShelfScreen:setDir(dir)
+    self:viewChanged()
     -- A page of search results or of one file type says nothing about the folder's own pages.
     if not self.query and not self.filter then self.left_at[self:pageKey(self.dir)] = self.pages.library end
     self.dir = dir
@@ -320,6 +328,7 @@ end
 -- Unlike the search and the type chip, the status stays when you change folder, like the sort order:
 -- it is how the library is shown, not something you are looking for.
 function ShelfScreen:setStatus(id)
+    self:viewChanged()
     self.status = id
     self.pages.library = 1
     self:refresh()
@@ -327,6 +336,7 @@ end
 
 -- The Books row of the chart: the list becomes every book in the library, wherever it is, or goes back to the folder it was on.
 function ShelfScreen:toggleBooks()
+    self:viewChanged()
     self.only_books = not self.only_books
     if self.only_books then self.dir = self.plugin.root end
     self.pages.library = 1
@@ -383,6 +393,7 @@ end
 
 -- Switches the file-type filter to `ext`, or off when it is already on.
 function ShelfScreen:toggleFilter(ext)
+    self:viewChanged()
     self.filter = self.filter ~= ext and ext or nil
     self.pages.library = 1
     self:refresh()
@@ -449,6 +460,7 @@ function ShelfScreen:askSort()
 end
 
 function ShelfScreen:setQuery(query)
+    self:viewChanged()
     query = query and query:match("^%s*(.-)%s*$")
     self.query = query ~= "" and query or nil
     self.pages.library = 1
