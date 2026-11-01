@@ -350,13 +350,17 @@ end
 function ShelfSpace:showInFileManager(path)
     local folder = path:match("^(.*)/[^/]+$") or self.root
     local FileChooser = require("ui/widget/filechooser")
-    -- The file manager lists only files KOReader can open, and what is locked here is mostly what it cannot, so it would not show
-    -- the file at all. Show unsupported files for this session only (nothing is saved: the setting comes back after a restart).
-    local was = FileChooser.show_unsupported
-    FileChooser.show_unsupported = true
     self.screen:onClose()
     UIManager:nextTick(function()
+        -- The file manager lists only files KOReader can open, and what is locked here is mostly what it cannot, so it would not
+        -- show the file at all. Its list is built once, so show unsupported files only while it is built, then put the setting back
+        -- as it was: nothing is saved and nothing stays changed.
+        local was = FileChooser.show_unsupported
+        FileChooser.show_unsupported = true
         if self.ui.document and self.ui.showFileManager then
+            -- A book is open: close it as KOReader's own Home does, then show the file manager.
+            UIManager:setSuspendRepaints(false)
+            self.ui:onClose()
             self.ui:showFileManager(path)
         else
             local FileManager = require("apps/filemanager/filemanager")
@@ -366,11 +370,7 @@ function ShelfSpace:showInFileManager(path)
                 FileManager:showFiles(folder, path)
             end
         end
-        if not was then
-            UIManager:show(require("ui/widget/notification"):new{
-                text = _("Showing files KOReader can't open until it restarts"),
-            })
-        end
+        FileChooser.show_unsupported = was
     end)
 end
 
