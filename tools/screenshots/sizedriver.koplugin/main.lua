@@ -36,7 +36,7 @@ function Driver:init()
         local cards = {}
         local function walk(widget)
             for _, child in ipairs(widget) do if type(child) == "table" then walk(child) end end
-            if widget.ges_events and widget.dimen and widget.dimen.w > w * 0.4 and widget.dimen.h > Device.screen:getHeight() * 0.1 then
+            if widget.ges_events and widget.dimen and widget.dimen.w > w * 0.4 and widget.dimen.h > Device.screen:getHeight() * 0.04 then
                 for name in pairs(widget.ges_events) do
                     if name:match("^TapRow") then table.insert(cards, { dimen = widget.dimen, on = widget["on" .. name] }) end
                 end

@@ -208,15 +208,17 @@ function ShelfScreen:openDuplicates()
 end
 
 function ShelfScreen:openSet(id)
+    self.dup_list_page = self.pages.duplicates or 1 -- the page of the list to come back to
     self.dup_set = id
     self.pages.duplicates = 1
     self:refresh()
 end
 
--- Back to the list, whichever of the two it was opened from.
+-- Back to the list, whichever of the two it was opened from, on the page it was left on (the page count clamps it if the list shrank).
 function ShelfScreen:closeSet()
     self.dup_set = nil
-    self.pages.duplicates = 1
+    self.pages.duplicates = self.dup_list_page or 1
+    self.dup_list_page = nil
     self:refresh()
 end
 
@@ -592,7 +594,7 @@ function ShelfScreen:rebuild()
         table.insert(col, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap + slack })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
         table.insert(col, UI.pager(th, main_w, page, pages, function(n) self:setPage(n) end,
-            { cell_w = cell, hide_label = (self.tab == "library" and next(self.selected) ~= nil) or ((self.tab == "koreader" or self.tab == "duplicates") and self.view_bar ~= nil) }))
+            { cell_w = cell }))
     else
         self.page_count = 1
         if view.message then
@@ -606,11 +608,17 @@ function ShelfScreen:rebuild()
         end
     end
 
-    -- Where the floating bar goes: the middle of the pager row, between its arrows; a tab with no pager gives it the whole row.
+    -- Where the floating bar goes.
     local geo = UI.pagerGeometry(main_w, landscape and sp(40) or nil)
     local left = pad + (landscape and (hero_w + 2 * gap) or 0)
-    self.bar_slot = { x = left + 2 * geo.cell_w, y = self.dimen.h - pad - geo.h, w = geo.centre_w, h = geo.h }
-    if not view.build then self.bar_slot.x, self.bar_slot.w = left, main_w end
+    -- The floating bar hangs over the bottom of the list, just above the pager row, which stays whole ("Page 1 of 3" and its arrows);
+    -- a tab with no pager has it in that row.
+    local bar_h = sp(48)
+    if view.build then
+        self.bar_slot = { x = left, y = self.dimen.h - pad - geo.h - bar_h - sp(2), w = main_w, h = bar_h }
+    else
+        self.bar_slot = { x = left, y = self.dimen.h - pad - geo.h, w = main_w, h = geo.h }
+    end
     -- getSize() above cached the groups' heights before the rows were added
     col:resetLayout()
     body:resetLayout()

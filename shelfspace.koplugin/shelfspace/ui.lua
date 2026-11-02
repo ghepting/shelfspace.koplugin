@@ -9,6 +9,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local LineWidget = require("ui/widget/linewidget")
 local LeftContainer = require("ui/widget/container/leftcontainer")
+local RenderText = require("ui/rendertext")
 local Size = require("ui/size")
 local TextWidget = require("ui/widget/textwidget")
 local Widget = require("ui/widget/widget")
@@ -27,9 +28,35 @@ local UI = {}
 function UI.sp(n) return Screen:scaleBySize(n) end
 local sp = UI.sp
 
+-- KOReader's own text drawing keeps only the brightness of a colour, so coloured text comes out grey. This draws the same glyphs with the
+-- colour kept, on a colour screen; on any other it is plain TextWidget.
+local ColorText = TextWidget:extend{}
+
+function ColorText:paintTo(bb, x, y)
+    self:updateSize()
+    if self._is_empty then return end
+    if not (self.use_xtext and bb:isRGB() and bb.colorblitFromRGB32) then return TextWidget.paintTo(self, bb, x, y) end
+    if not self._xshaping then
+        self._xshaping = self._xtext:shapeLine(self._shape_start, self._shape_end, self._shape_idx_to_substitute_with_ellipsis)
+    end
+    local text_width = bb:getWidth() - x
+    if self.max_width and self.max_width < text_width then text_width = self.max_width end
+    local pen_x = 0
+    local baseline = self.forced_baseline or self._baseline_h
+    for _i, xglyph in ipairs(self._xshaping) do
+        if pen_x >= text_width then break end
+        local face = self.face.getFallbackFont(xglyph.font_num)
+        local glyph = RenderText:getGlyphByIndex(face, xglyph.glyph, self.bold)
+        bb:colorblitFromRGB32(glyph.bb, x + pen_x + glyph.l + xglyph.x_offset, y + baseline - glyph.t - xglyph.y_offset,
+            0, 0, glyph.bb:getWidth(), glyph.bb:getHeight(), self.fgcolor)
+        pen_x = pen_x + xglyph.x_advance
+    end
+end
+
+-- opts.color_text: keep the colour of `color` instead of its brightness (the kept copy's name in green).
 function UI.text(text, size, opts)
     opts = opts or {}
-    return TextWidget:new{
+    return (opts.color_text and ColorText or TextWidget):new{
         text = text,
         face = Font:getFace(opts.face or "cfont", size),
         bold = opts.bold,
@@ -117,9 +144,14 @@ function UI.button(th, opts)
     else
         fill, line = th.white, th.ink
     end
+    -- opts.pill: ends as round as the button is tall, as the tabs and the floating bar's buttons are.
+    local radius = opts.pill and math.floor((label:getSize().h + 2 * (border + pad_v)) / 2) or Size.radius.button
+    -- A border of the fill's own colour only draws a dark fringe where its curve meets the one behind it, so such a button has none and
+    -- keeps its size by padding instead.
+    local solid = line == fill
     local frame = FrameContainer:new{
-        bordersize = border, color = line, background = fill, radius = Size.radius.button, margin = 0,
-        padding = pad_v, padding_left = pad_h, padding_right = pad_h,
+        bordersize = solid and 0 or border, color = line, background = fill, radius = radius, margin = 0,
+        padding = pad_v + (solid and border or 0), padding_left = pad_h + (solid and border or 0), padding_right = pad_h + (solid and border or 0),
         content,
     }
     if enabled and opts.callback then
@@ -132,7 +164,8 @@ end
 UI.CHECKBOX = sp(28)
 
 -- A rounded square, filled with a tick when `checked`.
--- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked), size.
+-- opts: mixed (some of a group are ticked: shows a dash), disabled (a row that cannot be ticked), size, fill (the colour of a checked box,
+-- the accent unless a screen has its own, as the copy to keep on the Duplicates tab has green).
 function UI.checkbox(th, checked, opts)
     opts = opts or {}
     local size = opts.size or UI.CHECKBOX
@@ -153,9 +186,18 @@ function UI.checkbox(th, checked, opts)
     end
     return FrameContainer:new{
         bordersize = border, color = opts.disabled and th.muted or th.ink, radius = math.floor(size / 4), margin = 0, padding = 0,
-        background = filled and th.accent or (opts.disabled and th.bg or th.white),
+        background = filled and (opts.fill or th.accent) or (opts.disabled and th.bg or th.white),
         inner,
     }
+end
+
+-- A round button for choosing one of several: the same size, ring and white ground as a checkbox, with a disc of `fill` (the accent unless
+-- given) inside the one chosen.
+function UI.radio(th, chosen, opts)
+    opts = opts or {}
+    local size = opts.size or UI.CHECKBOX
+    local radio = Icons.radioWidget(size, Size.border.thick, th.ink, chosen and (opts.fill or th.accent) or nil)
+    return radio or UI.checkbox(th, chosen, opts)
 end
 
 -- A row of small dots, w x h, to lead the eye across a gap (from a label to the box it belongs to).
@@ -191,57 +233,69 @@ function UI.selectAll(th, width, gap, opts)
     return (opts.on_tap and not opts.disabled) and UI.tappable(line, opts.on_tap) or line
 end
 
--- opts: active (filled, for a switched-on filter), on_tap (makes the chip tappable), icon (a widget that
+-- opts: fill (a solid colour, white label), active (filled, for a switched-on filter), on_tap (makes the chip tappable), icon (a widget that
 -- stands in for the text, drawn on the page colour).
 function UI.chip(th, text, opts)
     opts = opts or {}
     local chip = FrameContainer:new{
-        bordersize = Size.border.thin, color = th.ink, radius = sp(16), margin = 0,
-        background = opts.active and th.accent or nil,
-        padding = opts.icon and sp(2) or sp(4), padding_left = opts.icon and sp(14) or sp(10), padding_right = opts.icon and sp(14) or sp(10),
-        opts.icon or UI.text(text, 13, { bold = true, color = opts.active and th.white or th.ink }),
+        bordersize = Size.border.thin, color = opts.fill or th.ink, radius = sp(16), margin = 0,
+        background = opts.fill or (opts.active and th.accent or nil),
+        padding = opts.icon and sp(2) or (opts.pad_v or sp(4)), padding_left = opts.icon and sp(14) or sp(10), padding_right = opts.icon and sp(14) or sp(10),
+        opts.icon or UI.text(text, opts.size or 13, { bold = true, color = (opts.fill or opts.active) and th.white or th.ink }),
     }
     return opts.on_tap and UI.tappable(chip, opts.on_tap) or chip
 end
 
--- A floating bar of actions, a dark pill: a label, then buttons. `buttons` is a list of
--- { text, callback, danger }; the `danger` one is the light, filled button and the rest are outlined. Returns the bar and its buttons' widgets (their `dimen` is where they were
--- last drawn), so that whoever draws the bar can pass taps on to them.
--- opts.compact: a slimmer bar, as tall as the pager row, for drawing in the middle of it.
+-- A floating bar of actions, a dark pill: a label, then buttons, which are pills too. `buttons` is a list of { text, callback, danger }:
+-- the `danger` one (a delete) is the magenta-red of the Duplicates tab, the rest are solid white. Returns the bar and its buttons' widgets
+-- (their `dimen` is where they were last drawn), so that whoever draws the bar can pass taps on to them.
+-- opts.compact: a slimmer bar, for drawing over the bottom of a list.
 function UI.floatingBar(th, label, buttons, opts)
     local compact = opts and opts.compact
     local row = HorizontalGroup:new{ align = "center", UI.text(label, compact and 14 or 16, { bold = true, color = th.white }) }
     local hits = {}
     for _, b in ipairs(buttons) do
-        table.insert(row, HorizontalSpan:new{ width = sp(compact and 10 or 12) })
-        -- On the bar's dark ground the main action is the light button, and the other is outlined in light.
-        local button = UI.button(th, {
-            text = b.text, size = compact and 14 or 15, callback = b.callback,
-            pad_v = compact and sp(2) or nil, pad_h = compact and sp(10) or nil,
-            background = b.danger and th.white or th.ink, color = b.danger and th.ink or th.white,
-            border_color = th.white,
-        })
+        table.insert(row, HorizontalSpan:new{ width = sp(compact and 12 or 14) })
+        local button
+        if b.danger then
+            -- Outlined in white on a gray screen, where the delete colour is black and would vanish into the bar.
+            button = UI.button(th, {
+                text = b.text, size = compact and 14 or 15, callback = b.callback, pill = true,
+                pad_v = compact and sp(3) or nil, pad_h = compact and sp(14) or nil,
+                background = th.danger, color = th.white, border_color = th.tinted and th.danger or th.white,
+            })
+        else
+            button = UI.button(th, {
+                text = b.text, size = compact and 14 or 15, callback = b.callback, pill = true,
+                pad_v = compact and sp(3) or nil, pad_h = compact and sp(14) or nil,
+                background = th.white, color = th.ink, border_color = th.white,
+            })
+        end
         table.insert(row, button)
         table.insert(hits, { widget = button, callback = b.callback })
     end
-    -- Its corners are the buttons' corners grown by the padding around them, so the buttons sit in it with the same curve.
-    local pad = compact and sp(3) or sp(10)
+    -- A pill, with room around the buttons: as round as it is tall.
+    local pad = compact and sp(7) or sp(10)
     local bar = FrameContainer:new{
-        bordersize = 0, margin = 0, radius = Size.radius.button + pad, background = th.ink,
-        padding = pad, padding_left = compact and sp(16) or sp(20), padding_right = compact and sp(9) or sp(12),
+        bordersize = 0, margin = 0, radius = math.floor((row:getSize().h + 2 * pad) / 2), background = th.ink,
+        padding = pad, padding_left = compact and sp(20) or sp(22), padding_right = pad,
         row,
     }
     return bar, hits
 end
 
--- A rounded track with a filled share of it.
+-- An outlined, rounded track on white with a filled share of it. The fill is a rounded shape of its own, so nothing square pokes out
+-- of the outline's corners, and it reads the same on a white page and on a tinted card.
 function UI.bar(th, width, height, fraction, fill)
     fraction = math.max(0, math.min(1, fraction))
     local filled = math.floor(width * fraction)
-    local row = HorizontalGroup:new{}
-    if filled > 0 then table.insert(row, UI.block(filled, height, fill)) end
-    table.insert(row, UI.block(width - filled, height, th.free))
-    return UI.rounded(th, row, math.floor(height / 2))
+    local row = HorizontalGroup:new{ align = "top", VerticalSpan:new{ width = height } }
+    if filled > 0 then table.insert(row, UI.block(filled, height, fill, math.floor(height / 2))) end
+    table.insert(row, HorizontalSpan:new{ width = width - filled })
+    local border = Size.border.default
+    return FrameContainer:new{
+        bordersize = border, color = th.ink, radius = math.floor((height + 2 * border) / 2), margin = 0, padding = 0, background = th.white, row,
+    }
 end
 
 -- Wraps a widget so a tap (and optionally a hold) on it calls back.
@@ -297,7 +351,7 @@ function UI.pagerGeometry(width, cell)
     return { h = sp(44), cell_w = cell_w, centre_w = width - 4 * cell_w }
 end
 
--- opts.cell_w: the width of an arrow. opts.hide_label: leave the middle (the "Page 1 of 3") empty, for the floating bar to be drawn there.
+-- opts.cell_w: the width of an arrow.
 function UI.pager(th, width, page, pages, on_page, opts)
     local geo = UI.pagerGeometry(width, opts and opts.cell_w)
     local h, cell_w = geo.h, geo.cell_w
@@ -314,8 +368,7 @@ function UI.pager(th, width, page, pages, on_page, opts)
         cell("‹", page > 1 and page - 1 or nil),
         CenterContainer:new{
             dimen = Geom:new{ w = geo.centre_w, h = h },
-            (opts and opts.hide_label) and HorizontalSpan:new{ width = 0 }
-                or UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
+            UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
         },
         cell("›", page < pages and page + 1 or nil),
         cell("»", page < pages and pages or nil),

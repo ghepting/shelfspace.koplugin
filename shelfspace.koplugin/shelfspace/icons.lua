@@ -190,9 +190,24 @@ end
 -- in `color`, on a transparent ground (the box behind it is a native frame, so its rounded corners stay clean).
 function Icons.tickSvg(kind, color)
     local stroke = string.format('fill="none" stroke="#%s" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"', color)
-    local d = kind == "dash" and "M13 24 H35" or "M11 25 L21 35 L37 14"
+    local d = ({ dash = "M13 24 H35", cross = "M14 14 L34 34 M34 14 L14 34" })[kind] or "M11 25 L21 35 L37 14"
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
         .. 'viewBox="0 0 48 48">' .. string.format('<path d="%s" %s/>', d, stroke) .. "</svg>"
+end
+
+-- A disc of `color` with a white tick in it: the mark for something finished.
+function Icons.doneSvg(color)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">'
+        .. string.format('<circle cx="24" cy="24" r="24" fill="#%s"/>', color)
+        .. '<path d="M13 25 L21 33 L35 16" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+end
+
+-- A radio button: a white disc in a ring of `ink`, with a disc of `dot` inside when it is the one chosen. `stroke` is the ring's width in
+-- the 48 x 48 drawing, so it comes out as thick as a checkbox's border at the size it is shown.
+function Icons.radioSvg(ink, dot, stroke)
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">'
+        .. string.format('<circle cx="24" cy="24" r="%s" fill="#ffffff" stroke="#%s" stroke-width="%s"/>', 24 - stroke / 2, ink, stroke)
+        .. (dot and string.format('<circle cx="24" cy="24" r="%s" fill="#%s"/>', 13.5, dot) or "") .. "</svg>"
 end
 
 -- A folder with an arrow up out of it: the way to the parent folder. Transparent ground, one even stroke.
@@ -284,6 +299,23 @@ function Icons.tickWidget(kind, size, ink)
     local hex = hexOf(ink)
     local path = string.format("%s/cache/shelfspace/%s-%s.svg", DataStorage:getDataDir(), kind, hex)
     if not store(path, Icons.tickSvg(kind, hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
+end
+
+-- The finished mark, `size` pixels across, in the colour `color`; nil if it can't be produced.
+function Icons.doneWidget(size, color)
+    local hex = hexOf(color)
+    local path = string.format("%s/cache/shelfspace/done-%s.svg", DataStorage:getDataDir(), hex)
+    if not store(path, Icons.doneSvg(hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
+end
+
+-- A radio button `size` pixels across with a `border` pixel ring in `ink`, and a disc of `dot` (a Blitbuffer colour, or nil for none).
+function Icons.radioWidget(size, border, ink, dot)
+    local ink_hex, dot_hex = hexOf(ink), dot and hexOf(dot) or nil
+    local stroke = math.max(2, math.floor(border * 48 / size * 10 + 0.5) / 10)
+    local path = string.format("%s/cache/shelfspace/radio-%s-%s-%s.svg", DataStorage:getDataDir(), ink_hex, dot_hex or "none", tostring(stroke))
+    if not store(path, Icons.radioSvg(ink_hex, dot_hex, stroke)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size, alpha = true }
 end
 

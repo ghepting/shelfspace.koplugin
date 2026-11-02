@@ -14,7 +14,7 @@ local Theme = {}
 -- cannot touch (Other files), so it is the one chart colour with no hue.
 Theme.PALETTE = {
     indigo = "#3B2FD1", teal = "#00796B", green = "#34A853", gray = "#BBBBBB", red = "#D32F2F",
-    magenta = "#C2185B", orange = "#B35C00", purple = "#6A2C91", slate = "#6B6B6B", cyan = "#00698F", olive = "#6F6100", clear = "#FFDAD6",
+    magenta = "#C2185B", keep = "#1E7D3A", orange = "#B35C00", purple = "#6A2C91", slate = "#6B6B6B", cyan = "#00698F", olive = "#6F6100", clear = "#FFDAD6",
     -- Pale fills behind a row, under black text (16:1 or better). A colour e-ink screen washes them nearly to white, so a
     -- row never depends on its tint: the label and the size say everything.
     tint_indigo = "#E0DEFF", tint_teal = "#D3F2EC", tint_gray = "#E6E6E6", tint_green = "#DDF5DF", tint_magenta = "#FBD9E8",
@@ -38,6 +38,7 @@ function Theme.get()
         -- what a legend row sits on; white on a gray screen, where a rule between rows does the separating
         tint_books = Blitbuffer.COLOR_WHITE, tint_koreader = Blitbuffer.COLOR_WHITE, tint_other = Blitbuffer.COLOR_WHITE,
         tint_free = Blitbuffer.COLOR_WHITE, tint_duplicates = Blitbuffer.COLOR_WHITE,
+        keep = Blitbuffer.COLOR_BLACK, tint_keep = Blitbuffer.COLOR_WHITE, suggest = Blitbuffer.COLOR_BLACK,
         -- the page's title band: white with a rule on a gray screen, indigo on a colour one; and whether rows are tinted
         band = Blitbuffer.COLOR_WHITE, on_band = Blitbuffer.COLOR_BLACK, tinted = false,
         -- the row of each kind of file: its fill, and the colour of the letters on its tile
@@ -56,6 +57,8 @@ function Theme.get()
     th.duplicates = hex("magenta")
     th.tint_books, th.tint_koreader, th.tint_other = hex("tint_indigo"), hex("tint_teal"), hex("tint_gray")
     th.tint_free, th.tint_duplicates = hex("tint_green"), hex("tint_magenta")
+    -- The copy that stays is green and the ones that go are the magenta-red, wherever a set of copies is shown.
+    th.keep, th.tint_keep, th.suggest = hex("keep"), hex("tint_green"), hex("purple")
     th.book, th.document, th.fixed, th.comic, th.image = hex("indigo"), hex("cyan"), hex("orange"), hex("purple"), hex("olive")
     th.folder = hex("slate") -- teal means KOReader's data and indigo means books, so a folder is neither
     th.band, th.on_band, th.tinted = hex("indigo"), th.white, true
