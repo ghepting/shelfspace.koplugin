@@ -50,7 +50,9 @@ function Theme.get()
     local function hex(name) return Blitbuffer.colorFromString(Theme.PALETTE[name]) end
     th.accent, th.brand, th.books = hex("indigo"), hex("indigo"), hex("indigo")
     th.koreader_tile, th.koreader, th.folder = hex("teal"), hex("teal"), hex("teal")
-    th.other, th.free_space, th.danger, th.clear = hex("gray"), hex("green"), hex("red"), hex("clear")
+    th.other, th.free_space, th.clear = hex("gray"), hex("green"), hex("tint_magenta")
+    -- What clears or deletes is the same magenta-red as the Duplicates tab, so a destructive button never looks like a different app.
+    th.danger = hex("magenta")
     th.duplicates = hex("magenta")
     th.tint_books, th.tint_koreader, th.tint_other = hex("tint_indigo"), hex("tint_teal"), hex("tint_gray")
     th.tint_free, th.tint_duplicates = hex("tint_green"), hex("tint_magenta")

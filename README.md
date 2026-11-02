@@ -73,7 +73,7 @@ Shown with a count when a book is in the library more than once. It opens on how
 - **Same file** means identical bytes. **Same book** means the same name in another format, or with a "(1)" on the end. Spellings and capitals do not matter, so `Dune.epub`, `dune.KEPUB.EPUB` and `DUNE.fb2.zip` are one book.
 - Open a set to compare its copies side by side: file name, size, how far through you are, when it was added, where it is, and tags for what sets one apart (newest, smallest, an older format).
 - The copy to keep has a heavy outline and a filled radio, and says why. The book you are reading, or the copy you have read most, never goes. After that: the format that reads best on e-ink (EPUB, then MOBI, then reflowable formats, then fixed layouts such as PDF), then the copy nearest the top of the library, then the newest. Tap another copy to keep that one instead.
-- A sentence above the buttons says exactly what **Clear** will do, and the confirmation names what it keeps and what it clears. **Keep all** leaves the set alone from then on; those are under **Kept on purpose** in the menu.
+- A sentence above the copies says exactly what clearing will do, and the confirmation names what it keeps and what it clears. The buttons float in the bar over the bottom of the page, as everywhere else: **Clear** the copies, or **Keep all**, which leaves the set alone from then on (those are under **Kept on purpose** in the menu). A copy answers a tap anywhere on its card.
 
 It is one book at a time on purpose, so every deletion is something you have looked at.
 

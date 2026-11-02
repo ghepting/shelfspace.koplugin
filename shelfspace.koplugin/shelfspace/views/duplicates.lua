@@ -274,28 +274,25 @@ return function(screen, th, width, layout)
             VerticalSpan:new{ width = (h or row_h) - row:getSize().h },
         }
     end
-    -- What the button will do, in a sentence above it, so it never surprises you.
+    -- What the buttons will do, in a sentence above the list, so it never surprises you. The buttons themselves are the bar over the
+    -- pager row, as on the other tabs.
     local free = Duplicates.savings(set, keep)
     local clears = #set.copies - 1
     local box_pad = sp(10)
-    local inner = width - 2 * (box_pad + Size.border.thick)
-    local keep_w = math.floor(inner * 0.32)
-    local actions = HorizontalGroup:new{
-        align = "center",
-        set.ignored
-            and UI.button(th, { text = _("Stop ignoring"), size = 15, width = keep_w, callback = function() plugin:stopIgnoring(set) end })
-            or UI.button(th, { text = _("Keep all"), size = 15, width = keep_w, callback = function() plugin:keepAll(set) end }),
-        HorizontalSpan:new{ width = gap },
-        UI.button(th, {
-            text = T(N_("Clear %1 copy", "Clear %1 copies", clears), clears), size = 15, width = inner - keep_w - gap,
-            background = th.danger, color = th.white, callback = function() plugin:confirmClearCopies(set, keep) end,
-        }),
-    }
     local sentence = T(N_("Keeps %1 · clears %2 copy · frees %3", "Keeps %1 · clears %2 copies · frees %3", clears),
         set.copies[keep].name, clears, util.getFriendlySize(free))
     local summary = FrameContainer:new{
-        bordersize = Size.border.thick, color = th.ink, radius = sp(12), margin = 0, padding = box_pad, width = width, background = th.white,
-        VerticalGroup:new{ align = "left", UI.text(sentence, 14, { color = th.ink, max_width = inner }), VerticalSpan:new{ width = sp(8) }, actions },
+        bordersize = th.tinted and 0 or Size.border.thick, color = th.ink, radius = sp(12), margin = 0, padding = box_pad, width = width,
+        background = th.tint_duplicates,
+        UI.text(sentence, 14, { color = th.ink, max_width = width - 2 * (box_pad + Size.border.thick) }),
+    }
+    local bar = {
+        labels = { T(_("frees %1"), util.getFriendlySize(free)), "" },
+        buttons = {
+            set.ignored and { text = _("Stop ignoring"), callback = function() plugin:stopIgnoring(set) end }
+                or { text = _("Keep all"), callback = function() plugin:keepAll(set) end },
+            { text = T(N_("Clear %1 copy", "Clear %1 copies", clears), clears), danger = true, callback = function() plugin:confirmClearCopies(set, keep) end },
+        },
     }
     return {
         hero = hero,
@@ -312,6 +309,6 @@ return function(screen, th, width, layout)
             summary,
             VerticalSpan:new{ width = sp(8) },
         },
-        count = #set.copies, row_h = row_h, build = build, fixed_rows = true,
+        count = #set.copies, row_h = row_h, build = build, fixed_rows = true, bar = bar,
     }
 end

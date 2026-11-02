@@ -135,7 +135,7 @@ function ShelfScreen:buildActionBar()
             { text = _("Cancel"), callback = function() self:clearSelection() end },
             { text = _("Delete"), danger = true, callback = function() self.plugin:confirmDeleteMany(chosen) end },
         }
-    elseif self.tab == "koreader" and self.view_bar then
+    elseif (self.tab == "koreader" or self.tab == "duplicates") and self.view_bar then
         count, bytes, buttons = self.view_bar.count, self.view_bar.bytes, self.view_bar.buttons
     else
         return
@@ -592,7 +592,7 @@ function ShelfScreen:rebuild()
         table.insert(col, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap + slack })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
         table.insert(col, UI.pager(th, main_w, page, pages, function(n) self:setPage(n) end,
-            { cell_w = cell, hide_label = (self.tab == "library" and next(self.selected) ~= nil) or (self.tab == "koreader" and self.view_bar ~= nil) }))
+            { cell_w = cell, hide_label = (self.tab == "library" and next(self.selected) ~= nil) or ((self.tab == "koreader" or self.tab == "duplicates") and self.view_bar ~= nil) }))
     else
         self.page_count = 1
         if view.message then

@@ -224,9 +224,11 @@ function UI.floatingBar(th, label, buttons, opts)
         table.insert(row, button)
         table.insert(hits, { widget = button, callback = b.callback })
     end
+    -- Its corners are the buttons' corners grown by the padding around them, so the buttons sit in it with the same curve.
+    local pad = compact and sp(3) or sp(10)
     local bar = FrameContainer:new{
-        bordersize = 0, margin = 0, radius = sp(compact and 22 or 26), background = th.ink,
-        padding = compact and sp(3) or sp(10), padding_left = compact and sp(16) or sp(20), padding_right = compact and sp(9) or sp(12),
+        bordersize = 0, margin = 0, radius = Size.radius.button + pad, background = th.ink,
+        padding = pad, padding_left = compact and sp(16) or sp(20), padding_right = compact and sp(9) or sp(12),
         row,
     }
     return bar, hits
@@ -247,7 +249,8 @@ local tappables = 0
 
 function UI.tappable(widget, on_tap, on_hold)
     local size = widget:getSize()
-    local c = InputContainer:new{ dimen = Geom:new{ w = size.w, h = size.h }, widget }
+    -- A frame given a `width` is drawn that wide, but reports only the size of what is in it: the tap area is the width it is drawn at.
+    local c = InputContainer:new{ dimen = Geom:new{ w = math.max(size.w, widget.width or 0), h = size.h }, widget }
     -- Event names are unique per tappable: events travel down to child widgets, so a
     -- button inside a tappable row would otherwise answer the row's tap with its own.
     tappables = tappables + 1
