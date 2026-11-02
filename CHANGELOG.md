@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.2...v0.11.0) (2026-11-02)
+
+
+### Features
+
+* a landscape layout, with the chart or summary in a column beside the list, and landscape sizes in the size check ([#88](https://github.com/ghepting/shelfspace.koplugin/issues/88)) ([dd0e7b8](https://github.com/ghepting/shelfspace.koplugin/commit/dd0e7b859201716e0b5d70578ed2ebd4df6ec2b2))
+
 ## [0.10.2](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.1...v0.10.2) (2026-11-01)
 
 
