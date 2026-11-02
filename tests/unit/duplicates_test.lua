@@ -205,4 +205,25 @@ T.test("every fixed-layout format is tagged as one, in any case", function()
     T.eq(tagIds(set, 4, {}), "fixed_layout")
 end)
 
+print("empty files")
+
+T.test("a set of only empty files is not listed, since there is nothing to choose between", function()
+    local sets = Duplicates.find({ file("/lib/Empty Book.epub", 0), file("/lib/Mixed/Empty Book.epub", 0) }, sameWhen({}))
+    T.eq(#sets, 0)
+end)
+
+T.test("an empty copy is never the one to keep, even when it is the newest and nearest the top", function()
+    local empty = file("/lib/Dune.epub", 0, 900)
+    local real = file("/lib/Sci-Fi/Dune.epub", 3000, 100)
+    local i, why = suggest({ empty, real }, {})
+    T.eq(i, 2)
+    T.eq(why, "content")
+end)
+
+T.test("the empty copy is tagged, and it is not called the smallest", function()
+    local set = { copies = { file("/lib/Dune.epub", 3000, 1), file("/lib/A/Dune.epub", 0, 1), file("/lib/B/Dune.epub", 5000, 1) } }
+    T.eq(tagIds(set, 2, {}), "empty")
+    T.eq(tagIds(set, 1, {}), "suggested,smallest")
+end)
+
 T.done()

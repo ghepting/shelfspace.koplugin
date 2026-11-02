@@ -183,24 +183,17 @@ return function(screen, th, width, layout)
     -- another; the book you are reading is always kept.
     local keep = screen:keeper(set)
     local locked = info(set.copies[keep]).locked
-    local kind_chip = UI.chip(th, kindText(set))
-    local count_text = UI.text(T(N_("%1 copy", "%1 copies", #set.copies), #set.copies) .. (set.ignored and _(" · kept on purpose") or ""), 14, { color = th.muted })
+    -- The title over a muted line of facts, as the other tabs' headings are.
+    local sub = T(N_("%1 copy", "%1 copies", #set.copies), #set.copies) .. " · " .. kindText(set):lower() .. (set.ignored and _(" · kept on purpose") or "")
     local hero
     if layout and layout.landscape then
-        -- In a column of its own the title has the whole width and the facts sit under it.
-        hero = VerticalGroup:new{
-            align = "left",
-            UI.text(set.title, 26, { face = "tfont", color = th.ink, max_width = hero_w }),
-            VerticalSpan:new{ width = sp(4) },
-            HorizontalGroup:new{ align = "center", kind_chip, HorizontalSpan:new{ width = sp(8) }, count_text },
-        }
+        -- In a column of its own the title has the whole width; Back is in the column of copies.
+        hero = UI.stack(UI.text(set.title, 26, { face = "tfont", color = th.ink, max_width = hero_w }),
+            UI.text(sub, 15, { color = th.muted, max_width = hero_w }))
     else
-        -- Upright, the title and what it is take one line, so there is room for more copies below.
-        -- Back goes at the left of the title, so it costs no row of its own.
+        -- Upright, Back goes at the left of the title, so it costs no row of its own.
         local back_btn = UI.button(th, { text = _("‹ Back"), size = 15, callback = function() screen:closeSet() end })
-        -- The title over a muted line of facts, as the other tabs' headings are.
         local text_w = hero_w - back_btn:getSize().w - sp(12)
-        local sub = T(N_("%1 copy", "%1 copies", #set.copies), #set.copies) .. " · " .. kindText(set):lower() .. (set.ignored and _(" · kept on purpose") or "")
         hero = HorizontalGroup:new{
             align = "center",
             back_btn, HorizontalSpan:new{ width = sp(12) },
@@ -215,7 +208,7 @@ return function(screen, th, width, layout)
 
     local tag_text = {
         suggested = _("Suggested"), fixed_layout = _("Fixed layout"), older_format = _("Older format"),
-        newest = _("Newest"), smallest = _("Smallest"),
+        newest = _("Newest"), smallest = _("Smallest"), empty = _("Empty"),
     }
     -- A copy is a row like the KOReader tab's: its name over its facts at the left, its size and its radio button at the right, all centred
     -- in the row, with the file's type tile in front. The copy that stays is tinted green and the ones that go the magenta-red.
@@ -238,7 +231,7 @@ return function(screen, th, width, layout)
         local tag_chips = {}
         for _n, tag in ipairs(Duplicates.tags(set, i, function(c) return plugin:copyInfo(c) end)) do
             local text = tag.id == "most_read" and T(_("Most read %1%"), tag.percent) or tag_text[tag.id]
-            table.insert(tag_chips, UI.chip(th, text, { fill = tag.id == "suggested" and th.suggest or th.accent, size = 12, pad_v = sp(1) }))
+            table.insert(tag_chips, UI.chip(th, text, { fill = (tag.id == "suggested" and th.suggest) or (tag.id == "empty" and th.danger) or th.accent, size = 12, pad_v = sp(1) }))
         end
         local function tags_w(n)
             local w = 0
