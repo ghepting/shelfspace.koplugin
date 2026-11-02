@@ -147,6 +147,20 @@ T.test("the checkbox marks are one even round stroke in the colour asked for, on
     assert(tick ~= dash)
 end)
 
+T.test("the cross is two straight strokes in the colour asked for, drawn like the tick, not a font glyph", function()
+    local cross = Icons.tickSvg("cross", "ffffff")
+    assert(cross:find('stroke="#ffffff"', 1, true) and cross:find('stroke-linecap="round"', 1, true))
+    assert(cross:find("M14 14 L34 34", 1, true) and cross:find("M34 14 L14 34", 1, true), "two diagonals")
+    assert(not cross:find("<text", 1, true))
+end)
+
+T.test("a radio button is a ring on white, with a disc inside only when it is the one chosen", function()
+    local off, on = Icons.radioSvg("000000", nil, 4), Icons.radioSvg("000000", "1e7d3a", 4)
+    assert(off:find('stroke="#000000"', 1, true) and off:find('fill="#ffffff"', 1, true), "a ring on white")
+    assert(not off:find("1e7d3a", 1, true), "an unchosen one has no disc")
+    assert(on:find('fill="#1e7d3a"', 1, true), "the chosen one has a disc")
+end)
+
 T.test("the up icon is a folder with an arrow, in the colour asked for, on a transparent ground", function()
     local svg = Icons.upSvg("2a363b")
     assert(svg:find('stroke="#2a363b"', 1, true), "not in the colour asked for")

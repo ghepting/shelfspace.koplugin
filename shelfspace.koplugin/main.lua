@@ -240,7 +240,7 @@ function ShelfSpace:stopIgnoring(set)
     if self.screen and not self.screen.closed then self.screen:showActiveDuplicates() end
 end
 
--- Asks, then clears every copy of `set` except the one at `keep`.
+-- Asks, then deletes every copy of `set` except the one at `keep`.
 function ShelfSpace:confirmClearCopies(set, keep)
     local items, names, size, sidecars = {}, {}, 0, 0
     for i, copy in ipairs(set.copies) do
@@ -254,9 +254,9 @@ function ShelfSpace:confirmClearCopies(set, keep)
     if #items == 0 then return end
     if #items > 4 then table.insert(names, T(_("and %1 more"), #items - 4)) end
     local lines = {
-        T(N_("Clear %1 copy of %2?", "Clear %1 copies of %2?", #items), #items, set.title),
+        T(N_("Delete %1 copy of %2?", "Delete %1 copies of %2?", #items), #items, set.title),
         _("KEEPS") .. "\n" .. set.copies[keep].path:sub(#self.root + 2),
-        _("CLEARS") .. "\n" .. table.concat(names, "\n"),
+        _("DELETES") .. "\n" .. table.concat(names, "\n"),
         T(_("Frees %1."), util.getFriendlySize(size)),
     }
     if sidecars > 0 then
@@ -267,7 +267,7 @@ function ShelfSpace:confirmClearCopies(set, keep)
     self:showDialog(function()
         return ConfirmBox:new {
             text = table.concat(lines, "\n\n"),
-            ok_text = _("Clear"),
+            ok_text = _("Delete"),
             ok_callback = function()
                 self:deleteMany(items, function()
                     -- Whatever you decided about this set is done with: a later duplicate of the book is a new question.
