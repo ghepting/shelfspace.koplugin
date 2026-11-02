@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.12.0...v0.12.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* never offer an empty file as the copy to keep, and match the landscape set heading to portrait ([#94](https://github.com/ghepting/shelfspace.koplugin/issues/94)) ([d2ed72a](https://github.com/ghepting/shelfspace.koplugin/commit/d2ed72a82d1d74fa8a1ace055715439413480dc7))
+
 ## [0.12.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.11.1...v0.12.0) (2026-11-02)
 
 
