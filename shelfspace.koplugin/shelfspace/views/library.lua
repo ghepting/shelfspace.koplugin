@@ -214,36 +214,34 @@ return function(screen, th, width, layout)
     if screen.only_books then add_chip(_("Books"), function() screen:toggleBooks() end) end
     if screen.filter then add_chip(screen.filter:upper(), function() screen:toggleFilter(screen.filter) end) end
     if status then add_chip(Search.status(status).short, function() screen:setStatus(nil) end) end
-    -- The line under the controls: where you are and the way back up, or how many there are.
+    -- The line under the controls: where you are or what is narrowing the list on the left, and how many there are on the right,
+    -- ending where the boxes below do. The count is always in the same place, whatever is on the left. (Inside a folder the way
+    -- back up is the first row of the list.)
     local up_row = parent and not screen.only_books
-    local count_text
     local count = #entries
     local noun = flat and (screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count))
         or N_("item", "items", count)
-    if not up_row and #entries > 0 then
-        count_text = UI.text(T(_("%1 · %2 %3"), name, count, noun), 15, { color = th.muted, max_width = width })
-    end
+    local count_text = UI.text(T(_("%1 %2"), count, noun), 15, { color = th.muted, max_width = width - 2 * gap })
+    local left
     if #chips > 0 then
-        -- The count goes on the chips' own line, at the right (ending where the boxes below do), when there is room for both.
-        local chips_size = chips:getSize()
-        if count_text and chips_size.w + gap + count_text:getSize().w <= width - gap then
-            table.insert(header, HorizontalGroup:new{
-                align = "center",
-                chips,
-                RightContainer:new{ dimen = Geom:new{ w = width - chips_size.w - gap, h = chips_size.h }, count_text },
-                HorizontalSpan:new{ width = gap },
-            })
-            count_text = nil
-        else
-            table.insert(header, chips)
-            table.insert(header, VerticalSpan:new{ width = sp(6) })
-        end
+        left = chips
+    else
+        local place = up_row and T(_("Library / %1"), dir:sub(#root + 2)) or name
+        left = UI.text(place, 15, { color = th.muted, max_width = width - count_text:getSize().w - 3 * gap })
     end
-    if up_row then
-        -- Where you are, with how many; the way back up is the first row of the list.
-        table.insert(header, UI.text(T(_("Library / %1 · %2 %3"), dir:sub(#root + 2), count, noun), 15, { color = th.muted, max_width = width }))
-    elseif count_text then
-        table.insert(header, count_text)
+    local left_size = left:getSize()
+    if left_size.w + count_text:getSize().w + 2 * gap <= width then
+        table.insert(header, HorizontalGroup:new{
+            align = "center",
+            left,
+            RightContainer:new{ dimen = Geom:new{ w = width - left_size.w - gap, h = math.max(left_size.h, count_text:getSize().h) }, count_text },
+            HorizontalSpan:new{ width = gap },
+        })
+    else
+        -- No room for both on a line: the left on its own, then the count at the right.
+        table.insert(header, left)
+        table.insert(header, VerticalSpan:new{ width = sp(6) })
+        table.insert(header, RightContainer:new{ dimen = Geom:new{ w = width - gap, h = count_text:getSize().h }, count_text })
     end
     table.insert(header, VerticalSpan:new{ width = sp(8) })
 

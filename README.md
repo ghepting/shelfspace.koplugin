@@ -47,7 +47,7 @@ Three tabs: **Library**, **KOReader**, and **Duplicates**, which only appears wh
 
 ### Library
 
-At the top, the chart and its legend: books, KOReader's data, other files and free space. The legend is also the controls. Tap **Books** to list every book in the library, wherever it is, or **KOReader** to open that tab. The info icon on **Other** explains what that space is and why it is left alone.
+At the top, the chart and its legend: books, KOReader's data, other files and free space. They only show where the space went. The info icon after **Other** explains what that space is and why it is left alone.
 
 Under it, your files, largest first. Each row has a tile for its type, a colour for its kind, how far through a book you are, its size, and a checkbox.
 

@@ -39,6 +39,10 @@ function Driver:init()
         { function() shot("duplicates-set") end, 1 },
         { function() S():closeSet() S():switchTab("library") for _, e in ipairs(P.tree[P.root].entries) do if e.name == "Comics" then S():toggle(e) end end end, 2 },
         { function() shot("library-selected") end, 1 },
+        { function() S():clearSelection() S():setDir(P.root .. "/Comics") end, 2 },
+        { function() shot("library-folder") end, 1 },
+        { function() S():setDir(P.root) S():toggleFilter("epub") end, 2 },
+        { function() shot("library-filtered") end, 1 },
         { function() logger.info("sizedriver: done, " .. failed .. " failed") UIManager:quit() end, 0 },
     }
     local i = 0
