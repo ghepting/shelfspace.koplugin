@@ -19,7 +19,7 @@ local sp = UI.sp
 -- Where the device's storage went, at the top of the Library: the donut on the left and, beside it, a row for each of
 -- books, KOReader data, other files and free space. The rows are the chart's legend and its controls: Books narrows the list
 -- below to every book, KOReader opens its tab, Other explains itself; Free has nothing to open. Tapping a slice does the same.
-return function(screen, th, width)
+return function(screen, th, width, layout)
     local plugin = screen.plugin
     local u = plugin.usage
     local b = plugin.tree and plugin:breakdown(u) or nil
@@ -53,10 +53,21 @@ return function(screen, th, width)
         }
     end
 
-    local diameter = math.floor(width * 0.32)
-    local gap = sp(14)
-    local legend_w = width - diameter - gap
-    local row_h = math.floor((diameter - 3 * sp(6)) / 4)
+    -- Beside the list (landscape) there is only a column for it, so the chart sits over its legend; the chart gives way to the
+    -- legend when the column is short.
+    local stacked = layout and layout.landscape
+    local diameter, gap, legend_w, row_h
+    if stacked then
+        gap = sp(14)
+        row_h = sp(44)
+        legend_w = width
+        diameter = math.max(sp(110), math.min(math.floor(width * 0.8), (layout.hero_h or width) - 4 * row_h - 3 * sp(6) - gap))
+    else
+        diameter = math.floor(width * 0.32)
+        gap = sp(14)
+        legend_w = width - diameter - gap
+        row_h = math.floor((diameter - 3 * sp(6)) / 4)
+    end
     local dot = sp(16)
 
     local function legend_row(r)
@@ -118,5 +129,13 @@ return function(screen, th, width)
             },
         },
     }
+    if stacked then
+        return VerticalGroup:new{
+            align = "left",
+            CenterContainer:new{ dimen = Geom:new{ w = width, h = diameter }, chart },
+            VerticalSpan:new{ width = gap },
+            legend,
+        }
+    end
     return HorizontalGroup:new{ align = "center", chart, HorizontalSpan:new{ width = gap }, legend }
 end

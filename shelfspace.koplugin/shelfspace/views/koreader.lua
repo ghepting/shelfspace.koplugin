@@ -22,11 +22,11 @@ local sp = UI.sp
 local ROW_H = sp(62)
 
 -- KOReader's own data: what can be cleared, each with its size and a Clear button.
-return function(screen, th, width)
+return function(screen, th, width, layout)
     local plugin = screen.plugin
     local tree = plugin.tree
     if not tree then
-        return { hero = UI.hero(th, width, {
+        return { hero = UI.hero(th, layout and layout.hero_w or width, {
             color = th.koreader_tile, icon = "koreader", title = _("KOReader"), subtitle = _("Scanning…"),
         }), message = _("Scanning your library…") }
     end
@@ -51,7 +51,8 @@ return function(screen, th, width)
         clearable_total = clearable_total + t.size
     end
 
-    local hero = UI.hero(th, width, {
+    local hero = UI.hero(th, layout and layout.hero_w or width, {
+        wrap = layout and layout.landscape,
         color = th.koreader_tile,
         icon = "koreader",
         title = _("KOReader"),

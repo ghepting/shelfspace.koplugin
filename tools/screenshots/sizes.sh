@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Opens ShelfSpace at the screen sizes of common e-readers and checks that every tab fits, saving a screenshot of each.
 #
-#   tools/screenshots/sizes.sh /path/to/KOReader.app            every portrait size below
+#   tools/screenshots/sizes.sh /path/to/KOReader.app            every size below
 #   tools/screenshots/sizes.sh /path/to/KOReader.app clara      one of them
-#   tools/screenshots/sizes.sh /path/to/KOReader.app landscape  the sideways one (not run by default: the Library has no landscape
-#                                                               layout yet, so it shows one row a page and fails)
 #
 # Each size runs headless (SDL_VIDEODRIVER=dummy) in its own data folder against the sample library. The shots land in
 # <work>/<name>/; a tab that runs off the screen prints FAIL and the script exits 1.
@@ -24,6 +22,8 @@ elipsa 1404 1872 227
 paperwhite 758 1024 212
 basic6 600 800 167
 landscape 1680 1264 300
+landscape-basic6 800 600 167
+landscape-elipsa 1872 1404 227
 "
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/shelfspace-sizes.XXXXXX")"
@@ -32,7 +32,6 @@ status=0
 while read -r name w h dpi; do
     [ -n "$name" ] || continue
     [ -z "$only" ] || [ "$only" = "$name" ] || continue
-    [ "$name" != landscape ] || [ "$only" = landscape ] || continue
     dir="$work/$name"
     mkdir -p "$dir/home/plugins" "$dir/shots"
     "$repo/tools/screenshots/make-library.sh" "$dir" > /dev/null

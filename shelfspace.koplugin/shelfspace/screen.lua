@@ -502,8 +502,12 @@ function ShelfScreen:rebuild()
     local th = self.theme
     local pad = sp(16)
     local width = self.dimen.w - 2 * pad
-    local view = views[self.tab](self, th, width)
-    self.view_bar = view.bar
+    local gap = sp(10)
+    -- Sideways, the screen is wider than it is tall: the chart or summary takes a column of its own, and the controls, the list and
+    -- the pager the rest, so the list gets the full height instead of what a tall hero leaves it.
+    local landscape = self.dimen.w > self.dimen.h
+    local hero_w = landscape and math.floor(width * 0.36) or width
+    local main_w = landscape and (width - hero_w - 2 * gap) or width
 
     local titlebar = header(th, self.dimen.w, function() self:showMenu() end, function() self:onClose() end)
     -- Duplicates is a tab only while there is something to decide; the sets kept on purpose live in the menu.
@@ -512,26 +516,52 @@ function ShelfScreen:rebuild()
     if sets > 0 or self.tab == "duplicates" then
         table.insert(tabs, { id = "duplicates", label = sets > 0 and T(_("Duplicates · %1"), sets) or _("Duplicates") })
     end
-    local gap = sp(10)
-    local body = VerticalGroup:new{
+    local top = VerticalGroup:new{
         align = "left",
         UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end),
         VerticalSpan:new{ width = gap },
-        view.hero,
-        VerticalSpan:new{ width = gap },
     }
+    local layout = {
+        landscape = landscape, hero_w = hero_w,
+        hero_h = self.dimen.h - titlebar:getSize().h - 2 * pad - top:getSize().h,
+    }
+    local view = views[self.tab](self, th, main_w, layout)
+    self.view_bar = view.bar
+
+    -- `body` is the whole page under the title; `col` is where the list goes: the page itself, or the right-hand column.
+    local body, col
+    if landscape then
+        col = VerticalGroup:new{ align = "left" }
+        body = VerticalGroup:new{
+            align = "left", top,
+            HorizontalGroup:new{
+                align = "top",
+                LeftContainer:new{ dimen = Geom:new{ w = hero_w, h = view.hero:getSize().h }, view.hero }, -- as tall as it is, so it sits at the top
+                HorizontalSpan:new{ width = 2 * gap },
+                col,
+            },
+        }
+    else
+        body = top
+        table.insert(body, view.hero)
+        table.insert(body, VerticalSpan:new{ width = gap })
+        body:resetLayout() -- the tab bar was measured for the hero's room before the hero was added
+        col = body
+    end
 
     if view.build then
-        if view.header then table.insert(body, view.header) end
+        if view.header then table.insert(col, view.header) end
         -- A view with a `table_head` draws its rows as a table: a rounded, outlined box holding the head and the rows.
         local frame_w = Size.border.default * 2
         -- A view with `select_all` has a line over its rows that ticks the page; it is built once the page is known, so its height is
         -- measured here on an empty one.
         local probe_all = view.select_all and view.select_all(1, 0)
-        local used = titlebar:getSize().h + 2 * pad + body:getSize().h
+        local above = landscape and (top:getSize().h + col:getSize().h) or col:getSize().h
+        local used = titlebar:getSize().h + 2 * pad + above
             + (view.table_head and view.table_head:getSize().h + frame_w or 0)
             + (probe_all and probe_all:getSize().h or 0)
-        local pager_h = UI.pager(th, width, 1, 1, function() end):getSize().h
+        local cell = landscape and sp(40) or nil -- narrower arrows, so the bar has room beside a list that is not full width
+        local pager_h = UI.pager(th, main_w, 1, 1, function() end, { cell_w = cell }):getSize().h
         -- A little air between the last row and the pager row, which the floating bar fills when something is ticked.
         local pager_gap = sp(6)
         local avail = self.dimen.h - used - pager_h - pager_gap
@@ -547,38 +577,43 @@ function ShelfScreen:rebuild()
         self.page_count = pages
         local first = (page - 1) * per_page + 1
         local last = math.min(view.count, first + per_page - 1)
-        if probe_all then table.insert(body, view.select_all(first, last)) end
-        local rows = body
+        if probe_all then table.insert(col, view.select_all(first, last)) end
+        local rows = col
         if view.table_head then rows = VerticalGroup:new{ align = "left", view.table_head } end
         if view.count == 0 and view.empty then
             table.insert(rows, view.empty(per_page * row_h))
         else
             for i = first, last do table.insert(rows, view.build(i, row_h)) end
         end
-        if view.table_head then table.insert(body, UI.rounded(th, rows, sp(10), Size.border.default)) end
+        if view.table_head then table.insert(col, UI.rounded(th, rows, sp(10), Size.border.default)) end
         local shown = (view.count == 0 and view.empty) and per_page or (last - first + 1) -- the empty state takes the whole page
-        table.insert(body, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap })
+        -- Cards are not stretched, so what is left over goes above the pager row, which stays at the bottom.
+        local slack = view.fixed_rows and math.max(0, avail - per_page * row_h) or 0
+        table.insert(col, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap + slack })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
-        table.insert(body, UI.pager(th, width, page, pages, function(n) self:setPage(n) end,
-            { hide_label = (self.tab == "library" and next(self.selected) ~= nil) or (self.tab == "koreader" and self.view_bar ~= nil) }))
+        table.insert(col, UI.pager(th, main_w, page, pages, function(n) self:setPage(n) end,
+            { cell_w = cell, hide_label = (self.tab == "library" and next(self.selected) ~= nil) or (self.tab == "koreader" and self.view_bar ~= nil) }))
     else
         self.page_count = 1
         if view.message then
-            table.insert(body, UI.text(view.message, 20, { color = th.muted }))
+            table.insert(col, UI.text(view.message, 20, { color = th.muted }))
         else
-            table.insert(body, view.body)
+            table.insert(col, view.body)
         end
         if view.bottom then
-            table.insert(body, VerticalSpan:new{ width = sp(14) })
-            table.insert(body, view.bottom)
+            table.insert(col, VerticalSpan:new{ width = sp(14) })
+            table.insert(col, view.bottom)
         end
     end
 
     -- Where the floating bar goes: the middle of the pager row, between its arrows; a tab with no pager gives it the whole row.
-    local geo = UI.pagerGeometry(width)
-    self.bar_slot = { x = pad + 2 * geo.cell_w, y = self.dimen.h - pad - geo.h, w = geo.centre_w, h = geo.h }
-    if not view.build then self.bar_slot.x, self.bar_slot.w = pad, width end
-    body:resetLayout() -- getSize() above cached the group's height before the rows were added
+    local geo = UI.pagerGeometry(main_w, landscape and sp(40) or nil)
+    local left = pad + (landscape and (hero_w + 2 * gap) or 0)
+    self.bar_slot = { x = left + 2 * geo.cell_w, y = self.dimen.h - pad - geo.h, w = geo.centre_w, h = geo.h }
+    if not view.build then self.bar_slot.x, self.bar_slot.w = left, main_w end
+    -- getSize() above cached the groups' heights before the rows were added
+    col:resetLayout()
+    body:resetLayout()
     self[1] = FrameContainer:new{
         bordersize = 0, padding = 0, margin = 0, background = th.bg,
         width = self.dimen.w, height = self.dimen.h,

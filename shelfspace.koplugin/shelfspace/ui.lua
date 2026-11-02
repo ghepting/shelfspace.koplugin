@@ -288,14 +288,15 @@ end
 
 -- « ‹ Page 1 of 3 › » ; on_page(n) is called with the page to show.
 -- The pager row's measures: its height, the width of each arrow, and the width of what is between the arrows.
-function UI.pagerGeometry(width)
-    local cell_w = sp(56)
+-- `cell` narrows the arrows, to leave the middle more room when the page is not wide.
+function UI.pagerGeometry(width, cell)
+    local cell_w = cell or sp(56)
     return { h = sp(44), cell_w = cell_w, centre_w = width - 4 * cell_w }
 end
 
--- opts.hide_label: leave the middle (the "Page 1 of 3") empty, for the floating bar to be drawn there.
+-- opts.cell_w: the width of an arrow. opts.hide_label: leave the middle (the "Page 1 of 3") empty, for the floating bar to be drawn there.
 function UI.pager(th, width, page, pages, on_page, opts)
-    local geo = UI.pagerGeometry(width)
+    local geo = UI.pagerGeometry(width, opts and opts.cell_w)
     local h, cell_w = geo.h, geo.cell_w
     local function cell(label, target)
         local c = CenterContainer:new{
@@ -336,20 +337,41 @@ function UI.hero(th, width, spec)
         for _, chip in ipairs(spec.chips) do
             if type(chip) == "table" and chip.pinned then pinned = make(chip) else rest[#rest + 1] = chip end
         end
-        local reserved = pinned and (pinned:getSize().w + sp(6)) or 0
-        for i, chip in ipairs(rest) do
-            -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
-            local widget = make(chip)
-            local w = widget:getSize().w + (i > 1 and sp(6) or 0)
-            -- On a narrow screen, chips that would run off the edge are left out.
-            if used + w + reserved > info_w and i > 1 then break end
-            if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
-            table.insert(chips, widget)
-            used = used + w
-        end
-        if pinned then
-            if #chips > 0 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
-            table.insert(chips, pinned)
+        if spec.wrap then
+            -- In a column of its own the chips do not fit on one line, so they run on to the next rather than being left out.
+            local lines, line, used = VerticalGroup:new{ align = "left" }, HorizontalGroup:new{}, 0
+            local all = {}
+            for _, chip in ipairs(rest) do all[#all + 1] = make(chip) end
+            if pinned then all[#all + 1] = pinned end
+            for _, widget in ipairs(all) do
+                local w = widget:getSize().w
+                if used > 0 and used + sp(6) + w > info_w then
+                    table.insert(lines, line)
+                    table.insert(lines, VerticalSpan:new{ width = sp(4) })
+                    line, used = HorizontalGroup:new{}, 0
+                end
+                if used > 0 then table.insert(line, HorizontalSpan:new{ width = sp(6) }) used = used + sp(6) end
+                table.insert(line, widget)
+                used = used + w
+            end
+            table.insert(lines, line)
+            chips = lines
+        else
+            local reserved = pinned and (pinned:getSize().w + sp(6)) or 0
+            for i, chip in ipairs(rest) do
+                -- A chip is a plain string, or { text, active, on_tap } when it is a switch.
+                local widget = make(chip)
+                local w = widget:getSize().w + (i > 1 and sp(6) or 0)
+                -- On a narrow screen, chips that would run off the edge are left out.
+                if used + w + reserved > info_w and i > 1 then break end
+                if i > 1 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
+                table.insert(chips, widget)
+                used = used + w
+            end
+            if pinned then
+                if #chips > 0 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
+                table.insert(chips, pinned)
+            end
         end
         table.insert(info, VerticalSpan:new{ width = sp(6) })
         table.insert(info, chips)
@@ -360,7 +382,7 @@ function UI.hero(th, width, spec)
         + UI.text("Ag", 18):getSize().h
         + sp(6) + UI.chip(th, "Ag"):getSize().h
     return LeftContainer:new{
-        dimen = Geom:new{ w = width, h = math.max(icon_size, full) },
+        dimen = Geom:new{ w = width, h = math.max(icon_size, full, spec.wrap and info:getSize().h or 0) },
         HorizontalGroup:new{ align = "center", cover, HorizontalSpan:new{ width = gap }, info },
     }
 end

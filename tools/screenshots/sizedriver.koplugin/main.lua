@@ -35,6 +35,10 @@ function Driver:init()
         { function() shot("koreader-selected") end, 1 },
         { function() S():switchTab("duplicates") end, 2 },
         { function() shot("duplicates") end, 1 },
+        { function() S():openSet(P.duplicates[1].id) end, 2 },
+        { function() shot("duplicates-set") end, 1 },
+        { function() S():closeSet() S():switchTab("library") for _, e in ipairs(P.tree[P.root].entries) do if e.name == "Comics" then S():toggle(e) end end end, 2 },
+        { function() shot("library-selected") end, 1 },
         { function() logger.info("sizedriver: done, " .. failed .. " failed") UIManager:quit() end, 0 },
     }
     local i = 0
