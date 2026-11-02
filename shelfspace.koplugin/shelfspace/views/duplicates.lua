@@ -45,9 +45,10 @@ local function whereIs(plugin, copy)
 end
 
 -- The duplicates list, and, once a set is picked, that set's copies to choose between.
-return function(screen, th, width)
+return function(screen, th, width, layout)
     local plugin = screen.plugin
     local gap = sp(10)
+    local hero_w = layout and layout.hero_w or width
 
     -- A set that was picked but is gone (cleared, or moved between the lists) sends you back to the list.
     local set = screen:currentSet()
@@ -63,20 +64,27 @@ return function(screen, th, width)
         -- What the whole tab could free, as the first thing on it.
         local summary
         if ignored_mode then
-            summary = UI.text(T(N_("%1 book kept as it is", "%1 books kept as they are", #sets), #sets), 18, { bold = true, color = th.ink, max_width = width - 2 * gap })
+            summary = UI.text(T(N_("%1 book kept as it is", "%1 books kept as they are", #sets), #sets), 18, { bold = true, color = th.ink, max_width = hero_w - 2 * gap })
         elseif #sets == 0 then
-            summary = UI.text(_("Nothing is on the shelf twice"), 18, { bold = true, color = th.ink, max_width = width - 2 * gap })
+            summary = UI.text(_("Nothing is on the shelf twice"), 18, { bold = true, color = th.ink, max_width = hero_w - 2 * gap })
         else
             local big = UI.text(util.getFriendlySize(reclaim), 34, { face = "tfont", color = th.ink })
-            summary = HorizontalGroup:new{
-                align = "center", big, HorizontalSpan:new{ width = gap },
-                UI.text(T(N_("could be freed from %1 book on the shelf twice", "could be freed from %1 books on the shelf twice", #sets), #sets), 15,
-                    { color = th.ink, max_width = width - 2 * gap - big:getSize().w - gap }),
-            }
+            local text = T(N_("could be freed from %1 book on the shelf twice", "could be freed from %1 books on the shelf twice", #sets), #sets)
+            if layout and layout.landscape then
+                -- In its own column the words go under the number.
+                summary = VerticalGroup:new{ align = "left", big, VerticalSpan:new{ width = sp(4) },
+                    UI.text(_("could be freed"), 15, { color = th.ink, max_width = hero_w - 2 * gap }),
+                    UI.text(T(N_("from %1 book on the shelf twice", "from %1 books on the shelf twice", #sets), #sets), 15, { color = th.ink, max_width = hero_w - 2 * gap }) }
+            else
+                summary = HorizontalGroup:new{
+                    align = "center", big, HorizontalSpan:new{ width = gap },
+                    UI.text(text, 15, { color = th.ink, max_width = hero_w - 2 * gap - big:getSize().w - gap }),
+                }
+            end
         end
         local hero = FrameContainer:new{
             bordersize = th.tinted and 0 or Size.border.thick, color = th.ink, radius = sp(12), margin = 0, padding = gap,
-            background = th.tint_duplicates, width = width, summary,
+            background = th.tint_duplicates, width = hero_w, summary,
         }
 
         -- A set as a card: its book, what clearing it frees, and its copies, the one that stays marked ✓ and the others ✕.
@@ -176,7 +184,7 @@ return function(screen, th, width)
     local locked = info(set.copies[keep]).locked
     local hero = VerticalGroup:new{
         align = "left",
-        UI.text(set.title, 26, { face = "tfont", color = th.ink, max_width = width }),
+        UI.text(set.title, 26, { face = "tfont", color = th.ink, max_width = hero_w }),
         VerticalSpan:new{ width = sp(4) },
         HorizontalGroup:new{
             align = "center", UI.chip(th, kindText(set):upper()), HorizontalSpan:new{ width = sp(8) },

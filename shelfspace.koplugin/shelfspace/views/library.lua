@@ -42,11 +42,11 @@ end
 
 -- The Library: where the storage went (the chart, which also narrows the list), then the current folder's contents as a
 -- table, largest first, with the controls to search, filter and sort it.
-return function(screen, th, width)
+return function(screen, th, width, layout)
     local plugin = screen.plugin
     local tree = plugin.tree
     if not tree then
-        return { hero = Storage(screen, th, width), message = _("Scanning your library…") }
+        return { hero = Storage(screen, th, layout and layout.hero_w or width, layout), message = _("Scanning your library…") }
     end
 
     local root = plugin.root
@@ -81,7 +81,7 @@ return function(screen, th, width)
     Search.sort(entries, screen.sort, screen.descending, opened)
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
-    local hero = Storage(screen, th, width)
+    local hero = Storage(screen, th, layout and layout.hero_w or width, layout)
 
     local gap = sp(10)
     local vgap = sp(5) -- between rows: each row's height includes it

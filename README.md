@@ -43,7 +43,7 @@ To update later, you can do it from inside ShelfSpace when you choose to: see [A
 
 ## Using it
 
-Three tabs: **Library**, **KOReader**, and **Duplicates**, which only appears when you have some.
+Three tabs: **Library**, **KOReader**, and **Duplicates**, which only appears when you have some. Held upright, each tab has its chart or summary over its list; held sideways (on a tablet, or a reader you rotate), the summary moves into a column on the left and the list gets the full height beside it.
 
 ### Library
 
@@ -176,7 +176,7 @@ The logic runs under plain `luajit`, without KOReader. It covers what may be del
 
 Screenshots are taken by `tools/screenshots/run.sh /path/to/KOReader.app`. It builds a sample library and a made-up 8 GB device, drives ShelfSpace through every screen in the desktop emulator, checks it as it goes (what may be deleted, every file type, duplicates, the filters), and washes the colour screenshots with `tools/kaleido-wash.sh`. Add `--readme` to put the washed ones in `assets/`. Every screenshot in this repository goes through that wash; run `tools/kaleido-wash.sh shot.png` on any other colour capture, once.
 
-`tools/screenshots/sizes.sh /path/to/KOReader.app` opens ShelfSpace at the screen sizes of common e-readers (from 600 × 800 up to 1440 × 1920, 167 to 300 dpi) and checks that every tab fits, with a screenshot of each. Portrait only for now: in landscape the Library shows a single row a page.
+`tools/screenshots/sizes.sh /path/to/KOReader.app` opens ShelfSpace at the screen sizes of common e-readers (from 600 × 800 up to 1440 × 1920, 167 to 300 dpi, upright and sideways) and checks that every tab fits, with a screenshot of each.
 
 `tools/make-wordmark.py` draws the name under the logo as outlines from a font file; the result is already in `shelfspace.koplugin/shelfspace/icons.lua`.
 
