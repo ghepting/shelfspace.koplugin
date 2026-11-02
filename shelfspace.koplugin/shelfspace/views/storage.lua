@@ -24,25 +24,22 @@ return function(screen, th, width, layout)
     local u = plugin.usage
     local b = plugin.tree and plugin:breakdown(u) or nil
 
-    local go = {
-        books = function() screen:toggleBooks() end,
-        koreader = function() screen:switchTab("koreader") end,
-        other = function() plugin:explainOther(b) end,
-    }
+    -- The chart and its legend only tell you where the space went; the one thing to tap is the (i) after Other, which explains it.
+    local explain_other = function() plugin:explainOther(b) end
 
     -- { key (names the colour and the tint), label, size in bytes, what a tap does, and whether it is the lit one }
     local rows, slices
     if b then
         rows = {
-            { "books", _("Books"), b.books, go.books, screen.only_books },
-            { "koreader", _("KOReader"), b.koreader, go.koreader },
-            { "other", _("Other"), b.other, nil, false, go.other },
+            { "books", _("Books"), b.books },
+            { "koreader", _("KOReader"), b.koreader },
+            { "other", _("Other"), b.other, nil, false, explain_other },
             { "free", _("Free"), u.available },
         }
         slices = {
-            { fraction = b.books / u.total, color = th.books, on_tap = go.books },
-            { fraction = b.koreader / u.total, color = th.koreader, on_tap = go.koreader },
-            { fraction = b.other / u.total, color = th.other, on_tap = go.other },
+            { fraction = b.books / u.total, color = th.books },
+            { fraction = b.koreader / u.total, color = th.koreader },
+            { fraction = b.other / u.total, color = th.other },
             { fraction = u.available / u.total, color = th.free_space },
         }
     else
@@ -74,15 +71,15 @@ return function(screen, th, width, layout)
         local key, label, bytes, on_tap, lit, on_info = r[1], r[2], r[3], r[4], r[5], r[6]
         local inner_w = legend_w - 2 * sp(12)
         local size_w = UI.text(util.getFriendlySize(bytes), 18, { color = th.muted })
-        local tail_w = on_tap and sp(22) or (on_info and sp(30) or 0)
-        local tail
-        if on_info then
-            tail = IconWidget:new{ icon = "notice-info", alpha = true, width = sp(24), height = sp(24) }
-        elseif on_tap then
-            tail = UI.text("›", 26, { color = th.muted })
-        end
         local color = ({ books = th.books, koreader = th.koreader, other = th.other, free = th.free_space })[key]
-        local name_w = inner_w - dot - sp(10) - size_w:getSize().w - sp(8) - tail_w
+        local name_w = inner_w - dot - sp(10) - size_w:getSize().w - sp(8)
+        local name = UI.text(label, 18, { bold = true, color = th.ink, max_width = name_w })
+        -- The (i) sits right after the word, so the size on the right lines up with the others.
+        local info
+        if on_info then
+            info = UI.tappable(IconWidget:new{ icon = "notice-info", alpha = true, width = sp(24), height = sp(24) }, on_info)
+        end
+        local used = name:getSize().w + (info and (sp(8) + info:getSize().w) or 0)
         local row = HorizontalGroup:new{
             align = "center",
             FrameContainer:new{
@@ -90,11 +87,12 @@ return function(screen, th, width, layout)
                 HorizontalGroup:new{ HorizontalSpan:new{ width = dot }, VerticalSpan:new{ width = dot } },
             },
             HorizontalSpan:new{ width = sp(10) },
-            UI.text(label, 18, { bold = true, color = th.ink, max_width = name_w }),
-            HorizontalSpan:new{ width = math.max(0, name_w - UI.text(label, 18, { bold = true, max_width = name_w }):getSize().w) },
+            name,
+            info and HorizontalSpan:new{ width = sp(8) } or HorizontalSpan:new{ width = 0 },
+            info or HorizontalSpan:new{ width = 0 },
+            HorizontalSpan:new{ width = math.max(0, name_w - used) },
             size_w,
             HorizontalSpan:new{ width = sp(8) },
-            tail or HorizontalSpan:new{ width = 0 },
         }
         local framed = FrameContainer:new{
             -- A lit row (Books, while the list is narrowed to books) gets a black outline; the rest have none.
@@ -102,7 +100,7 @@ return function(screen, th, width, layout)
             color = lit and th.ink or th["tint_" .. key], background = th["tint_" .. key],
             CenterContainer:new{ dimen = Geom:new{ w = legend_w, h = row_h }, row },
         }
-        return (on_tap or on_info) and UI.tappable(framed, on_tap or on_info) or framed
+        return framed
     end
 
     local legend = VerticalGroup:new{ align = "left" }
