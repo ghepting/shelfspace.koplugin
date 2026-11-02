@@ -100,7 +100,12 @@ function Duplicates.find(files, same)
     local sets = {}
     for _, root in ipairs(order) do
         local s = sets_by_root[root]
-        if #s.copies > 1 then
+        -- Files with nothing in them are not copies of anything, so a set of only those has nothing to choose between.
+        local any_content = false
+        for _, f in ipairs(s.copies) do
+            if (f.size or 0) > 0 then any_content = true end
+        end
+        if #s.copies > 1 and any_content then
             local identical = true
             local c = cfind(s.indexes[1])
             for _, i in ipairs(s.indexes) do
@@ -132,13 +137,16 @@ local function depth(path)
 end
 
 -- Which copy to keep. `info(copy)` gives { progress = 0..1, locked = bool }: the copy being read, then the
--- one furthest through, is never the one to go. After that the format that reads best on e-ink, the one
--- nearest the library root, and the newest. Returns the index and why, as one of
--- "reading", "progress", "format", "location" or "newest".
+-- one furthest through, is never the one to go; nor is a copy that has content over one that is empty. After that the
+-- format that reads best on e-ink, the one nearest the library root, and the newest. Returns the index and why, as one of
+-- "reading", "content", "progress", "format", "location" or "newest".
 function Duplicates.suggest(set, info)
     local function better(a, b)
         local ia, ib = info(a), info(b)
         if (ia.locked or false) ~= (ib.locked or false) then return ia.locked and "reading" or nil end
+        -- A file with nothing in it is never the good one.
+        local ea, eb = (a.size or 0) == 0, (b.size or 0) == 0
+        if ea ~= eb then return eb and "content" or nil end
         local pa, pb = ia.progress or 0, ib.progress or 0
         if pa ~= pb then return pa > pb and "progress" or nil end
         local fa, fb = Duplicates.formatRank(a.name), Duplicates.formatRank(b.name)
@@ -153,7 +161,7 @@ function Duplicates.suggest(set, info)
         if better(set.copies[i], set.copies[best]) then best = i end
     end
     -- The reason is what set the winner apart from its closest rival: the latest rule that had to decide.
-    local order = { reading = 1, progress = 2, format = 3, location = 4, newest = 5 }
+    local order = { reading = 1, content = 2, progress = 3, format = 4, location = 5, newest = 6 }
     local reason
     for i = 1, #set.copies do
         if i ~= best then
@@ -193,12 +201,14 @@ function Duplicates.tags(set, i, info)
     local newest, smallest = 0, math.huge
     for _, c in ipairs(set.copies) do
         newest = math.max(newest, c.modified or 0)
-        smallest = math.min(smallest, c.size)
+        if c.size > 0 then smallest = math.min(smallest, c.size) end -- an empty file is not the smallest copy, it is no copy
     end
     if unique(function(c) return c.modified or 0 end, newest) and (copy.modified or 0) == newest then
         table.insert(tags, { id = "newest" })
     end
-    if unique(function(c) return c.size end, smallest) and copy.size == smallest then
+    if copy.size == 0 and #set.copies > 1 then
+        table.insert(tags, { id = "empty" }) -- (a set that is only empty files is never listed)
+    elseif unique(function(c) return c.size end, smallest) and copy.size == smallest then
         table.insert(tags, { id = "smallest" })
     end
     return tags
