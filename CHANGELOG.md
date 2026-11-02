@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.11.0...v0.11.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* keep the item count at the right of the list, and make the chart's legend plain text with the info icon right after Other ([#90](https://github.com/ghepting/shelfspace.koplugin/issues/90)) ([6327870](https://github.com/ghepting/shelfspace.koplugin/commit/6327870d4d7515d51f4fbcca386472a86b7db6dd))
+
 ## [0.11.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.10.2...v0.11.0) (2026-11-02)
 
 
