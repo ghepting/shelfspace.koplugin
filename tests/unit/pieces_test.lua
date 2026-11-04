@@ -108,6 +108,18 @@ T.test("the figure is the biggest that fits, 1.35 times its unit", function()
     assert(bigger.f >= fit.f, "more room, no smaller")
 end)
 
+T.test("a figure too wide for its tag loses its decimals before the type shrinks", function()
+    local roomy = Pieces.fitFigure("26.4", "GB free", 68, 44, width)
+    T.eq(roomy.text, "26.4", "kept whole when it fits")
+    -- a narrow tag: the unit would allow bigger type, but "128.5" does not fit at it
+    local tight = Pieces.fitFigure("128.5", "GB", 44, 60, width)
+    T.eq(tight.text, "128", "floored, not shrunk")
+    T.eq(Pieces.fitFigure("0.9", "GB", 20, 60, width).text, "0.9", "a figure under one is never floored to 0")
+    T.eq(Pieces.fitFigure("320", "MB", 20, 60, width).text, "320", "a whole figure is left alone")
+    local r = lay("glass", 0.6, { s = 1, num = "128.5" })
+    assert(r.label.text == "128.5" or r.label.text == "128", "the layout carries the text to draw")
+end)
+
 T.test("the candle burns down with the free space and goes out at the end", function()
     local lit, nearly = lay("candle", 0.8), lay("candle", 0.01)
     assert(find(lit, "candle-flame") and not find(lit, "candle-smoke"), "lit")

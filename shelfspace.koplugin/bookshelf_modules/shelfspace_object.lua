@@ -319,7 +319,7 @@ return {
         -- The figure: the number big, its unit under it, tucked together, in the middle of the label's body.
         local label = layout.label
         if label then
-            local line1, line2 = text(num, label.big), text(p.unit, label.f)
+            local line1, line2 = text(label.text or num, label.big), text(p.unit, label.f)
             local s1, s2 = line1:getSize(), line2:getSize()
             local mid = label.x + label.w / 2 + dx
             local top = label.y + dy + (label.h - 6 - (label.big + label.f - label.tight)) / 2

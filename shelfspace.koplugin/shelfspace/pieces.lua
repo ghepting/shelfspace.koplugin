@@ -77,14 +77,20 @@ end
 -- the lines tucked 16% together. `width(text, size)` is the width of text in that size. Returns { f, big, tight } (sizes in px).
 function Pieces.fitFigure(num, unit, bw, bh, width)
     local W, H = bw - 10, bh - 6
-    local f = 6
+    -- When the figure is what stops the type from being bigger, it loses its decimals ("128.5" is "128") before the type shrinks.
+    local whole = num:match("^(%d+)%.%d+$")
+    if whole == "0" then whole = nil end
+    local f, text = 6, num
     for size = 30, 6, -1 do
         local big = round(size * Pieces.RATIO)
         local tight = round(big * 0.16)
-        if width(unit, size) <= W and width(num, big) <= W and big + size - tight <= H then f = size; break end
+        if width(unit, size) <= W and big + size - tight <= H then
+            if width(num, big) <= W then f, text = size, num; break end
+            if whole and width(whole, big) <= W then f, text = size, whole; break end
+        end
     end
     local big = round(f * Pieces.RATIO)
-    return { f = f, big = big, tight = round(big * 0.16) }
+    return { f = f, big = big, tight = round(big * 0.16), text = text }
 end
 
 -- Lays one piece out. `spec` is art/spec.lua; `p` says how:
@@ -126,7 +132,7 @@ function Pieces.layout(spec, id, p)
     -- The figure in the body (x, y, w, h px) of a label drawn at scale `sc`
     local function figure(x, y, w, h)
         local fit = Pieces.fitFigure(p.num, p.unit, w, h, p.width)
-        return { x = x, y = y, w = w, h = h, f = fit.f, big = fit.big, tight = fit.tight }
+        return { x = x, y = y, w = w, h = h, f = fit.f, big = fit.big, tight = fit.tight, text = fit.text }
     end
     -- The shared tag, centred on cx and resting on `bottom` (px)
     local function tag(cx, bottom)
