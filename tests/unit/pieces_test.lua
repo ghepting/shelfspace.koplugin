@@ -100,9 +100,9 @@ T.test("with the label switched off no piece wears a tag or a figure", function(
     end
 end)
 
-T.test("the figure is the biggest that fits, 1.35 times its unit", function()
+T.test("the figure is the biggest that fits, 1.2 times its unit", function()
     local fit = Pieces.fitFigure("26.4", "GB free", 68, 44, width)
-    T.eq(fit.big, math.floor(fit.f * 1.35 + 0.5), "ratio")
+    T.eq(fit.big, math.floor(fit.f * 1.2 + 0.5), "ratio")
     assert(width("GB free", fit.f) <= 58 and width("26.4", fit.big) <= 58, "fits")
     local bigger = Pieces.fitFigure("26.4", "GB free", 68, 44, function(t, s) return width(t, s) / 100 end)
     assert(bigger.f >= fit.f, "more room, no smaller")

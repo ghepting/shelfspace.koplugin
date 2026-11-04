@@ -1,7 +1,7 @@
 --[[
 Bookshelf micro-module: a ShelfSpace object. See micromodules/README.md in bookshelf.koplugin for the contract.
 
-A piece that stands on a shelf among the books and shows how full the device is: a conical flask, a glass of water, a whiskey glass, a
+An ornament that stands on a shelf among the books and shows how full the device is: a conical flask, a glass of water, a whiskey glass, a
 decanter, a stack of books, a pillar candle or an inkwell and quill. It has no card, like an ornament: it stands on the plank (or sits
 centred among covers) with the figure on a small tag. Every piece but the stack is full when the device has plenty of room; the stack
 grows as the device fills. The level is the live free space. Which piece it is, is that card's own setting (long-press it, or choose when
@@ -227,8 +227,8 @@ end
 
 return {
     key = "shelfspace_object",
-    title = _("ShelfSpace object"),
-    summary = _("An object that shows how full the device is. Works offline."),
+    title = _("ShelfSpace ornament"),
+    summary = _("An ornament that shows how full the device is. Works offline."),
     -- No card behind it: it stands on the plank, as an ornament does.
     bare = true,
     -- It sizes itself to the cell: one render at the cell's size.
@@ -249,6 +249,10 @@ return {
         local s = Live.read()
         if not s then return nil end
         local num, unit = Summary.figure(s.free)
+        -- "28 GB" over "free": whole units from ten up (28.3 is 28), and the unit stays with its number
+        local whole = num:match("^(%d%d+)%.%d+$")
+        if whole then num = whole end
+        num = num .. " " .. unit
         local id = ctx.config and ctx.config:get("object", DEFAULT) or DEFAULT
         if not SPEC[id] then id = DEFAULT end
         local o = SPEC[id]
@@ -272,7 +276,7 @@ return {
 
         local free_share = s.total and s.total > 0 and s.free / s.total or 0
         local p = {
-            s = Pieces.HEIGHT[id] / 100 * H / o.base, free = free_share, num = num, unit = unit .. " " .. _("free"), width = width,
+            s = Pieces.HEIGHT[id] / 100 * H / o.base, free = free_share, num = num, unit = _("free"), width = width,
             tag = Pieces.TAG_SCALE * row, min_label = Pieces.MIN_LABEL * row,
             no_label = ctx.config and ctx.config:get("label", true) == false,
         }
@@ -348,9 +352,9 @@ return {
         local dialog
         local label_on = ctx.config:get("label", true) ~= false
         dialog = ButtonDialog:new(Kit.withClose{
-            title = _("ShelfSpace object"), title_align = "center", width_factor = 0.8,
+            title = _("ShelfSpace ornament"), title_align = "center", width_factor = 0.8,
             buttons = {
-                { { text = _("Change piece\xE2\x80\xA6"), callback = function()
+                { { text = _("Swap\xE2\x80\xA6"), callback = function()
                     UIManager:close(dialog)
                     -- As Bookshelf's own ornament Swap does it: the pick writes the choice, and the shelf is rebuilt once the picker has closed.
                     chooseObject(ctx.config:get("object", DEFAULT), function(key) store(ctx, "object", key) end,

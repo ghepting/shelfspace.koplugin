@@ -18,7 +18,8 @@ Pieces.ORDER = { "flask", "glass", "whiskey", "decanter", "stack", "candle", "in
 -- How tall each piece stands, as a share of the shelf row: the pieces are not the same size in life.
 Pieces.HEIGHT = { flask = 74, glass = 70, whiskey = 56, decanter = 80, inkwell = 64, candle = 78, stack = 72 }
 
-Pieces.RATIO = 1.35 -- the figure against its unit
+Pieces.RATIO = 1.2 -- the figure against its unit line
+Pieces.LINE_GAP = 2 -- px of air between the figure and the unit line, on top of the lines being tucked together
 Pieces.TAG = "glass-tag" -- the one tag every piece but the flask wears
 Pieces.TAG_SCALE = 0.9 -- px per art unit, at the lab's shelf row height
 Pieces.ROW = 190 -- ... which was this tall
@@ -83,14 +84,14 @@ function Pieces.fitFigure(num, unit, bw, bh, width)
     local f, text = 6, num
     for size = 30, 6, -1 do
         local big = round(size * Pieces.RATIO)
-        local tight = round(big * 0.16)
+        local tight = round(big * 0.16) - Pieces.LINE_GAP
         if width(unit, size) <= W and big + size - tight <= H then
             if width(num, big) <= W then f, text = size, num; break end
             if whole and width(whole, big) <= W then f, text = size, whole; break end
         end
     end
     local big = round(f * Pieces.RATIO)
-    return { f = f, big = big, tight = round(big * 0.16), text = text }
+    return { f = f, big = big, tight = round(big * 0.16) - Pieces.LINE_GAP, text = text }
 end
 
 -- Lays one piece out. `spec` is art/spec.lua; `p` says how:

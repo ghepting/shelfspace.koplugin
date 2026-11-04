@@ -118,9 +118,9 @@ You can do all of that without opening ShelfSpace: in KOReader's Tools menu, She
 If you use the [Bookshelf](https://github.com/AndyHazz/bookshelf.koplugin) plugin, ShelfSpace adds two modules (Bookshelf's word for a thing that stands among the books on a shelf). They only show how full the device is; they never scan or delete anything. Tapping one opens ShelfSpace. Without Bookshelf they do nothing, and ShelfSpace works as before.
 
 - **ShelfSpace storage** is a card with the storage bar drawn as a shelf of spines. It sizes itself to the space it is given.
-- **ShelfSpace object** is a small object that stands on the shelf with the free space on a tag above it. It is a conical flask, a glass of water, a whiskey glass, a decanter, a stack of books, a pillar candle, or an inkwell and quill. Every one but the stack is full when the device has plenty of room and empties as it fills; the candle burns down. The stack goes the other way: it grows as the device fills.
+- **ShelfSpace ornament** is a small ornament that stands on the shelf with the free space on a tag above it. It is a conical flask, a glass of water, a whiskey glass, a decanter, a stack of books, a pillar candle, or an inkwell and quill. Every one but the stack is full when the device has plenty of room and empties as it fills; the candle burns down. The stack goes the other way: it grows as the device fills.
 
-To add one, long-press a shelf's tab in Bookshelf, then Modules, **Add module…**, and the **ShelfSpace** tab. For the object you then pick which piece, from a grid of small pictures. Long-press a piece on the shelf and choose **Settings** to **Change piece…** later, or to **Hide label** (the tag with the number) or **Show label** for that one piece. **Width** in the same menu sets how many book widths it takes; it starts at one.
+To add one, long-press a shelf's tab in Bookshelf, then Modules, **Add module…**, and the **ShelfSpace** tab. For the ornament you then pick which one, from a grid of small pictures. Long-press it on the shelf and choose **Settings** to **Swap…** it later, or to **Hide label** (the tag with the number) or **Show label** for that one ornament. **Width** in the same menu sets how many book widths it takes; it starts at one.
 
 ## Tested on
 
