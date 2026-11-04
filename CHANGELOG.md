@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.12.1...v0.13.0) (2026-11-04)
+
+
+### Features
+
+* add ShelfSpace storage and ornament modules for Bookshelf ([#96](https://github.com/ghepting/shelfspace.koplugin/issues/96)) ([a88998c](https://github.com/ghepting/shelfspace.koplugin/commit/a88998cca6e861e9a6f8b5ebf6d9ad762f1822f1))
+
 ## [0.12.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.12.0...v0.12.1) (2026-11-02)
 
 
