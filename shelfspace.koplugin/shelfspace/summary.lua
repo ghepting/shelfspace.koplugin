@@ -102,13 +102,14 @@ function Summary.slots(n, sh)
     return out
 end
 
--- A size as a number and a unit, for a headline: "21.4" "GB", "320" "MB", "0" "B". 1024 to the step, as KOReader counts.
+-- A size as a number and a unit, for a headline: "21.4" "GB", "320" "MB", "0" "B". 1000 to the step, as KOReader's util.getFriendlySize
+-- counts, so a figure here is the same as the one ShelfSpace shows on its own screens.
 function Summary.figure(bytes)
     bytes = math.max(0, bytes or 0)
-    local gb, mb = 1024 ^ 3, 1024 ^ 2
+    local gb, mb = 1000 ^ 3, 1000 ^ 2
     if bytes >= gb then return string.format("%.1f", bytes / gb), "GB" end
     if bytes >= mb then return string.format("%d", math.floor(bytes / mb + 0.5)), "MB" end
-    if bytes >= 1024 then return string.format("%d", math.floor(bytes / 1024 + 0.5)), "kB" end
+    if bytes >= 1000 then return string.format("%d", math.floor(bytes / 1000 + 0.5)), "kB" end
     return string.format("%d", bytes), "B"
 end
 
@@ -116,7 +117,7 @@ end
 -- (under a megabyte counts as none).
 function Summary.state(s)
     local share = s.total > 0 and s.free / s.total or 0
-    if s.free < 1024 ^ 2 then return "full" end
+    if s.free < 1000 ^ 2 then return "full" end
     if share < 0.02 then return "almost" end
     if share < 0.10 then return "low" end
     return nil

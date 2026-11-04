@@ -33,7 +33,7 @@ local function guard(fn)
 end
 
 local function totalText(total)
-    local gb = 1024 ^ 3
+    local gb = 1000 ^ 3 -- as KOReader counts a GB
     if total >= gb then return string.format("%d GB", math.floor(total / gb + 0.5)) end
     local n, u = Summary.figure(total)
     return n .. " " .. u

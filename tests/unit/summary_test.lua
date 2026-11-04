@@ -3,8 +3,8 @@ local Summary = require("shelfspace/summary")
 
 print("the saved summary")
 
-local GB = 1024 ^ 3
-local MB = 1024 ^ 2
+local GB = 1000 ^ 3 -- as KOReader's util.getFriendlySize counts, so a figure matches the ones ShelfSpace shows on its own screens
+local MB = 1000 ^ 2
 
 local function near(actual, expected, eps)
     assert(math.abs(actual - expected) <= eps, string.format("expected about %s, got %s", expected, actual))
@@ -111,10 +111,15 @@ T.test("a headline number changes its unit as it shrinks", function()
     T.eq(n, "21.4"); T.eq(u, "GB")
     n, u = Summary.figure(320 * MB)
     T.eq(n, "320"); T.eq(u, "MB")
-    n, u = Summary.figure(512 * 1024)
+    n, u = Summary.figure(512 * 1000)
     T.eq(n, "512"); T.eq(u, "kB")
     n, u = Summary.figure(0)
     T.eq(n, "0"); T.eq(u, "B")
+end)
+
+T.test("a headline number is KOReader's own figure for the same bytes (a GB is 1000 MB, as util.getFriendlySize counts)", function()
+    local n, u = Summary.figure(28300000000)
+    T.eq(n, "28.3"); T.eq(u, "GB") -- the number the Library tab prints as "28.3 GB"
 end)
 
 T.test("a chip says low, almost full or full, and nothing when there is room", function()
@@ -124,7 +129,7 @@ T.test("a chip says low, almost full or full, and nothing when there is room", f
     T.eq(st(0.099), "low")
     T.eq(st(0.019), "almost")
     T.eq(st(0), "full")
-    T.eq(Summary.state(Summary.valid(Summary.build({ usage = { total = 100 * MB, free = 500 * 1024 }, breakdown = {} }))), "full")
+    T.eq(Summary.state(Summary.valid(Summary.build({ usage = { total = 100 * MB, free = 500 * 1000 }, breakdown = {} }))), "full")
 end)
 
 T.done()
