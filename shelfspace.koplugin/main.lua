@@ -16,6 +16,8 @@ local N_ = _.ngettext
 local T = ffiUtil.template
 
 local Deleter = require("shelfspace/deleter")
+local Cleanup = require("shelfspace/cleanup")
+local Summary = require("shelfspace/summary")
 local About = require("shelfspace/about")
 local Changelog = require("shelfspace/changelog")
 local Details = require("shelfspace/details")
@@ -145,11 +147,34 @@ function ShelfSpace:explainOther(b)
     end)
 end
 
+-- Keeps what the last scan found in KOReader's settings, small, for the card ShelfSpace offers Bookshelf: it has to draw at
+-- once and so cannot scan. Written whenever this screen refreshes, so it is as fresh as the last time ShelfSpace was open.
+function ShelfSpace:saveSummary()
+    if not self.tree or not self.usage or not self.usage.total or self.usage.total == 0 then return end
+    local ok, err = pcall(function()
+        local clearable = 0
+        for _, t in ipairs(Cleanup.targets(self.tree, self.koreader_dir, false, self.root)) do
+            clearable = clearable + (t.size or 0)
+        end
+        local sets = self.duplicates or {}
+        G_reader_settings:saveSetting(Summary.KEY, Summary.build({
+            usage = self.usage,
+            breakdown = self:breakdown(self.usage),
+            duplicates = Duplicates.reclaimable(sets),
+            duplicate_sets = #sets,
+            koreader_clearable = clearable,
+            time = os.time(),
+        }))
+    end)
+    if not ok then logger.warn("ShelfSpace: could not save the summary: " .. tostring(err)) end
+end
+
 -- Re-reads free space and redraws whichever tab is showing.
 function ShelfSpace:refresh()
     if not self.screen or self.screen.closed then return end
     self.usage = util.diskUsage(self.root)
     self:findDuplicates()
+    self:saveSummary()
     self.screen:refresh()
 end
 
