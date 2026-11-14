@@ -185,4 +185,16 @@ T.test("the padlock is one even round stroke in the colour asked for, on a trans
     assert(svg:find("<rect", 1, true) and svg:find("<path", 1, true), "a body and a shackle")
 end)
 
+T.test("the chevron that hides the summary points up, and down to bring it back (left and right sideways), on a transparent ground", function()
+    local up, down = Icons.chevronSvg("up", "2a363b"), Icons.chevronSvg("down", "2a363b")
+    assert(up ~= down, "both directions draw the same chevron")
+    assert(up:find('d="M12 30 L24 18 L36 30"', 1, true), "the up chevron does not point up")
+    assert(down:find('d="M12 18 L24 30 L36 18"', 1, true), "the down chevron does not point down")
+    local left, right = Icons.chevronSvg("left", "2a363b"), Icons.chevronSvg("right", "2a363b")
+    assert(left:find('d="M30 12 L18 24 L30 36"', 1, true), "the left chevron does not point left")
+    assert(right:find('d="M18 12 L30 24 L18 36"', 1, true), "the right chevron does not point right")
+    assert(up:find('stroke="#2a363b"', 1, true), "colour missing")
+    assert(not up:find('fill="#', 1, true), "no fill, so the ground stays transparent")
+end)
+
 T.done()
