@@ -32,13 +32,22 @@ T.test("the README logo is the mark and the name with no tile behind them, in on
     assert(not svg:find("<text", 1, true), "the renderer ignores <text>; the name must be outlines")
 end)
 
-T.test("the README logos are the generated ones: coup de grâce for light pages, white for dark (run tools/make-logos.lua after changing icons.lua)", function()
+T.test("the README logo's empty slot can take its own colour", function()
+    local svg = Icons.plainLogo("2a363b", "2f6f5e")
+    assert(svg:find('stroke="#2f6f5e"', 1, true), "the slot is not in its own colour")
+    assert(not svg:find('stroke="#2a363b"', 1, true), "the slot is still in the ink colour")
+    assert(svg:find('fill="#2a363b"', 1, true), "the books and the name lost their colour")
+    assert(Icons.plainLogo("2a363b"):find('stroke="#2a363b"', 1, true), "without a slot colour the slot should match the rest")
+end)
+
+T.test("the README logos are the generated ones: coup de grâce for light pages, white for dark, the slot green (run tools/make-logos.lua after changing icons.lua)", function()
     local here = debug.getinfo(1, "S").source:match("^@(.*)/[^/]+$") or "."
-    for name, hex in pairs({ light = "2a363b", dark = "ffffff" }) do
+    for name, c in pairs({ light = { "2a363b", "2f6f5e" }, dark = { "ffffff", "6fc2a8" } }) do
+        local hex = c[1]
         local f = assert(io.open(here .. "/../../assets/logo-" .. name .. ".svg"), "assets/logo-" .. name .. ".svg is missing")
         local text = f:read("*a")
         f:close()
-        T.eq(text, Icons.plainLogo(hex))
+        T.eq(text, Icons.plainLogo(hex, c[2]))
     end
 end)
 

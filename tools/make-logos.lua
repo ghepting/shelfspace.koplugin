@@ -3,9 +3,10 @@
 dofile("tests/unit/helper.lua") -- stand-ins for the few KOReader modules icons.lua loads
 local Icons = require("shelfspace/icons")
 
-for name, hex in pairs({ light = "2a363b", dark = "ffffff" }) do -- coup de grâce on light pages, white on dark
+-- coup de grâce on light pages and white on dark, with the empty slot in green (SideShelf's green, lightened for dark pages)
+for name, c in pairs({ light = { "2a363b", "2f6f5e" }, dark = { "ffffff", "6fc2a8" } }) do
     local f = assert(io.open("assets/logo-" .. name .. ".svg", "w"))
-    f:write(Icons.plainLogo(hex))
+    f:write(Icons.plainLogo(c[1], c[2]))
     f:close()
     print("wrote assets/logo-" .. name .. ".svg")
 end

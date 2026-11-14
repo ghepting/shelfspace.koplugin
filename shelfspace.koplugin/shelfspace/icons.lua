@@ -118,9 +118,10 @@ function Icons.svg(name, hex, koreader_logo, opts)
         .. (named and wordmark(opts.glyph or "ffffff") or "") .. "</svg>"
 end
 
--- The mark and the name in one colour on a transparent background, with no tile: the README's logo. The spines' bands are cut out with a mask so the page shows
--- through them. (The same coordinates as the tile version, which is raised 13 to centre it over the name.)
-function Icons.plainLogo(hex)
+-- The mark and the name on a transparent background, with no tile: the README's logo. The spines' bands are cut out with a mask so the page shows
+-- through them. Everything is `hex` except the empty slot, which is `slot_hex` when given (the README's green). (The same coordinates as the tile version,
+-- which is raised 13 to centre it over the name.)
+function Icons.plainLogo(hex, slot_hex)
     local fill = "#" .. hex
     local base = 132
     local solid, cuts = { rect(CENTER_X - 54, 140, 108, 9, 4.5, fill) }, {}
@@ -131,7 +132,7 @@ function Icons.plainLogo(hex)
         cuts[#cuts + 1] = rect(x, base - 14, 17, 3.5, 0, "#000000")
     end
     local slot = string.format('<rect x="111.1" y="71.5" width="35" height="%d" rx="3.5" fill="none" stroke="%s" '
-        .. 'stroke-width="3" stroke-dasharray="7 5"/>', base - 70 - 3, fill)
+        .. 'stroke-width="3" stroke-dasharray="7 5"/>', base - 70 - 3, "#" .. (slot_hex or hex))
     return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="120" height="137" '
         .. 'viewBox="35.6 48 120 137"><defs><mask id="spines" maskUnits="userSpaceOnUse" x="0" y="0" width="195" height="195">'
         .. '<rect width="195" height="195" fill="#ffffff"/>' .. table.concat(cuts) .. '</mask></defs>'
