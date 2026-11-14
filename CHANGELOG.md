@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.13.0...v0.14.0) (2026-11-14)
+
+
+### Features
+
+* colour the README logo's empty slot green to match SideShelf ([#99](https://github.com/ghepting/shelfspace.koplugin/issues/99)) ([9ae5684](https://github.com/ghepting/shelfspace.koplugin/commit/9ae568424b8861b334ce1a06f87fbc75e5cdc7bd))
+* hide the chart and summary to give the list the whole page ([#101](https://github.com/ghepting/shelfspace.koplugin/issues/101)) ([98d2823](https://github.com/ghepting/shelfspace.koplugin/commit/98d2823f23e34222423ff919e0e344e071baab09))
+
 ## [0.13.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.12.1...v0.13.0) (2026-11-04)
 
 
