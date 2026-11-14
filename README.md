@@ -157,9 +157,9 @@ Anything else is untested. If you try it on another device, please [tell us how 
 | --- | --- | --- |
 | <img src="assets/formats.png" width="260"> | <img src="assets/menu.png" width="260"> | <img src="assets/locked-rows.png" width="260"> |
 
-| Why it is locked | | |
+| Why it is locked | Chart hidden | |
 | --- | --- | --- |
-| <img src="assets/locked-card.png" width="260"> | | |
+| <img src="assets/locked-card.png" width="260"> | <img src="assets/hidden.png" width="260"> | |
 
 | Sets of copies | Compare and choose | Confirm |
 | --- | --- | --- |

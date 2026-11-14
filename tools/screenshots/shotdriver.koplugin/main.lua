@@ -122,6 +122,13 @@ function Driver:init()
             check("four EPUBs in Sci-Fi by type", #Search.find(P.tree, root .. "/Sci-Fi", nil, "epub") == 4)
             check("a search finds both copies of Dune", #Search.find(P.tree, root, "dune") == 2, #Search.find(P.tree, root, "dune"))
         end, 0 },
+        { "library-hidden", function() S():toggleSummary() end, 2 },
+        { nil, function()
+            check("the chart can be hidden", S().summary_hidden == true)
+            check("hiding it is remembered", G_reader_settings:isTrue("shelfspace_hide_summary"))
+            S():toggleSummary()
+            check("and brought back", S().summary_hidden == false and not G_reader_settings:isTrue("shelfspace_hide_summary"))
+        end, 1 },
         { "library-books", function() S():toggleBooks() end, 2 },
         { nil, function() check("Books narrows the list", S().only_books == true) end, 0 },
         { "library-books-sorted", function() S():setSort("name") end, 2 },

@@ -60,6 +60,7 @@ if [ "${2:-}" = "--readme" ]; then
         cp "$new" "$old"
     done <<M
 library library
+library-hidden hidden
 library-books books
 library-filter-dialog filter
 library-search search
