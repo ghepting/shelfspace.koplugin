@@ -55,7 +55,7 @@ Under it, your files, largest first. Each row has a tile for its type, a colour 
 
 - **Open things.** Tap a folder to go in; the first row in a folder is `../`, to go back up. Tap a file, or press and hold any row, for its card: type, size, where it is, when it changed, when you last opened it and your progress, with **Open** and **Book info**. For the book you have open there is **Close book**, so you can delete it.
 - **Search** (the magnifier) looks by name through the folder you are in and everything under it. Once you have searched, the button shows your search and tapping it clears it.
-- **Filter** by file type, or by **Show**: books you have finished, or never opened, wherever they are. What is narrowing the list appears as chips with a ✕, each undoing just that. When nothing matches, you are told why and given a button that undoes it.
+- **Filter** by file type, or by **Show**: every book in the library, the books you have finished, or the ones never opened, wherever they are. What is narrowing the list appears as chips with a ✕, each undoing just that. When nothing matches, you are told why and given a button that undoes it.
 - **Sort** by size, name, date or last opened; the arrow beside it flips the direction.
 
 #### Deleting

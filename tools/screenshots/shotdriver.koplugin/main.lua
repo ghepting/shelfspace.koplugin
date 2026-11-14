@@ -129,8 +129,14 @@ function Driver:init()
             S():toggleSummary()
             check("and brought back", S().summary_hidden == false and not G_reader_settings:isTrue("shelfspace_hide_summary"))
         end, 1 },
-        { "library-books", function() S():toggleBooks() end, 2 },
-        { nil, function() check("Books narrows the list", S().only_books == true) end, 0 },
+        { "library-books", function() S():setShow(nil, true) end, 2 },
+        { nil, function()
+            check("Show › All books narrows the list", S().only_books == true and S().dir == root, S().dir)
+            S():setShow("complete", false)
+            check("a reading status replaces All books", S().status == "complete" and S().only_books == false)
+            S():setShow(nil, true)
+            check("and All books replaces the status", S().only_books == true and S().status == nil)
+        end, 0 },
         { "library-books-sorted", function() S():setSort("name") end, 2 },
         { "library-folder", function() S():toggleBooks() S():setSort("size") S():setDir(root .. "/Manuals") end, 2 },
         { nil, function() check("Books turned off again", S().only_books == false) check("folder opens", S().dir == root .. "/Manuals", S().dir) end, 0 },

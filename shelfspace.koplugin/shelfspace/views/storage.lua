@@ -17,8 +17,8 @@ local UI = require("shelfspace/ui")
 local sp = UI.sp
 
 -- Where the device's storage went, at the top of the Library: the donut on the left and, beside it, a row for each of
--- books, KOReader data, other files and free space. The rows are the chart's legend and its controls: Books narrows the list
--- below to every book, KOReader opens its tab, Other explains itself; Free has nothing to open. Tapping a slice does the same.
+-- books, KOReader data, other files and free space. The rows are the chart's legend, as plain text: the only thing to tap is the
+-- (i) after Other, which explains it. (Every book in the library is in Filter › Show › All books.)
 return function(screen, th, width, layout)
     local plugin = screen.plugin
     local u = plugin.usage

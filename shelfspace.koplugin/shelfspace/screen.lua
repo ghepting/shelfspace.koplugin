@@ -82,7 +82,7 @@ local ShelfScreen = InputContainer:extend{
     plugin = nil, -- the ShelfSpace plugin: usage, tree, and the delete / clear actions
     tab = "library",
     dir = nil, -- folder shown on the Library tab
-    only_books = false, -- the list is every book in the library, whichever folder it is in (the Books row of the chart)
+    only_books = false, -- the list is every book in the library, whichever folder it is in (Filter › Show › All books)
     sort = "size", -- how the Library orders rows: a category id from Search.SORTS
     descending = true, -- ...and which way: biggest, newest or most recent first (names: Z to A)
     query = nil, -- name search in the Library, over the shown folder and everything under it
@@ -332,23 +332,22 @@ function ShelfScreen:setDir(dir)
     self:refresh()
 end
 
--- Unlike the search and the type chip, the status stays when you change folder, like the sort order:
--- it is how the library is shown, not something you are looking for.
-function ShelfScreen:setStatus(id)
+-- What Filter › Show is set to: every file (neither), every book in the library wherever it is (`books`), or the books with a
+-- reading status (`status`). They are one choice, so picking one drops the other. Unlike the search and the type chip, it stays
+-- when you change folder, like the sort order: it is how the library is shown, not something you are looking for.
+function ShelfScreen:setShow(status, books)
     self:viewChanged()
-    self.status = id
-    self.pages.library = 1
-    self:refresh()
-end
-
--- The Books row of the chart: the list becomes every book in the library, wherever it is, or goes back to the folder it was on.
-function ShelfScreen:toggleBooks()
-    self:viewChanged()
-    self.only_books = not self.only_books
+    self.status = status
+    self.only_books = books and not status or false
     if self.only_books then self.dir = self.plugin.root end
     self.pages.library = 1
     self:refresh()
 end
+
+function ShelfScreen:setStatus(id) self:setShow(id, false) end
+
+-- Every book in the library, wherever it is, or back to the folder it was on (the Books chip's ✕).
+function ShelfScreen:toggleBooks() self:setShow(nil, not self.only_books) end
 
 -- The file type and the reading status in one dialog: each is a choice, the current one ticked, and tapping it again clears it.
 function ShelfScreen:askFilter()
@@ -367,11 +366,16 @@ function ShelfScreen:askFilter()
         end
         local buttons = { types }
         table.insert(buttons, { { text = _("Show"), enabled = false } })
-        for _, option in ipairs(Search.STATUSES) do
+        local function show(label, on, status, books)
             table.insert(buttons, { {
-                text = (option.id == self.status and "✓  " or "     ") .. option.label,
-                callback = pick(function() self:setStatus(option.id) end),
+                text = (on and "✓  " or "     ") .. label,
+                callback = pick(function() self:setShow(status, books) end),
             } })
+        end
+        for i, option in ipairs(Search.STATUSES) do
+            show(option.label, option.id == self.status and (option.id or not self.only_books), option.id, false)
+            -- Every book in the library comes right after every file.
+            if i == 1 then show(_("All books"), self.only_books and not self.status, nil, true) end
         end
         table.insert(buttons, { { text = _("Clear filters"), callback = pick(function() self:clearFilters() end) } })
         dialog = ButtonDialog:new{ title = _("Filter"), title_align = "center", buttons = buttons }
