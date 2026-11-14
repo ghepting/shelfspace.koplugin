@@ -45,6 +45,8 @@ To update later, you can do it from inside ShelfSpace when you choose to: see [A
 
 Three tabs: **Library**, **KOReader**, and **Duplicates**, which only appears when you have some. Held upright, each tab has its chart or summary over its list; held sideways (on a tablet, or a reader you rotate), the summary moves into a column on the left and the list gets the full height beside it.
 
+To give the list the whole page, tap the round chevron at the end of the tabs: it hides the chart or summary on every tab, and tapping it again brings them back. It points the way they go, up when they are over the list and left when they are in a column, and ShelfSpace remembers your choice the next time you open it. A set of duplicates keeps its heading, since that is where **‹ Back** is.
+
 ### Library
 
 At the top, the chart and its legend: books, KOReader's data, other files and free space. They only show where the space went. The info icon after **Other** explains what that space is and why it is left alone.

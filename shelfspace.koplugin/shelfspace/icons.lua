@@ -221,6 +221,16 @@ function Icons.upSvg(color)
         .. "</svg>"
 end
 
+-- A chevron pointing `up`, `down`, `left` or `right`: the button that hides the chart and summary, and brings them back.
+-- Transparent ground, one even stroke.
+function Icons.chevronSvg(direction, color)
+    local stroke = string.format('fill="none" stroke="#%s" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"', color)
+    local d = ({ up = "M12 30 L24 18 L36 30", left = "M30 12 L18 24 L30 36", right = "M18 12 L30 24 L18 36" })[direction]
+        or "M12 18 L24 30 L36 18"
+    return '<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" '
+        .. 'viewBox="0 0 48 48">' .. string.format('<path d="%s" %s/>', d, stroke) .. "</svg>"
+end
+
 -- A padlock: the mark in the box of a row that cannot be ticked. Transparent ground, one even stroke.
 function Icons.lockSvg(color)
     local stroke = string.format('fill="none" stroke="#%s" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"', color)
@@ -325,6 +335,14 @@ function Icons.lockWidget(size, ink)
     local hex = hexOf(ink)
     local path = string.format("%s/cache/shelfspace/lock-%s.svg", DataStorage:getDataDir(), hex)
     if not store(path, Icons.lockSvg(hex)) then return nil end
+    return IconWidget:new{ file = path, width = size, height = size, alpha = true }
+end
+
+-- The chevron, `size` pixels square, pointing `direction` ("up", "down", "left" or "right"), in the colour `ink`; nil if it can't be produced.
+function Icons.chevronWidget(direction, size, ink)
+    local hex = hexOf(ink)
+    local path = string.format("%s/cache/shelfspace/chevron-%s-%s.svg", DataStorage:getDataDir(), direction, hex)
+    if not store(path, Icons.chevronSvg(direction, hex)) then return nil end
     return IconWidget:new{ file = path, width = size, height = size, alpha = true }
 end
 

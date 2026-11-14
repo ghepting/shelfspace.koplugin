@@ -91,7 +91,10 @@ local ShelfScreen = InputContainer:extend{
     dup_set = nil, -- the set of duplicates being looked at, by id; nil shows the list of sets
     dup_ignored = false, -- the list shows the sets you chose to keep, not the ones still to deal with
     dup_keep = nil, -- set id -> the copy chosen to keep, when it is not the suggested one
+    summary_hidden = false, -- the chart or summary over the list is folded away, so the list has the page (remembered between sessions)
 }
+
+local HIDE_SUMMARY = "shelfspace_hide_summary"
 
 function ShelfScreen:init()
     self.dimen = Geom:new{ x = 0, y = 0, w = Screen:getWidth(), h = Screen:getHeight() }
@@ -101,6 +104,7 @@ function ShelfScreen:init()
     self.left_at = {} -- pageKey -> the page of the Library a folder was on when you left it
     self.selected = {} -- path -> entry; survives paging, folders and searches
     self.dup_keep = {}
+    self.summary_hidden = G_reader_settings:isTrue(HIDE_SUMMARY)
     if Device:hasKeys() then
         self.key_events.Close = { { Device.input.group.Back } }
         self.key_events.NextPage = { { Device.input.group.PgFwd } }
@@ -494,6 +498,31 @@ function ShelfScreen:askQuery()
     self.plugin.popup:onShowKeyboard()
 end
 
+-- The chart or summary can be hidden on every page but a set of duplicates, where that space holds the book's name and Back.
+function ShelfScreen:summaryHideable()
+    return not (self.tab == "duplicates" and self.dup_set)
+end
+
+function ShelfScreen:toggleSummary()
+    self.summary_hidden = not self.summary_hidden
+    G_reader_settings:saveSetting(HIDE_SUMMARY, self.summary_hidden)
+    self:refresh()
+end
+
+-- The round button at the end of the tab row. It points the way the chart or summary goes: upright that is over the list, so up hides it
+-- and down brings it back; sideways it is a column on the left, so left hides it and right brings it back.
+local function summaryToggle(th, hidden, sideways, on_tap)
+    local h = sp(40) -- as tall as a tab
+    local border = Size.border.button
+    local direction = sideways and (hidden and "right" or "left") or (hidden and "down" or "up")
+    local icon = Icons.chevronWidget(direction, sp(24), th.ink)
+        or UI.text(({ up = "⌃", down = "⌄", left = "‹", right = "›" })[direction], 20, { bold = true, color = th.ink })
+    return UI.tappable(FrameContainer:new{
+        bordersize = border, color = th.ink, radius = math.floor(h / 2), margin = 0, padding = 0, background = th.bg,
+        CenterContainer:new{ dimen = Geom:new{ w = h - 2 * border, h = h - 2 * border }, icon },
+    }, on_tap)
+end
+
 function ShelfScreen:setPage(n)
     self.pages[self.tab] = n
     self:refresh()
@@ -507,7 +536,10 @@ function ShelfScreen:rebuild()
     local gap = sp(10)
     -- Sideways, the screen is wider than it is tall: the chart or summary takes a column of its own, and the controls, the list and
     -- the pager the rest, so the list gets the full height instead of what a tall hero leaves it.
-    local landscape = self.dimen.w > self.dimen.h
+    -- With the chart or summary hidden there is no column for it, so the list is laid out as it is upright, across the whole width.
+    local hideable = self:summaryHideable()
+    local hidden = self.summary_hidden and hideable
+    local landscape = self.dimen.w > self.dimen.h and not hidden
     local hero_w = landscape and math.floor(width * 0.36) or width
     local main_w = landscape and (width - hero_w - 2 * gap) or width
 
@@ -518,9 +550,18 @@ function ShelfScreen:rebuild()
     if sets > 0 or self.tab == "duplicates" then
         table.insert(tabs, { id = "duplicates", label = sets > 0 and T(_("Duplicates · %1"), sets) or _("Duplicates") })
     end
+    local tabbar = UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end)
+    if hideable then
+        local toggle = summaryToggle(th, hidden, self.dimen.w > self.dimen.h, function() self:toggleSummary() end)
+        tabbar = OverlapGroup:new{
+            dimen = Geom:new{ w = width, h = math.max(tabbar:getSize().h, toggle:getSize().h) },
+            tabbar,
+            RightContainer:new{ dimen = Geom:new{ w = width, h = toggle:getSize().h }, toggle },
+        }
+    end
     local top = VerticalGroup:new{
         align = "left",
-        UI.tabbar(th, width, tabs, self.tab, function(id) self:switchTab(id) end),
+        tabbar,
         VerticalSpan:new{ width = gap },
     }
     local layout = {
@@ -545,8 +586,10 @@ function ShelfScreen:rebuild()
         }
     else
         body = top
-        table.insert(body, view.hero)
-        table.insert(body, VerticalSpan:new{ width = gap })
+        if not hidden then
+            table.insert(body, view.hero)
+            table.insert(body, VerticalSpan:new{ width = gap })
+        end
         body:resetLayout() -- the tab bar was measured for the hero's room before the hero was added
         col = body
     end
@@ -577,6 +620,7 @@ function ShelfScreen:rebuild()
         local page = math.min(self.pages[self.tab] or 1, pages)
         self.pages[self.tab] = page
         self.page_count = pages
+        self.per_page = per_page -- rows on a page, for the size checks
         local first = (page - 1) * per_page + 1
         local last = math.min(view.count, first + per_page - 1)
         if probe_all then table.insert(col, view.select_all(first, last)) end
