@@ -121,6 +121,15 @@ function Driver:init()
             check("four books in Sci-Fi", #Search.find(P.tree, root .. "/Sci-Fi", nil, nil, Deleter.isBook) == 4)
             check("four EPUBs in Sci-Fi by type", #Search.find(P.tree, root .. "/Sci-Fi", nil, "epub") == 4)
             check("a search finds both copies of Dune", #Search.find(P.tree, root, "dune") == 2, #Search.find(P.tree, root, "dune"))
+            -- The full refresh a gesture asks for goes through the Dispatcher to the topmost widget, which is ShelfSpace.
+            local set_dirty, full = UIManager.setDirty, false
+            UIManager.setDirty = function(ui, widget, mode, ...)
+                if mode == "full" then full = true end
+                return set_dirty(ui, widget, mode, ...)
+            end
+            require("dispatcher"):execute({ full_refresh = true })
+            UIManager.setDirty = set_dirty
+            check("a full refresh gesture refreshes the screen", full)
         end, 0 },
         { "library-hidden", function() S():toggleSummary() end, 2 },
         { nil, function()

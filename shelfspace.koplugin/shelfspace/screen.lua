@@ -722,6 +722,13 @@ function ShelfScreen:onShow()
     UIManager:setDirty(self, function() return "ui", self.dimen end)
 end
 
+-- A full refresh from a gesture you set (or the Dispatcher) goes to the topmost widget, this one, and then only to widgets that are always
+-- active; the file manager is not, so without this the gesture was taken and nothing refreshed.
+function ShelfScreen:onFullRefresh()
+    UIManager:setDirty(nil, "full")
+    return true
+end
+
 function ShelfScreen:onCloseWidget()
     self.closed = true
     UIManager:setDirty(nil, "ui")
