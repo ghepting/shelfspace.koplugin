@@ -343,38 +343,6 @@ function UI.tabbar(th, width, tabs, active, on_select)
     return row
 end
 
--- « ‹ Page 1 of 3 › » ; on_page(n) is called with the page to show.
--- The pager row's measures: its height, the width of each arrow, and the width of what is between the arrows.
--- `cell` narrows the arrows, to leave the middle more room when the page is not wide.
-function UI.pagerGeometry(width, cell)
-    local cell_w = cell or sp(56)
-    return { h = sp(44), cell_w = cell_w, centre_w = width - 4 * cell_w }
-end
-
--- opts.cell_w: the width of an arrow.
-function UI.pager(th, width, page, pages, on_page, opts)
-    local geo = UI.pagerGeometry(width, opts and opts.cell_w)
-    local h, cell_w = geo.h, geo.cell_w
-    local function cell(label, target)
-        local c = CenterContainer:new{
-            dimen = Geom:new{ w = cell_w, h = h },
-            UI.text(label, 26, { color = target and th.ink or th.line }),
-        }
-        if not target then return c end
-        return UI.tappable(c, function() on_page(target) end)
-    end
-    return HorizontalGroup:new{
-        cell("«", page > 1 and 1 or nil),
-        cell("‹", page > 1 and page - 1 or nil),
-        CenterContainer:new{
-            dimen = Geom:new{ w = geo.centre_w, h = h },
-            UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
-        },
-        cell("›", page < pages and page + 1 or nil),
-        cell("»", page < pages and pages or nil),
-    }
-end
-
 -- spec: { icon ("shelfspace", "library" or "koreader"), named (the ShelfSpace mark with its name), color (the tile), title, subtitle, chips = { text | { text, active, on_tap, pinned }... } }
 function UI.hero(th, width, spec)
     local icon_size = sp(108)
