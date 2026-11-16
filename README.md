@@ -201,7 +201,7 @@ Pull requests are squash-merged, so the title must be a conventional commit: `fe
 
 If ShelfSpace freed up space you were missing, you can buy me a coffee:
 
-<a href='https://ko-fi.com/H3N82AROX1' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/H3N82AROX1)
 
 ## License
 
