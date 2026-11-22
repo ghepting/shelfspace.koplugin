@@ -643,7 +643,7 @@ function ShelfScreen:rebuild()
         table.insert(col, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap + slack })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
         table.insert(col, Pager.row(th, main_w, page, pages, function(n) self:setPage(n) end,
-            { cell_w = cell }))
+            { cell_w = cell, show_parent = self }))
     else
         self.page_count = 1
         if view.message then

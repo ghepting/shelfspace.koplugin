@@ -1,6 +1,6 @@
--- The pager row: |< < Page 1 of 3 > >| across the width it is given, the arrows at the ends and the page in the middle. The arrows are
--- KOReader's own chevron icons at the size its file browser draws them (a Button's default icon, DGENERIC_ICON_SIZE, with a Button's
--- padding round it), so they are as big, and as easy to tap, as in the file browser. An arrow that has nowhere to go is dimmed, as there.
+-- The pager row: |< < Page 1 of 3 > >| across the width it is given, the arrows at the ends and the page in the middle, made of the
+-- same Buttons as KOReader's file browser: its chevrons at its size (DGENERIC_ICON_SIZE, with a Button's padding round it), a flash
+-- on a tap, an arrow with nowhere to go dimmed, and a tap on the page number to go to a page.
 --
 -- Pure layout, with nothing of one plugin in it; ShelfSpace and SideShelf share it.
 local _ = require("gettext")
@@ -24,35 +24,66 @@ function Pager.geometry(width, cell, scale, icon)
     return { h = h, cell_w = cell_w, centre_w = math.max(0, width - 4 * cell_w), icon = icon_px, button = button }
 end
 
--- on_page(n) is called with the page to show. opts.cell_w: the width of an arrow's cell (see geometry).
+-- on_page(n) is called with the page to show. opts.cell_w: the width of an arrow's cell (see geometry); opts.show_parent: the
+-- widget the buttons are drawn in (the screen), which KOReader refreshes when a button flashes on a tap.
+--
+-- The parts are KOReader's own, as in its file browser: the arrows are Buttons, so they flash when tapped and a disabled one is
+-- dimmed the stock way, and "Page 1 of 3" is a Button too, which asks for a page number to go to.
 function Pager.row(th, width, page, pages, on_page, opts)
     local BD = require("ui/bidi")
+    local Button = require("ui/widget/button")
     local CenterContainer = require("ui/widget/container/centercontainer")
     local Geom = require("ui/geometry")
     local HorizontalGroup = require("ui/widget/horizontalgroup")
-    local IconWidget = require("ui/widget/iconwidget")
-    local UI = require("shelfspace/ui")
+    local InputDialog = require("ui/widget/inputdialog")
+    local UIManager = require("ui/uimanager")
 
-    local geo = Pager.geometry(width, opts and opts.cell_w)
+    opts = opts or {}
+    local geo = Pager.geometry(width, opts.cell_w)
     local first, prev, nxt, last = "chevron.first", "chevron.left", "chevron.right", "chevron.last"
     if BD.mirroredUILayout() then -- the row is mirrored, so the arrows are too, as in KOReader's menus
         first, prev, nxt, last = last, nxt, prev, first
     end
     local function cell(icon, target)
-        local c = CenterContainer:new{
+        return CenterContainer:new{
             dimen = Geom:new{ w = geo.cell_w, h = geo.h },
-            IconWidget:new{ icon = icon, width = geo.icon, height = geo.icon, dim = not target },
+            Button:new{
+                icon = icon, icon_width = geo.icon, icon_height = geo.icon, bordersize = 0, background = th.bg,
+                enabled = target ~= nil, show_parent = opts.show_parent,
+                callback = function() if target then on_page(target) end end,
+            },
         }
-        if not target then return c end
-        return UI.tappable(c, function() on_page(target) end)
     end
+
+    -- Tapping the page number asks which page to go to, as in KOReader's file browser.
+    local function ask()
+        local dialog
+        local function go()
+            local n = tonumber(dialog:getInputText())
+            if not n then return end
+            UIManager:close(dialog)
+            on_page(math.max(1, math.min(pages, math.floor(n))))
+        end
+        dialog = InputDialog:new{
+            title = _("Go to page"), input_type = "number", input_hint = T("(1 - %1)", pages),
+            buttons = { {
+                { text = _("Cancel"), id = "close", callback = function() UIManager:close(dialog) end },
+                { text = _("Go to page"), is_enter_default = true, callback = go },
+            } },
+        }
+        UIManager:show(dialog)
+        dialog:onShowKeyboard()
+    end
+    local label = Button:new{
+        text = T(_("Page %1 of %2"), page, pages), text_font_bold = false, bordersize = 0, background = th.bg,
+        max_width = geo.centre_w, show_parent = opts.show_parent,
+        callback = function() if pages > 1 then ask() end end, -- a list of one page has nowhere to go
+    }
+
     return HorizontalGroup:new{
         cell(first, page > 1 and 1 or nil),
         cell(prev, page > 1 and page - 1 or nil),
-        CenterContainer:new{
-            dimen = Geom:new{ w = geo.centre_w, h = geo.h },
-            UI.text(T(_("Page %1 of %2"), page, pages), 16, { bold = true, color = th.ink }),
-        },
+        CenterContainer:new{ dimen = Geom:new{ w = geo.centre_w, h = geo.h }, label },
         cell(nxt, page < pages and page + 1 or nil),
         cell(last, page < pages and pages or nil),
     }
