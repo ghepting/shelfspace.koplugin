@@ -45,4 +45,11 @@ T.test("the place defaults to Library", function()
     T.eq(Empty.describe({ query = "x" }).line, "Nothing in Library matches “x”.")
 end)
 
+T.test("no large files says what it looked for and offers all files", function()
+    local d = Empty.describe({ large = "100 MB", place = "Library" })
+    T.eq(d.headline, "No large files")
+    T.eq(d.line, "Nothing in the library is over 100 MB.")
+    T.eq(d.action, "status")
+end)
+
 T.done()

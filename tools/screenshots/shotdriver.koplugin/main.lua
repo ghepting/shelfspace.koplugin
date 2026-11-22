@@ -146,6 +146,16 @@ function Driver:init()
             S():setShow(nil, true)
             check("and All books replaces the status", S().only_books == true and S().status == nil)
         end, 0 },
+        { "library-large", function() S():setShow(nil, false) S():setSort("name") S():showLarge() end, 2 },
+        { nil, function()
+            check("the badge counts the two comics over 100 MB", S().shortcuts and S().shortcuts.large.count == 2,
+                S().shortcuts and S().shortcuts.large.count)
+            check("Large files lists them from the whole library, biggest first", S().large == true and S().dir == root
+                and S().sort == "size" and S().descending == true)
+            S():showFinished()
+            check("Finished replaces Large files", S().status == "complete" and S().large == false and S().dir == root)
+            S():setShow(nil, true)
+        end, 0 },
         { "library-books-sorted", function() S():setSort("name") end, 2 },
         { "library-folder", function() S():toggleBooks() S():setSort("size") S():setDir(root .. "/Manuals") end, 2 },
         { nil, function() check("Books turned off again", S().only_books == false) check("folder opens", S().dir == root .. "/Manuals", S().dir) end, 0 },

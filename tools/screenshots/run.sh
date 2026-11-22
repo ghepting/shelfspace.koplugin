@@ -62,6 +62,7 @@ if [ "${2:-}" = "--readme" ]; then
 library library
 library-hidden hidden
 library-books books
+library-large large
 library-filter-dialog filter
 library-search search
 library-select select

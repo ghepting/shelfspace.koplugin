@@ -1,6 +1,6 @@
 -- What Browse says when a folder, a search or a filter leaves nothing to show: a headline, a line saying
 -- why, and the one action that undoes it (if there is one). `state` is what is in force:
---   query (the search text), ext (a file type like "pdf"), status ("complete" or "new"), place (where
+--   query (the search text), ext (a file type like "pdf"), status ("complete" or "new"), large (the size a large file is over), place (where
 --   we are: "Library" or a folder's name), has_parent (we can go up).
 local _ = require("gettext")
 local T = require("ffi/util").template
@@ -10,7 +10,7 @@ local Empty = {}
 -- Returns { headline, line, action, label }; `action` is "search", "filter", "status", "all" or "up", or nil.
 function Empty.describe(state)
     local place = state.place or _("Library")
-    local count = (state.query and 1 or 0) + (state.ext and 1 or 0) + (state.status and 1 or 0)
+    local count = (state.query and 1 or 0) + (state.ext and 1 or 0) + (state.status and 1 or 0) + (state.large and 1 or 0)
     if count == 0 then
         return {
             headline = _("This folder is empty"), line = T(_("There is nothing in %1."), place),
@@ -31,6 +31,11 @@ function Empty.describe(state)
     elseif state.status == "new" then
         return {
             headline = _("No unread books"), line = _("Every book here has been opened."),
+            action = "status", label = _("Show all files"),
+        }
+    elseif state.large then
+        return {
+            headline = _("No large files"), line = T(_("Nothing in the library is over %1."), state.large),
             action = "status", label = _("Show all files"),
         }
     elseif state.status == "complete" then

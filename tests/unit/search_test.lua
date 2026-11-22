@@ -189,4 +189,21 @@ T.test("a type filter ignores case and counts a format's other spellings as one 
     T.eq(T.names((Search.find(cased, "/r", "", "md"))), "notes.Markdown")
 end)
 
+T.test("the shortcuts count the finished books and the files over 100 MB in the whole library, and never a sidecar", function()
+    local big = 150 * 1000 * 1000
+    local t = {
+        ["/r"] = { entries = { e("Done.epub", "/r/Done.epub", 30, 1), e("Saga.cbz", "/r/Saga.cbz", big, 1), e("Sub", "/r/Sub", 0, 1, true),
+            e("Big.sdr", "/r/Big.sdr", 0, 1, true, true) } },
+        ["/r/Sub"] = { entries = { e("Read.pdf", "/r/Sub/Read.pdf", Search.LARGE, 1), e("Unread.epub", "/r/Sub/Unread.epub", 5, 1) } },
+        ["/r/Big.sdr"] = { entries = { e("cache.bin", "/r/Big.sdr/cache.bin", big, 1) } },
+    }
+    local finished = { ["/r/Done.epub"] = true, ["/r/Sub/Read.pdf"] = true }
+    local cut = Search.shortcuts(t, "/r", function(path) return finished[path] and "complete" or "reading" end,
+        function(entry) return not entry.name:match("%.cbz$") end)
+    T.eq(cut.finished.count, 2, "finished")
+    T.eq(cut.finished.size, 30 + Search.LARGE, "finished size")
+    T.eq(cut.large.count, 2, "large (exactly 100 MB counts)")
+    T.eq(cut.large.size, big + Search.LARGE, "large size")
+end)
+
 T.done()
