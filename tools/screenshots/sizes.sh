@@ -4,7 +4,7 @@
 #   tools/screenshots/sizes.sh /path/to/KOReader.app            every size below
 #   tools/screenshots/sizes.sh /path/to/KOReader.app clara      one of them
 #
-# Each size runs headless (SDL_VIDEODRIVER=dummy) in its own data folder against the sample library. The shots land in
+# Each size runs headless (SDL_VIDEODRIVER=dummy) in its own data folder against the sample library, all of them at once. The shots land in
 # <work>/<name>/; a tab that runs off the screen prints FAIL and the script exits 1.
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -28,11 +28,10 @@ landscape-elipsa 1872 1404 227
 
 work="$(mktemp -d "${TMPDIR:-/tmp}/shelfspace-sizes.XXXXXX")"
 work="$(cd "$work" && pwd -P)"
-status=0
-while read -r name w h dpi; do
-    [ -n "$name" ] || continue
-    [ -z "$only" ] || [ "$only" = "$name" ] || continue
-    dir="$work/$name"
+
+# One size: its own data folder and library, run headless. The sizes do not share anything, so they all run at once.
+run_size() {
+    local name="$1" w="$2" h="$3" dpi="$4" dir="$work/$1"
     mkdir -p "$dir/home/plugins" "$dir/shots"
     "$repo/tools/screenshots/make-library.sh" "$dir" > /dev/null
     ln -s "$repo/shelfspace.koplugin" "$dir/home/plugins/shelfspace.koplugin"
@@ -48,6 +47,21 @@ return {
 S
     SDL_VIDEODRIVER=dummy KO_HOME="$dir/home" SHOT_OUT="$dir/shots" \
         EMULATE_READER_W="$w" EMULATE_READER_H="$h" EMULATE_READER_DPI="$dpi" "$bin" > "$dir/run.log" 2>&1 || true
+}
+
+while read -r name w h dpi; do
+    [ -n "$name" ] || continue
+    [ -z "$only" ] || [ "$only" = "$name" ] || continue
+    run_size "$name" "$w" "$h" "$dpi" &
+done <<< "$SIZES"
+wait
+
+# The results, in the order of the list.
+status=0
+while read -r name w h dpi; do
+    [ -n "$name" ] || continue
+    [ -z "$only" ] || [ "$only" = "$name" ] || continue
+    dir="$work/$name"
     if ! grep -q "sizedriver: done" "$dir/run.log"; then
         echo "FAIL  $name ($w x $h at $dpi dpi): the check did not finish; see $dir/run.log"; status=1; continue
     fi
