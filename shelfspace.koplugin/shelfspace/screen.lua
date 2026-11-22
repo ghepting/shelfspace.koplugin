@@ -31,6 +31,7 @@ local Icons = require("shelfspace/icons")
 local Theme = require("shelfspace/theme")
 local Search = require("shelfspace/search")
 local Selection = require("shelfspace/selection")
+local Pager = require("shelfspace/pager")
 local UI = require("shelfspace/ui")
 local Zones = require("shelfspace/zones")
 local sp = UI.sp
@@ -610,7 +611,7 @@ function ShelfScreen:rebuild()
             + (view.table_head and view.table_head:getSize().h + frame_w or 0)
             + (probe_all and probe_all:getSize().h or 0)
         local cell = landscape and sp(40) or nil -- narrower arrows, so the bar has room beside a list that is not full width
-        local pager_h = UI.pager(th, main_w, 1, 1, function() end, { cell_w = cell }):getSize().h
+        local pager_h = Pager.row(th, main_w, 1, 1, function() end, { cell_w = cell }):getSize().h
         -- A little air between the last row and the pager row, which the floating bar fills when something is ticked.
         local pager_gap = sp(6)
         local avail = self.dimen.h - used - pager_h - pager_gap
@@ -641,8 +642,8 @@ function ShelfScreen:rebuild()
         local slack = view.fixed_rows and math.max(0, avail - per_page * row_h) or 0
         table.insert(col, VerticalSpan:new{ width = (per_page - shown) * row_h + pager_gap + slack })
         -- While rows are ticked the floating bar is drawn in the middle of this row, in place of "Page 1 of 3"; the arrows stay.
-        table.insert(col, UI.pager(th, main_w, page, pages, function(n) self:setPage(n) end,
-            { cell_w = cell }))
+        table.insert(col, Pager.row(th, main_w, page, pages, function(n) self:setPage(n) end,
+            { cell_w = cell, show_parent = self }))
     else
         self.page_count = 1
         if view.message then
@@ -657,7 +658,7 @@ function ShelfScreen:rebuild()
     end
 
     -- Where the floating bar goes.
-    local geo = UI.pagerGeometry(main_w, landscape and sp(40) or nil)
+    local geo = Pager.geometry(main_w, landscape and sp(40) or nil)
     local left = pad + (landscape and (hero_w + 2 * gap) or 0)
     -- The floating bar hangs over the bottom of the list, just above the pager row, which stays whole ("Page 1 of 3" and its arrows);
     -- a tab with no pager has it in that row.
