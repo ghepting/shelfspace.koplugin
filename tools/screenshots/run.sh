@@ -31,7 +31,7 @@ return {
 S
 
 # 632 x 840 points is 1264 x 1680 pixels on a Retina screen (with no window, SDL_VIDEODRIVER=dummy, set EMULATE_READER_W=1264 EMULATE_READER_H=1680 EMULATE_READER_DPI=600 for the same): the Kobo Libra Colour's proportions and the size of the screenshots.
-echo "running ShelfSpace in $bin (about four minutes)..."
+echo "running ShelfSpace in $bin (about a minute)..."
 KO_HOME="$work/home" SHOT_OUT="$work/shots" SHOT_LIBRARY="$work/Books" \
     EMULATE_READER_W="${EMULATE_READER_W:-632}" EMULATE_READER_H="${EMULATE_READER_H:-840}" EMULATE_READER_DPI="${EMULATE_READER_DPI:-300}" "$bin" > "$work/run.log" 2>&1 || true
 

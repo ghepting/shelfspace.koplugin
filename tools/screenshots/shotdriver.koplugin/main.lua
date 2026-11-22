@@ -10,6 +10,37 @@ local OUT = assert(os.getenv("SHOT_OUT"), "SHOT_OUT is not set") .. "/"
 
 local Driver = WidgetContainer:extend{ name = "shotdriver", is_doc_only = false }
 
+-- Waits until KOReader has settled, then calls `fn`: nothing waiting to be drawn or refreshed, and no task due soon (the scanner works in
+-- small scheduled steps, a dialog paints on the next tick). `cap` seconds is the most it waits, for anything that never settles. This
+-- replaces fixed waits, which spent most of a run doing nothing: a screen is built and drawn in a few milliseconds.
+-- A fresh data folder makes KOReader show a passing message ("Book info cache database updated.") that closes itself a few seconds
+-- later. The run does not wait for it: it is closed before the first step, so it is never on top of what is being checked or shot.
+local function closeMessages()
+    local InfoMessage = require("ui/widget/infomessage")
+    for k = #UIManager._window_stack, 1, -1 do
+        local w = UIManager._window_stack[k].widget
+        if getmetatable(w) == InfoMessage then UIManager:close(w) end
+    end
+end
+
+local function settle(cap, fn)
+    local time = require("ui/time")
+    local deadline, quiet = time.now() + time.s(cap), 0
+    local function poll()
+        local busy = next(UIManager._dirty) ~= nil or #UIManager._refresh_stack > 0
+        if not busy then
+            local soon = time.now() + time.s(0.25)
+            for _, task in ipairs(UIManager._task_queue) do
+                if task.action ~= poll and task.time < soon then busy = true break end
+            end
+        end
+        quiet = busy and 0 or quiet + 1
+        if quiet >= 2 or time.now() >= deadline then return fn() end
+        UIManager:scheduleIn(0.05, poll)
+    end
+    UIManager:scheduleIn(0.05, poll)
+end
+
 local pass, fail = 0, 0
 local function check(name, ok, detail)
     if ok then
@@ -109,7 +140,7 @@ function Driver:init()
         end
     end
 
-    -- { shot name or nil, action, seconds to wait before the shot (and the next step) }
+    -- { shot name or nil, action, the most seconds to wait before the shot (and the next step); it moves on as soon as KOReader settles }
     local steps = {
         ---------------------------------------------------------------- colour screen
         { nil, function() stash_formats(true) end, 0 },
@@ -354,7 +385,7 @@ function Driver:init()
             fail = fail + 1
             logger.err("TEST FAIL step " .. tostring(s[1] or i) .. " raised: " .. tostring(err))
         end
-        UIManager:scheduleIn(s[3], function()
+        settle(math.max(s[3], 1), function()
             if s[1] then
                 Device.screen:shot(OUT .. s[1] .. ".png")
                 logger.info("shotdriver: shot " .. s[1])
@@ -362,7 +393,7 @@ function Driver:init()
             nextStep()
         end)
     end
-    UIManager:scheduleIn(4, nextStep)
+    settle(10, function() closeMessages() settle(1, nextStep) end)
 end
 
 return Driver
