@@ -59,12 +59,28 @@ Search.STATUSES = {
     { id = "new", label = "Never read", short = "Never read", noun = "unread" },
 }
 
+-- A file this big or bigger is a large file: the Large files filter and the badge at the top of the Library.
+Search.LARGE = 100 * 1000 * 1000
+Search.LARGE_LABEL = "100 MB"
+
 -- The status option with this id (nil is "All files").
 function Search.status(id)
     for _, option in ipairs(Search.STATUSES) do
         if option.id == id then return option end
     end
     return Search.STATUSES[1]
+end
+
+-- The two shortcuts at the top of the Library, over the whole library: the finished books and the large files, how many and how big.
+-- `status(path)` is KOReader's reading status for a book, `is_book(entry)` whether a file is a book.
+function Search.shortcuts(tree, root, status, is_book)
+    local finished, large = { count = 0, size = 0 }, { count = 0, size = 0 }
+    Search.find(tree, root, nil, nil, function(e)
+        if (e.size or 0) >= Search.LARGE then large.count, large.size = large.count + 1, large.size + e.size end
+        if is_book(e) and status(e.path) == "complete" then finished.count, finished.size = finished.count + 1, finished.size + (e.size or 0) end
+        return false
+    end)
+    return { finished = finished, large = large }
 end
 
 function Search.find(tree, dir, query, ext, include)

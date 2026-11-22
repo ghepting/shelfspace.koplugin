@@ -50,7 +50,7 @@ return function(screen, th, width, layout)
     end
 
     local root = plugin.root
-    local dir = screen.only_books and root or screen.dir
+    local dir = (screen.only_books or screen.large) and root or screen.dir
     if not dir or not tree[dir] then dir = root end
     screen.dir = dir
     local parent = dir ~= root and dir:match("^(.*)/[^/]+$") or nil
@@ -59,9 +59,10 @@ return function(screen, th, width, layout)
     local entries, where = {}, nil
     local status = screen.status
     local include
-    if status or screen.only_books then
+    if status or screen.only_books or screen.large then
         include = function(e)
             if status then return Deleter.isBook(e) and BookList.getBookStatus(e.path) == status end
+            if screen.large then return (e.size or 0) >= Search.LARGE end
             return Deleter.isSupported(e)
         end
     end
@@ -212,16 +213,38 @@ return function(screen, th, width, layout)
         table.insert(chips, UI.chip(th, text .. " ✕", { active = true, on_tap = on_tap }))
     end
     if screen.only_books then add_chip(_("Books"), function() screen:toggleBooks() end) end
+    if screen.large then add_chip(T(_("Over %1"), Search.LARGE_LABEL), function() screen:setShow(nil, false, false) end) end
     if screen.filter then add_chip(screen.filter:upper(), function() screen:toggleFilter(screen.filter) end) end
     if status then add_chip(Search.status(status).short, function() screen:setStatus(nil) end) end
     -- The line under the controls: where you are or what is narrowing the list on the left, and how many there are on the right,
     -- ending where the boxes below do. The count is always in the same place, whatever is on the left. (Inside a folder the way
     -- back up is the first row of the list.)
-    local up_row = parent and not screen.only_books
+    local up_row = parent and not (screen.only_books or screen.large)
     local count = #entries
-    local noun = flat and (screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count)) or N_("book", "books", count))
+    local noun = flat and (screen.filter and (screen.filter:upper() .. " " .. N_("file", "files", count))
+            or screen.large and N_("file", "files", count) or N_("book", "books", count))
         or N_("item", "items", count)
     local count_text = UI.text(T(_("%1 %2"), count, noun), 15, { color = th.muted, max_width = width - 2 * gap })
+    -- At the top of the library, with nothing narrowing it, the shortcuts to what frees the most: the books you have finished and the
+    -- files over 100 MB, wherever they are. Each says how much it holds and opens that list, biggest first. Worked out once a scan.
+    if #chips == 0 and dir == root and not screen.query then
+        if screen.shortcuts_tree ~= tree then
+            screen.shortcuts_tree = tree
+            screen.shortcuts = Search.shortcuts(tree, root, function(path) return BookList.getBookStatus(path) end, Deleter.isBook)
+        end
+        local cut = screen.shortcuts
+        local function shortcut(text, fill, on_tap)
+            if #chips > 0 then table.insert(chips, HorizontalSpan:new{ width = sp(6) }) end
+            table.insert(chips, UI.chip(th, text, { fill = fill, size = 14, on_tap = on_tap }))
+        end
+        if cut.finished.count > 0 then
+            shortcut(T(_("Finished · %1"), util.getFriendlySize(cut.finished.size)), th.keep, function() screen:showFinished() end)
+        end
+        if cut.large.count > 0 then
+            shortcut(T(N_("%1 over %2", "%1 over %2", cut.large.count), cut.large.count, Search.LARGE_LABEL), th.danger,
+                function() screen:showLarge() end)
+        end
+    end
     local left
     if #chips > 0 then
         left = chips
@@ -300,7 +323,7 @@ return function(screen, th, width, layout)
     -- rows would have taken.
     local function empty_state(h)
         local d = Empty.describe({
-            query = screen.query and shorten(screen.query, 20), ext = screen.filter, status = status,
+            query = screen.query and shorten(screen.query, 20), ext = screen.filter, status = status, large = screen.large and Search.LARGE_LABEL,
             place = name, has_parent = parent ~= nil,
         })
         local actions = {
