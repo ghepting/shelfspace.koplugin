@@ -67,12 +67,12 @@ end
 
 -- A title with a line of small print under it, grouped tight. A text box is taller than its letters (it leaves room above for
 -- tall letters and below for the tails of g and y), so two stacked boxes float apart; the title is measured shorter here, which
--- closes the gap. Text is not clipped to its box, so nothing is cut off. `under` may be nil.
+-- closes the gap. Text is not clipped to its box, so nothing is cut off. `under` may be nil: then the title keeps its full box, so
+-- it is centred like any other text (a shortened box with nothing under it sits its letters low).
 function UI.stack(title, under)
+    if not under then return title end
     title.forced_height = math.floor(title:getSize().h * 0.8)
-    local group = VerticalGroup:new{ align = "left", title }
-    if under then table.insert(group, under) end
-    return group
+    return VerticalGroup:new{ align = "left", title, under }
 end
 
 -- A solid w x h block; FrameContainer takes its size from its content.
