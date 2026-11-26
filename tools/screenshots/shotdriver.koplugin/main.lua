@@ -369,6 +369,12 @@ function Driver:init()
             check("the set is gone from the list", #P.duplicates == state.sets - 1, #P.duplicates)
         end, 0 },
         { "library-after", function() S():switchTab("library") S():setDir(root) end, 2 },
+        { nil, function()
+            local large = 0
+            for _, e in ipairs((Search.find(P.tree, root, nil, nil, function(e) return e.size >= Search.LARGE end))) do large = large + 1 end
+            check("the badges are counted again after a delete", S().shortcuts and S().shortcuts.large.count == large,
+                S().shortcuts and S().shortcuts.large.count .. " vs " .. large)
+        end, 0 },
     }
     local i = 0
     local function nextStep()

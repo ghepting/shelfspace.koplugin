@@ -95,7 +95,8 @@ function ShelfSpace:scan(on_done)
     self.koreader_dir = ffiUtil.realpath(koreader_dir) or koreader_dir
     local started = time.now()
     local cache_dir = DataStorage:getDataDir() .. "/cache/shelfspace"
-    local cache_file = cache_dir .. "/scan.lua"
+    local cache_file = cache_dir .. "/scan.txt"
+    os.remove(cache_dir .. "/scan.lua") -- what ShelfSpace 0.15 and earlier saved, in a way a big library outgrew
     local previous = self.tree or ScanCache.load(cache_file, self.root)
     if previous then -- KOReader's own files change in place, so that folder is always read afresh
         local data = self.koreader_dir
@@ -103,24 +104,38 @@ function ShelfSpace:scan(on_done)
             if dir == data or dir:sub(1, #data + 1) == data .. "/" then previous[dir] = nil end
         end
     end
-    local function finish(tree)
+    -- `changed`: whether anything in the library was read from the disk rather than kept from the last scan. When nothing was, the
+    -- saved scan already says what this one does and is not written again (on a big library that is megabytes on every open).
+    local function finish(tree, changed)
         self.tree = tree
-        lfs.mkdir(DataStorage:getDataDir() .. "/cache")
-        lfs.mkdir(cache_dir)
-        ScanCache.save(cache_file, self.root, tree, self.koreader_dir)
+        if changed then
+            lfs.mkdir(DataStorage:getDataDir() .. "/cache")
+            lfs.mkdir(cache_dir)
+            ScanCache.save(cache_file, self.root, tree, self.koreader_dir)
+        end
         local dirs, files = Scanner.count(tree)
         logger.info(string.format("ShelfSpace: scanned %d folders, %d files in %d ms",
             dirs, files, time.to_ms(time.since(started))))
         on_done()
     end
-    Scanner.scan(self.root, function(tree)
+    -- KOReader's own folder is never kept from the last scan, so when it is inside the library its folders are always read:
+    -- they don't count as a change.
+    Scanner.scan(self.root, function(tree, read)
+        local inside = 0
         if tree[self.koreader_dir] then
-            finish(tree)
+            local data = self.koreader_dir
+            for dir in pairs(tree) do
+                if dir == data or dir:sub(1, #data + 1) == data .. "/" then inside = inside + 1 end
+            end
+        end
+        local changed = not previous or read > inside
+        if tree[self.koreader_dir] then
+            finish(tree, changed)
             return
         end
         Scanner.scan(self.koreader_dir, function(extra)
             for dir, node in pairs(extra) do tree[dir] = node end
-            finish(tree)
+            finish(tree, changed)
         end)
     end, previous)
 end
@@ -172,6 +187,8 @@ end
 -- Re-reads free space and redraws whichever tab is showing.
 function ShelfSpace:refresh()
     if not self.screen or self.screen.closed then return end
+    -- The library may have changed (a scan, a delete): what the screen keeps between taps, such as a filtered list, is worked out again.
+    self.revision = (self.revision or 0) + 1
     self.usage = util.diskUsage(self.root)
     self:findDuplicates()
     self:saveSummary()
@@ -718,31 +735,52 @@ function ShelfSpace:confirmDeleteMany(entries)
     end)
 end
 
--- Deletes one entry per tick so the screen stays alive, then leaves select mode.
-function ShelfSpace:deleteMany(items, after)
-    local busy = InfoMessage:new { text = T(N_("Deleting %1 item…", "Deleting %1 items…", #items), #items) }
+-- How long one go at deleting may keep the screen from answering before it lets KOReader draw and listen again.
+local DELETE_SLICE = time.ms(100)
+
+-- A progress bar for deleting `count` items: KOReader's own, which redraws itself now and then (an e-ink screen cannot redraw
+-- after every book). Older KOReader without it gets a message instead. It cannot be tapped away: the delete goes on either way.
+local function deleteProgress(count)
+    local title = T(N_("Deleting %1 item…", "Deleting %1 items…", count), count)
+    local ok, ProgressbarDialog = pcall(require, "ui/widget/progressbardialog")
+    if ok and count > 1 then
+        local bar = ProgressbarDialog:new{ title = title, progress_max = count, refresh_time_seconds = 1, dismissable = false }
+        bar:show()
+        return { report = function(done) bar:reportProgress(done) end, close = function() bar:close() end }
+    end
+    local busy = InfoMessage:new { text = title }
     UIManager:show(busy)
+    return { report = function() end, close = function() UIManager:close(busy) end }
+end
+
+-- Deletes `items` in short goes, so the screen stays alive and the progress bar moves, then leaves select mode.
+function ShelfSpace:deleteMany(items, after)
+    local progress = deleteProgress(#items)
     local failed, at = {}, 0
+    local function finish()
+        progress.close()
+        self.block_cache = {}
+        if self.screen and not self.screen.closed then self.screen.selected = {} end
+        self:refresh()
+        if after then after() end
+        if #failed > 0 then
+            self:notify(T(_("Could not delete %1 of %2:\n%3"), #failed, #items, table.concat(failed, "\n")))
+        end
+    end
     local function step()
-        at = at + 1
-        local entry = items[at]
-        if not entry then
-            UIManager:close(busy)
-            self.block_cache = {}
-            if self.screen and not self.screen.closed then self.screen.selected = {} end
-            self:refresh()
-            if after then after() end
-            if #failed > 0 then
-                self:notify(T(_("Could not delete %1 of %2:\n%3"), #failed, #items, table.concat(failed, "\n")))
+        local started = time.now()
+        repeat
+            at = at + 1
+            local entry = items[at]
+            if not entry then return finish() end
+            local dir = entry.path:match("^(.*)/[^/]+$") or self.root
+            if lfs.attributes(entry.path, "mode") == nil or Deleter.delete(entry) then
+                Scanner.remove(self.tree, self.root, dir, entry)
+            else
+                table.insert(failed, entry.name)
             end
-            return
-        end
-        local dir = entry.path:match("^(.*)/[^/]+$") or self.root
-        if lfs.attributes(entry.path, "mode") == nil or Deleter.delete(entry) then
-            Scanner.remove(self.tree, self.root, dir, entry)
-        else
-            table.insert(failed, entry.name)
-        end
+        until time.since(started) >= DELETE_SLICE
+        progress.report(at)
         UIManager:scheduleIn(0, step)
     end
     UIManager:nextTick(step)
