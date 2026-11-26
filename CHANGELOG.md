@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/ghepting/shelfspace.koplugin/compare/v0.15.0...v0.15.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* faster on large libraries, less memory once closed, a progress bar for big deletes, and badges that update after a delete ([#109](https://github.com/ghepting/shelfspace.koplugin/issues/109)) ([7a335ce](https://github.com/ghepting/shelfspace.koplugin/commit/7a335ce41f7bcaf765f97d84b9be0e28fdc551c3))
+
 ## [0.15.0](https://github.com/ghepting/shelfspace.koplugin/compare/v0.14.0...v0.15.0) (2026-11-22)
 
 
