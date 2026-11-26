@@ -1,5 +1,6 @@
 -- Opens ShelfSpace on a large made-up library and times what a person does with it: the scan (first and again), building the
--- Library, selecting a row, the Finished filter, turning a page, the badges, deleting many books at once, and the other tabs.
+-- Library, selecting a row, the Finished filter, turning a page, the badges, deleting many books at once, and the other tabs; and
+-- how much memory it takes while open and leaves behind once closed.
 -- Prints one "PERF <step> <ms>" line per step, then "perfdriver: done", and quits. It deletes books, so it only runs on the
 -- library tools/perf/make-library.py builds (PERF_LIBRARY).
 local UIManager = require("ui/uimanager")
@@ -15,6 +16,13 @@ local function closeMessages()
         local w = UIManager._window_stack[k].widget
         if getmetatable(w) == InfoMessage then UIManager:close(w) end
     end
+end
+
+-- What Lua holds, after a full collection, in MB.
+local function heap()
+    collectgarbage("collect")
+    collectgarbage("collect")
+    return collectgarbage("count") / 1024
 end
 
 local function report(step, started, extra)
@@ -49,8 +57,11 @@ function Driver:init()
     end
 
     -- The first scan reads every folder; the second has the cache from the first.
+    local base
     add(function(go)
         closeMessages()
+        base = heap()
+        logger.info(string.format("PERF %-22s %7.1f MB", "memory before opening", base))
         local started = time.now()
         local scan = P.scan
         P.scan = function(plugin, done)
@@ -78,6 +89,10 @@ function Driver:init()
         timed("  of which duplicates", function() P:findDuplicates() end)
         local f = require("datastorage"):getDataDir() .. "/cache/shelfspace/scan.txt"
         logger.info(string.format("PERF %-22s %7.1f MB", "saved scan", (require("libs/libkoreader-lfs").attributes(f, "size") or 0) / 1e6))
+        go()
+    end)
+    add(function(go)
+        logger.info(string.format("PERF %-22s %7.1f MB", "memory while open", heap() - base))
         go()
     end)
     add(function(go) timed("build Library", function() S():refresh() end) go() end)
@@ -132,6 +147,15 @@ function Driver:init()
     add(function(go) timed("duplicates (find)", function() P:findDuplicates() end) go() end)
     add(function(go) timed("Duplicates tab", function() S():switchTab("duplicates") end) go() end)
     add(function(go) S():onClose() go() end)
+    add(function(go)
+        -- What ShelfSpace leaves behind once closed, while you go on reading: its own scan, and the reading status of every book it
+        -- asked KOReader about (KOReader's cache, which it never empties by itself).
+        logger.info(string.format("PERF %-22s %7.1f MB", "memory after closing", heap() - base))
+        local n = 0
+        for _ in pairs(require("ui/widget/booklist").book_info_cache) do n = n + 1 end
+        logger.info(string.format("PERF %-22s %7d books", "  KOReader's status cache", n))
+        go()
+    end)
 
     UIManager:scheduleIn(0.5, function() P = self.ui.shelfspace nextStep() end)
 end

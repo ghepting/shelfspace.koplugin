@@ -116,6 +116,9 @@ function ShelfSpace:scan(on_done)
         local dirs, files = Scanner.count(tree)
         logger.info(string.format("ShelfSpace: scanned %d folders, %d files in %d ms",
             dirs, files, time.to_ms(time.since(started))))
+        -- Closed while the scan ran: it is saved for next time, and not kept. (`on_done` still runs, to close what it showed; with
+        -- the screen closed it draws nothing.)
+        if not self.screen or self.screen.closed then self:release() end
         on_done()
     end
     -- KOReader's own folder is never kept from the last scan, so when it is inside the library its folders are always read:
@@ -138,6 +141,24 @@ function ShelfSpace:scan(on_done)
             finish(tree, changed)
         end)
     end, previous)
+end
+
+-- Lets go of the scan once ShelfSpace is closed: on a big library it is megabytes, and KOReader keeps this plugin (and so all it
+-- holds) for as long as the file manager or the book is open. The saved scan brings it back quickly the next time. Kept: which
+-- files were compared byte for byte, which is small and would mean reading them all again.
+--
+-- KOReader remembers the reading status of every book anything asks about (BookList's cache, which the file manager uses too) and
+-- never forgets one. ShelfSpace asks about every book in the library, for its badges and filters, so on closing it takes back what it
+-- added: the entries there were not there when it opened. KOReader reads any of them again when it next needs it.
+function ShelfSpace:release()
+    self.tree, self.duplicates, self.ignored_duplicates, self.block_cache = nil, nil, nil, {}
+    local cache, before = BookList.book_info_cache, self.book_info_before
+    if type(cache) == "table" and before then
+        for path in pairs(cache) do
+            if not before[path] then cache[path] = nil end
+        end
+    end
+    self.book_info_before = nil
 end
 
 -- Books = visible top-level entries; "other" is whatever the partition holds beyond that.
@@ -333,6 +354,11 @@ function ShelfSpace:showOverview(state)
         return
     end
     self.usage = usage
+    -- Which books KOReader already had the reading status of, so closing takes back only what ShelfSpace added (see release).
+    if not self.book_info_before and type(BookList.book_info_cache) == "table" then
+        self.book_info_before = {}
+        for path in pairs(BookList.book_info_cache) do self.book_info_before[path] = true end
+    end
     state = state or {}
     self.screen = ShelfScreen:new { plugin = self, tab = state.tab, dir = state.dir, query = state.query, status = state.status, sort = state.sort, descending = state.descending }
     self.screen.pages.library = state.page

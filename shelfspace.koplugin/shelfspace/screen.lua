@@ -747,6 +747,8 @@ end
 
 function ShelfScreen:onCloseWidget()
     self.closed = true
+    self.list_cache, self.shortcuts = nil, nil
+    self.plugin:release()
     UIManager:setDirty(nil, "ui")
 end
 
