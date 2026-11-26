@@ -56,30 +56,41 @@ return function(screen, th, width, layout)
     local parent = dir ~= root and dir:match("^(.*)/[^/]+$") or nil
     if parent and not tree[parent] then parent = root end
 
-    local entries, where = {}, nil
+    -- The list, found and sorted. A filter looks through the whole library (and the reading status of every book in it), so the
+    -- list is kept until something it depends on changes: selecting a row or turning a page then only draws the page. `plugin.revision`
+    -- moves on whenever the library changes (a scan, a delete).
     local status = screen.status
-    local include
-    if status or screen.only_books or screen.large then
-        include = function(e)
-            if status then return Deleter.isBook(e) and BookList.getBookStatus(e.path) == status end
-            if screen.large then return (e.size or 0) >= Search.LARGE end
-            return Deleter.isSupported(e)
+    local key = table.concat({ plugin.revision or 0, dir, screen.query or "", screen.filter or "", status or "",
+        tostring(screen.only_books), tostring(screen.large), screen.sort, tostring(screen.descending) }, "|")
+    local list = screen.list_cache
+    if not list or list.tree ~= tree or list.key ~= key then
+        local entries, where = {}, nil
+        local include
+        if status or screen.only_books or screen.large then
+            include = function(e)
+                if status then return Deleter.isBook(e) and BookList.getBookStatus(e.path) == status end
+                if screen.large then return (e.size or 0) >= Search.LARGE end
+                return Deleter.isSupported(e)
+            end
         end
-    end
-    if screen.query or screen.filter or include then
-        entries, where = Search.find(tree, dir, screen.query, screen.filter, include)
-    else
-        for i, e in ipairs(tree[dir].entries) do
-            if not e.hidden then table.insert(entries, e) end
+        if screen.query or screen.filter or include then
+            entries, where = Search.find(tree, dir, screen.query, screen.filter, include)
+        else
+            for i, e in ipairs(tree[dir].entries) do
+                if not e.hidden then table.insert(entries, e) end
+            end
         end
+        local opened
+        if screen.sort == "opened" then
+            local last = {}
+            for _, item in ipairs(ReadHistory.hist) do last[item.file] = item.time end
+            opened = function(e) return last[e.path] end
+        end
+        Search.sort(entries, screen.sort, screen.descending, opened)
+        list = { tree = tree, key = key, entries = entries, where = where }
+        screen.list_cache = list
     end
-    local opened
-    if screen.sort == "opened" then
-        local last = {}
-        for _, item in ipairs(ReadHistory.hist) do last[item.file] = item.time end
-        opened = function(e) return last[e.path] end
-    end
-    Search.sort(entries, screen.sort, screen.descending, opened)
+    local entries, where = list.entries, list.where
 
     local name = dir == root and _("Library") or dir:match("[^/]+$")
     local hero = Storage(screen, th, layout and layout.hero_w or width, layout)
@@ -226,10 +237,12 @@ return function(screen, th, width, layout)
         or N_("item", "items", count)
     local count_text = UI.text(T(_("%1 %2"), count, noun), 15, { color = th.muted, max_width = width - 2 * gap })
     -- At the top of the library, with nothing narrowing it, the shortcuts to what frees the most: the books you have finished and the
-    -- files over 100 MB, wherever they are. Each says how much it holds and opens that list, biggest first. Worked out once a scan.
+    -- files over 100 MB, wherever they are. Each says how much it holds and opens that list, biggest first.
     if #chips == 0 and dir == root and not screen.query then
-        if screen.shortcuts_tree ~= tree then
-            screen.shortcuts_tree = tree
+        -- Worked out again when the library changes: after deleting the finished books the badge is gone, not still offering them.
+        local at = tostring(tree) .. "|" .. (plugin.revision or 0)
+        if screen.shortcuts_at ~= at then
+            screen.shortcuts_at = at
             screen.shortcuts = Search.shortcuts(tree, root, function(path) return BookList.getBookStatus(path) end, Deleter.isBook)
         end
         local cut = screen.shortcuts
